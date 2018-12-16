@@ -1,4 +1,5 @@
 import { remote, ipcRenderer } from 'electron';
+import menus from './menus';
 import servers from './servers';
 import sidebar from './sidebar';
 import webview from './webview';
@@ -6,7 +7,7 @@ import setTouchBar from './touchBar';
 
 
 const { app, getCurrentWindow, shell } = remote;
-const { certificate, dock, menus, tray } = remote.require('./background');
+const { certificate, dock, tray } = remote.require('./background');
 
 const updatePreferences = () => {
 	const mainWindow = getCurrentWindow();
