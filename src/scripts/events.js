@@ -32,7 +32,6 @@ const updatePreferences = () => {
 	});
 };
 
-
 const updateServers = () => {
 	menus.setState({
 		servers: Object.values(servers.hosts)
@@ -42,25 +41,9 @@ const updateServers = () => {
 	});
 };
 
-
 const updateWindowState = () => tray.setState({ isMainWindowVisible: getCurrentWindow().isVisible() });
 
-const destroyAll = () => {
-	try {
-		menus.removeAllListeners();
-		tray.destroy();
-		dock.destroy();
-		const mainWindow = getCurrentWindow();
-		mainWindow.removeListener('hide', updateWindowState);
-		mainWindow.removeListener('show', updateWindowState);
-	} catch (error) {
-		remote.getGlobal('console').error(error);
-	}
-};
-
-export default () => {
-	window.addEventListener('beforeunload', destroyAll);
-
+const attachMenusEvents = () => {
 	menus.on('quit', () => app.quit());
 	menus.on('about', () => ipcRenderer.send('open-about-dialog'));
 	menus.on('open-url', (url) => shell.openExternal(url));
@@ -154,13 +137,18 @@ export default () => {
 
 		updatePreferences();
 	});
+};
 
+const attachServersEvents = () => {
 	servers.on('loaded', updateServers);
 	servers.on('active-cleared', updateServers);
 	servers.on('active-setted', updateServers);
 	servers.on('host-added', updateServers);
 	servers.on('host-removed', updateServers);
 	servers.on('title-setted', updateServers);
+};
+
+const attachSidebarEvents = () => {
 	sidebar.on('hosts-sorted', updateServers);
 
 	sidebar.on('badge-setted', () => {
@@ -168,17 +156,17 @@ export default () => {
 		tray.setState({ badge });
 		dock.setState({ badge });
 	});
+};
 
-	getCurrentWindow().on('hide', updateWindowState);
-	getCurrentWindow().on('show', updateWindowState);
-
-	tray.on('created', () => getCurrentWindow().emit('set-state', { hideOnClose: true }));
-	tray.on('destroyed', () => getCurrentWindow().emit('set-state', { hideOnClose: false }));
-	tray.on('set-main-window-visibility', (visible) =>
-		(visible ? getCurrentWindow().show() : getCurrentWindow().hide()));
+const attachTrayEvents = () => {
+	const mainWindow = getCurrentWindow();
+	tray.on('created', () => mainWindow.emit('set-state', { hideOnClose: true }));
+	tray.on('destroyed', () => mainWindow.emit('set-state', { hideOnClose: false }));
+	tray.on('set-main-window-visibility', (visible) => (visible ? mainWindow.show() : mainWindow.hide()));
 	tray.on('quit', () => app.quit());
+};
 
-
+const attachWebviewEvents = () => {
 	webview.on('ipc-message-unread-changed', (hostUrl, [count]) => {
 		if (typeof count === 'number' && localStorage.getItem('showWindowOnUnreadChanged') === 'true') {
 			const mainWindow = remote.getCurrentWindow();
@@ -194,15 +182,39 @@ export default () => {
 		tray.setState({ status });
 		dock.setState({ status });
 	});
+};
 
-	if (process.platform === 'darwin') {
-		setTouchBar();
-	}
+const attachMainWindowEvents = () => {
+	getCurrentWindow().on('hide', updateWindowState);
+	getCurrentWindow().on('show', updateWindowState);
+};
 
+export default () => {
+	window.addEventListener('beforeunload', () => {
+		try {
+			tray.destroy();
+			menus.destroy();
+			dock.destroy();
+			getCurrentWindow().removeListener('hide', updateWindowState);
+			getCurrentWindow().removeListener('show', updateWindowState);
+		} catch (error) {
+			ipcRenderer.send('log', error);
+		}
+	});
+
+	attachMenusEvents();
+	attachServersEvents();
+	attachSidebarEvents();
+	attachTrayEvents();
+	attachWebviewEvents();
+	attachMainWindowEvents();
 
 	servers.restoreActive();
 	updatePreferences();
 	updateServers();
 	updateWindowState();
 
+	if (process.platform === 'darwin') {
+		setTouchBar();
+	}
 };
