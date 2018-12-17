@@ -14,7 +14,7 @@ import './background/updates';
 
 import i18n from './i18n/index.js';
 
-export { default as remoteServers } from './background/servers';
+export { default as servers } from './background/servers';
 export { certificate };
 
 
@@ -49,8 +49,9 @@ const parseProtocolUrls = (args) =>
 			return `${ insecure === 'true' ? 'http' : 'https' }://${ hostname }${ pathname || '' }`;
 		});
 
-const addServers = (protocolUrls) => parseProtocolUrls(protocolUrls)
-	.forEach((serverUrl) => addServer(serverUrl));
+const addServers = async(protocolUrls) => {
+	parseProtocolUrls(protocolUrls).forEach((serverUrl) => addServer(serverUrl));
+};
 
 // macOS only
 app.on('open-url', (event, url) => {
@@ -86,7 +87,6 @@ const gotTheLock = app.requestSingleInstanceLock();
 
 if (gotTheLock) {
 	app.on('second-instance', async(event, argv) => {
-		(await getMainWindow()).show();
 		addServers(argv.slice(2));
 	});
 
