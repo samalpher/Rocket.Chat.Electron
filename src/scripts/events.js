@@ -5,7 +5,6 @@ import servers from './servers';
 import sidebar from './sidebar';
 import tray from './tray';
 import webview from './webview';
-import setTouchBar from './touchBar';
 
 
 const { app, getCurrentWindow } = remote;
@@ -279,8 +278,4 @@ export default () => {
 	updatePreferences();
 	updateServers();
 	updateWindowState();
-
-	if (process.platform === 'darwin') {
-		setTouchBar();
-	}
 };
