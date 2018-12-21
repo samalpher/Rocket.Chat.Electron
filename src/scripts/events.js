@@ -49,6 +49,7 @@ const attachMenusEvents = () => {
 
 	menus.on('add-new-server', () => {
 		getCurrentWindow().show();
+		sidebar.changeSidebarColor({});
 		servers.clearActive();
 		webview.showLanding();
 	});
@@ -183,6 +184,7 @@ const attachServersEvents = () => {
 
 const attachSidebarEvents = () => {
 	sidebar.on('add-server', () => {
+		sidebar.changeSidebarColor({});
 		servers.clearActive();
 		webview.showLanding();
 	});
