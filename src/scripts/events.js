@@ -32,9 +32,7 @@ const updatePreferences = () => {
 
 const updateServers = () => {
 	menus.setState({
-		servers: Object.values(servers.hosts)
-			.sort((a, b) => (sidebar ? (sidebar.sortOrder.indexOf(a.url) - sidebar.sortOrder.indexOf(b.url)) : 0))
-			.map(({ title, url }) => ({ title, url })),
+		servers: servers.ordered.map(({ title, url }) => ({ title, url })),
 		currentServerUrl: servers.active,
 	});
 };
@@ -153,7 +151,7 @@ const attachMenusEvents = () => {
 
 const attachServersEvents = () => {
 	servers.on('loaded', () => {
-		if (Object.keys(servers.hosts).length === 1) {
+		if (servers.ordered.length === 1) {
 			localStorage.setItem('sidebar-closed', 'true');
 		}
 
@@ -221,7 +219,10 @@ const attachSidebarEvents = () => {
 		servers.clearActive();
 	});
 
-	sidebar.on('servers-sorted', updateServers);
+	sidebar.on('servers-sorted', (orderedUrls) => {
+		servers.sort(orderedUrls);
+		updateServers();
+	});
 
 	sidebar.on('badge-setted', () => {
 		const badge = sidebar.getGlobalBadge();
@@ -284,8 +285,7 @@ const attachWebviewEvents = () => {
 		active.loadURL(server);
 	});
 
-	webview.on('dom-ready', (hostUrl) => {
-		sidebar.setImage(hostUrl);
+	webview.on('dom-ready', () => {
 		if (sidebar.isHidden()) {
 			sidebar.hide();
 		} else {
@@ -311,6 +311,8 @@ export default () => {
 			ipcRenderer.send('log', error);
 		}
 	});
+
+	window.addEventListener('focus', () => webview.focusActive());
 
 	window.addEventListener('keydown', (e) => {
 		if (e.key === 'Control' || e.key === 'Meta') {
