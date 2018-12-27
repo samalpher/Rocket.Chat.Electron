@@ -336,6 +336,7 @@ export default () => {
 	});
 
 	initializeSidebar();
+	webview.initialize();
 
 	window.addEventListener('focus', () => webview.focusActive());
 
