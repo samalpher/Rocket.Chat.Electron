@@ -6,6 +6,7 @@ import menus from './menus';
 import servers from './servers';
 import tray from './tray';
 import webview from './webview';
+import AppState from '../components/AppState';
 import Sidebar from '../components/Sidebar';
 import { __ } from '../i18n';
 const { app, dialog, getCurrentWindow } = remote;
@@ -13,8 +14,11 @@ const { app, dialog, getCurrentWindow } = remote;
 
 let sidebar;
 
+const setState = (partialState) => {
+	sidebar.setState(partialState);
+};
 
-const initializeSidebar = () => {
+const initializeApp = () => {
 	class SidebarContainer extends React.PureComponent {
 		constructor(props) {
 			super(props);
@@ -22,21 +26,27 @@ const initializeSidebar = () => {
 		}
 
 		render() {
-			return React.createElement(Sidebar, {
-				...this.state,
-				onReloadServer: ({ url }) => webview.getByUrl(url).reload(),
-				onRemoveServer: ({ url }) => servers.remove({ url }),
-				onOpenDevToolsForServer: ({ url }) => webview.getByUrl(url).openDevTools(),
-				onAddServer: () => servers.clearActive(),
-				onSortServers: (orderedUrls) => servers.sort(orderedUrls),
-				onActivateServer: (host) => servers.setActive(host),
-			});
+			return React.createElement(AppState.Provider,
+				{
+					...this.props,
+					value: {
+						...this.state,
+						onActivateServer: (host) => servers.setActive(host),
+						onReloadServer: ({ url }) => webview.getByUrl(url).reload(),
+						onRemoveServer: ({ url }) => servers.remove({ url }),
+						onOpenDevToolsForServer: ({ url }) => webview.getByUrl(url).openDevTools(),
+						onAddServer: () => servers.clearActive(),
+						onSortServers: (orderedUrls) => servers.sort(orderedUrls),
+					},
+				},
+				React.createElement(Sidebar),
+			);
 		}
 	}
 
 	ReactDOM.render(React.createElement(SidebarContainer, { ref: (i) => { sidebar = i; } }), document.querySelector('.Sidebar'));
 
-	sidebar.setState({
+	setState({
 		hosts: servers.ordered,
 		active: servers.active,
 	});
@@ -61,7 +71,7 @@ const updatePreferences = () => {
 		showUserStatus: (localStorage.getItem('showUserStatusInTray') || 'true') === 'true',
 	});
 
-	sidebar.setState({ visible: localStorage.getItem('sidebar-closed') !== 'true' });
+	setState({ sidebarVisible: localStorage.getItem('sidebar-closed') !== 'true' });
 	webview.adjustPadding(localStorage.getItem('sidebar-closed') !== 'true');
 };
 
@@ -71,7 +81,7 @@ const updateServers = () => {
 		currentServerUrl: servers.active,
 	});
 
-	sidebar.setState({
+	setState({
 		hosts: servers.ordered,
 		active: servers.active,
 	});
@@ -257,7 +267,7 @@ const attachTrayEvents = () => {
 
 const attachWebviewEvents = () => {
 	webview.on('ipc-message-unread-changed', (url, [badge]) => {
-		sidebar.setState({ badges: { ...sidebar.state.badges, [url]: badge ? badge : null } });
+		setState({ badges: { ...sidebar.state.badges, [url]: badge ? badge : null } });
 
 		const { count, unread } = Object.values(sidebar.state.badges)
 			.reduce(({ count, unread }, badge) => ({
@@ -284,7 +294,7 @@ const attachWebviewEvents = () => {
 	});
 
 	webview.on('ipc-message-sidebar-background', (url, [{ color, background }]) => {
-		sidebar.setState({
+		setState({
 			colors: { ...sidebar.state.colors, [url]: color },
 			backgrounds: { ...sidebar.state.backgrounds, [url]: background },
 		});
@@ -310,7 +320,7 @@ const attachWebviewEvents = () => {
 	});
 
 	webview.on('dom-ready', () => {
-		sidebar.setState({ visible: localStorage.getItem('sidebar-closed') !== 'true' });
+		setState({ sidebarVisible: localStorage.getItem('sidebar-closed') !== 'true' });
 		webview.adjustPadding(localStorage.getItem('sidebar-closed') !== 'true');
 		webview.getActive() && webview.getActive().send && webview.getActive().send('request-sidebar-color');
 	});
@@ -334,7 +344,7 @@ export default () => {
 		}
 	});
 
-	initializeSidebar();
+	initializeApp();
 	webview.initialize();
 
 	window.addEventListener('focus', () => webview.focusActive());
