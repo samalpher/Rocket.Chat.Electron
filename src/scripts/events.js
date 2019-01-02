@@ -6,47 +6,38 @@ import menus from './menus';
 import servers from './servers';
 import tray from './tray';
 import webview from './webview';
-import AppState from '../components/AppState';
-import Sidebar from '../components/Sidebar';
 import { __ } from '../i18n';
+import App from '../components/App';
 const { app, dialog, getCurrentWindow } = remote;
 
 
-let sidebar;
+const appState = {
+	element: null,
 
-const setState = (partialState) => {
-	sidebar.setState(partialState);
+	state: {
+		onActivateServer: (host) => servers.setActive(host),
+		onReloadServer: ({ url }) => webview.getByUrl(url).reload(),
+		onRemoveServer: ({ url }) => servers.remove({ url }),
+		onOpenDevToolsForServer: ({ url }) => webview.getByUrl(url).openDevTools(),
+		onAddServer: () => servers.clearActive(),
+		onSortServers: (orderedUrls) => servers.sort(orderedUrls),
+	},
+
+	setState(partialState) {
+		this.state = { ...this.state, ...partialState };
+		this.element.setState(this.state);
+	},
 };
 
 const initializeApp = () => {
-	class SidebarContainer extends React.PureComponent {
-		constructor(props) {
-			super(props);
-			this.state = {};
-		}
+	ReactDOM.render(React.createElement(App, {
+		ref: (ref) => {
+			appState.element = ref;
+		},
+		initialState: appState.state,
+	}), document.querySelector('.app-page'));
 
-		render() {
-			return React.createElement(AppState.Provider,
-				{
-					...this.props,
-					value: {
-						...this.state,
-						onActivateServer: (host) => servers.setActive(host),
-						onReloadServer: ({ url }) => webview.getByUrl(url).reload(),
-						onRemoveServer: ({ url }) => servers.remove({ url }),
-						onOpenDevToolsForServer: ({ url }) => webview.getByUrl(url).openDevTools(),
-						onAddServer: () => servers.clearActive(),
-						onSortServers: (orderedUrls) => servers.sort(orderedUrls),
-					},
-				},
-				React.createElement(Sidebar),
-			);
-		}
-	}
-
-	ReactDOM.render(React.createElement(SidebarContainer, { ref: (i) => { sidebar = i; } }), document.querySelector('.Sidebar'));
-
-	setState({
+	appState.setState({
 		hosts: servers.ordered,
 		active: servers.active,
 	});
@@ -71,7 +62,7 @@ const updatePreferences = () => {
 		showUserStatus: (localStorage.getItem('showUserStatusInTray') || 'true') === 'true',
 	});
 
-	setState({ sidebarVisible: localStorage.getItem('sidebar-closed') !== 'true' });
+	appState.setState({ sidebarVisible: localStorage.getItem('sidebar-closed') !== 'true' });
 	webview.adjustPadding(localStorage.getItem('sidebar-closed') !== 'true');
 };
 
@@ -81,7 +72,7 @@ const updateServers = () => {
 		currentServerUrl: servers.active,
 	});
 
-	setState({
+	appState.setState({
 		hosts: servers.ordered,
 		active: servers.active,
 	});
@@ -267,9 +258,9 @@ const attachTrayEvents = () => {
 
 const attachWebviewEvents = () => {
 	webview.on('ipc-message-unread-changed', (url, [badge]) => {
-		setState({ badges: { ...sidebar.state.badges, [url]: badge ? badge : null } });
+		appState.setState({ badges: { ...appState.state.badges, [url]: badge ? badge : null } });
 
-		const { count, unread } = Object.values(sidebar.state.badges)
+		const { count, unread } = Object.values(appState.state.badges)
 			.reduce(({ count, unread }, badge) => ({
 				count: count + (isNaN(parseInt(badge, 10)) ? 0 : parseInt(badge, 10)),
 				unread: unread || !!badge,
@@ -294,9 +285,9 @@ const attachWebviewEvents = () => {
 	});
 
 	webview.on('ipc-message-sidebar-background', (url, [{ color, background }]) => {
-		setState({
-			colors: { ...sidebar.state.colors, [url]: color },
-			backgrounds: { ...sidebar.state.backgrounds, [url]: background },
+		appState.setState({
+			colors: { ...appState.state.colors, [url]: color },
+			backgrounds: { ...appState.state.backgrounds, [url]: background },
 		});
 	});
 
@@ -320,7 +311,7 @@ const attachWebviewEvents = () => {
 	});
 
 	webview.on('dom-ready', () => {
-		setState({ sidebarVisible: localStorage.getItem('sidebar-closed') !== 'true' });
+		appState.setState({ sidebarVisible: localStorage.getItem('sidebar-closed') !== 'true' });
 		webview.adjustPadding(localStorage.getItem('sidebar-closed') !== 'true');
 		webview.getActive() && webview.getActive().send && webview.getActive().send('request-sidebar-color');
 	});

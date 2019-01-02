@@ -204,22 +204,6 @@ class Sidebar extends React.PureComponent {
 		this.setState({ hosts: null });
 	}
 
-	updateContainer() {
-		const { visible, active, backgrounds = {}, colors = {} } = this.props;
-
-		document.querySelector('.Sidebar').classList[visible ? 'remove' : 'add']('Sidebar--hidden');
-		document.querySelector('.Sidebar').style.background = backgrounds[active] || '';
-		document.querySelector('.Sidebar').style.color = colors[active] || '';
-	}
-
-	componentDidMount() {
-		this.updateContainer();
-	}
-
-	componentDidUpdate() {
-		this.updateContainer();
-	}
-
 	renderServer(host, i) {
 		const { active, badges = {} } = this.props;
 		const { moving } = this.state;
@@ -250,21 +234,25 @@ class Sidebar extends React.PureComponent {
 	}
 
 	render() {
-		const className = [
-			'Sidebar__inner',
-			process.platform === 'darwin' && 'Sidebar__inner--mac',
-		].filter(Boolean).join(' ');
+		const { active, backgrounds = {}, colors = {}, visible } = this.props;
 
 		return html`
-		<div className=${ className }>
-			<ol className="Sidebar__server-list ServerList">
-				${ (this.state.hosts || this.props.hosts || []).map(this.renderServer) }
-				<${ AppState.Consumer }>
-					${ ({ onAddServer }) => html`
-						<${ AddServer } onAddServer=${ onAddServer } />
-					` }
-				</${ AppState.Consumer }>
-			</ol>
+		<div
+			className=${ ['Sidebar', !visible && 'Sidebar--hidden'].filter(Boolean).join(' ') }
+			style=${ { background: backgrounds[active] || '', color: colors[active] || '' } }
+		>
+			<div
+				className=${ ['Sidebar__inner', process.platform === 'darwin' && 'Sidebar__inner--mac'].filter(Boolean).join(' ') }
+			>
+				<ol className="Sidebar__server-list ServerList">
+					${ (this.state.hosts || this.props.hosts || []).map(this.renderServer) }
+					<${ AppState.Consumer }>
+						${ ({ onAddServer }) => html`
+							<${ AddServer } onAddServer=${ onAddServer } />
+						` }
+					</${ AppState.Consumer }>
+				</ol>
+			</div>
 		</div>
 		`;
 	}
