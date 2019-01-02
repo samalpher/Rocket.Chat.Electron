@@ -38,8 +38,8 @@ const initializeApp = () => {
 	}), document.querySelector('.app-page'));
 
 	appState.setState({
-		hosts: servers.ordered,
-		active: servers.active,
+		servers: servers.ordered,
+		activeServerUrl: servers.active,
 	});
 };
 
@@ -73,8 +73,8 @@ const updateServers = () => {
 	});
 
 	appState.setState({
-		hosts: servers.ordered,
-		active: servers.active,
+		servers: servers.ordered,
+		activeServerUrl: servers.active,
 	});
 };
 

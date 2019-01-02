@@ -27,9 +27,9 @@ export default class App extends React.PureComponent {
 						</header>
 
 						<div className="loading-indicator">
-							<span className="dot"></span>
-							<span className="dot"></span>
-							<span className="dot"></span>
+							<span className="dot" />
+							<span className="dot" />
+							<span className="dot" />
 						</div>
 
 						<form id="login-card" method="/">

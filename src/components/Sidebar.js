@@ -2,7 +2,7 @@ import { remote } from 'electron';
 import htm from 'htm';
 import React from 'react';
 import { __ } from '../i18n';
-import AppState from './AppState';
+import { connect } from './AppState';
 const { getCurrentWindow, Menu } = remote;
 const html = htm.bind(React.createElement);
 
@@ -26,16 +26,16 @@ class Server extends React.PureComponent {
 		this.setState({ faviconLoaded: true });
 	}
 
-	handleKeyStateForHotKeys(hotkeyVisible, e) {
-		if (['Control', 'Meta'].includes(e.key)) {
+	handleKeyStateForHotKeys(hotkeyVisible, event) {
+		if (['Control', 'Meta'].includes(event.key)) {
 			this.setState({ hotkeyVisible });
 		}
 	}
 
 	handleContextMenu(event) {
 		event.preventDefault();
-		const { host } = this.props;
-		const menu = Menu.buildFromTemplate(this.createMenuTemplate(host));
+		const template = this.createMenuTemplate();
+		const menu = Menu.buildFromTemplate(template);
 		menu.popup(getCurrentWindow());
 	}
 
@@ -158,33 +158,33 @@ class Sidebar extends React.PureComponent {
 		this.renderServer = this.renderServer.bind(this);
 	}
 
-	handleDragOver(host, event) {
+	handleDragOver(server, event) {
 		event.preventDefault();
 	}
 
-	handleDragStart(host, event) {
+	handleDragStart(server, event) {
 		event.dataTransfer.dropEffect = 'move';
 		event.dataTransfer.effectAllowed = 'move';
 		this.setState({
-			hosts: this.props.hosts,
-			moving: host.url,
+			servers: this.props.servers,
+			moving: server.url,
 		});
 	}
 
-	handleDragEnter(host) {
-		const srcHost = this.state.hosts.find(({ url }) => url === this.state.moving);
-		const destHost = this.state.hosts.find(({ url }) => url === host.url);
+	handleDragEnter(server) {
+		const srcServer = this.state.servers.find(({ url }) => url === this.state.moving);
+		const destServer = this.state.servers.find(({ url }) => url === server.url);
 		this.setState({
-			hosts: this.state.hosts.map((host) => {
-				if (host.url === srcHost.url) {
-					return destHost;
+			servers: this.state.servers.map((server) => {
+				if (server.url === srcServer.url) {
+					return destServer;
 				}
 
-				if (host.url === destHost.url) {
-					return srcHost;
+				if (server.url === destServer.url) {
+					return srcServer;
 				}
 
-				return host;
+				return server;
 			}),
 		});
 	}
@@ -193,64 +193,57 @@ class Sidebar extends React.PureComponent {
 		this.setState({ moving: null });
 	}
 
-	handleDrop(host, event) {
+	handleDrop(server, event) {
 		event.preventDefault();
 
-		const orderedUrls = this.state.hosts.map(({ url }) => url);
+		const orderedUrls = this.state.servers.map(({ url }) => url);
 
 		this.props.onSortServers && this.props.onSortServers.call(null, orderedUrls);
-		this.props.onActivateServer && this.props.onActivateServer.call(null, host);
+		this.props.onActivateServer && this.props.onActivateServer.call(null, server);
 
-		this.setState({ hosts: null });
+		this.setState({ servers: null });
 	}
 
-	renderServer(host, i) {
-		const { active, badges = {} } = this.props;
+	renderServer(server, i) {
+		const { activeServerUrl, badges = {}, onActivateServer, onReloadServer, onRemoveServer, onOpenDevToolsForServer } = this.props;
 		const { moving } = this.state;
 
 		return html`
-		<${ AppState.Consumer } key=${ i }>
-			${ ({ onActivateServer, onReloadServer, onRemoveServer, onOpenDevToolsForServer }) => html`
-				<${ Server }
-					active=${ host.url === active }
-					badge=${ badges[host.url] }
-					index=${ i + 1 }
-					moving=${ host.url === moving }
-					title=${ host.title }
-					url=${ host.url }
-					onActivate=${ onActivateServer.bind(null, host) }
-					onReload=${ onReloadServer.bind(null, host) }
-					onRemove=${ onRemoveServer.bind(null, host) }
-					onOpenDevToolsFor=${ onOpenDevToolsForServer.bind(null, host) }
-					onDragOver=${ this.handleDragOver.bind(this, host) }
-					onDragStart=${ this.handleDragStart.bind(this, host) }
-					onDragEnter=${ this.handleDragEnter.bind(this, host) }
-					onDragEnd=${ this.handleDragEnd.bind(this, host) }
-					onDrop=${ this.handleDrop.bind(this, host) }
-				/>
-			` }
-		</${ AppState.Consumer }>
+		<${ Server }
+			key=${ server.url }
+			active=${ server.url === activeServerUrl }
+			badge=${ badges[server.url] }
+			index=${ i + 1 }
+			moving=${ server.url === moving }
+			title=${ server.title }
+			url=${ server.url }
+			onActivate=${ onActivateServer.bind(null, server) }
+			onReload=${ onReloadServer.bind(null, server) }
+			onRemove=${ onRemoveServer.bind(null, server) }
+			onOpenDevToolsFor=${ onOpenDevToolsForServer.bind(null, server) }
+			onDragOver=${ this.handleDragOver.bind(this, server) }
+			onDragStart=${ this.handleDragStart.bind(this, server) }
+			onDragEnter=${ this.handleDragEnter.bind(this, server) }
+			onDragEnd=${ this.handleDragEnd.bind(this, server) }
+			onDrop=${ this.handleDrop.bind(this, server) }
+		/>
 		`;
 	}
 
 	render() {
-		const { active, backgrounds = {}, colors = {}, visible } = this.props;
+		const { activeServerUrl, backgrounds = {}, colors = {}, visible, onAddServer } = this.props;
 
 		return html`
 		<div
 			className=${ ['Sidebar', !visible && 'Sidebar--hidden'].filter(Boolean).join(' ') }
-			style=${ { background: backgrounds[active] || '', color: colors[active] || '' } }
+			style=${ { background: backgrounds[activeServerUrl] || '', color: colors[activeServerUrl] || '' } }
 		>
 			<div
 				className=${ ['Sidebar__inner', process.platform === 'darwin' && 'Sidebar__inner--mac'].filter(Boolean).join(' ') }
 			>
 				<ol className="Sidebar__server-list ServerList">
-					${ (this.state.hosts || this.props.hosts || []).map(this.renderServer) }
-					<${ AppState.Consumer }>
-						${ ({ onAddServer }) => html`
-							<${ AddServer } onAddServer=${ onAddServer } />
-						` }
-					</${ AppState.Consumer }>
+					${ (this.state.servers || this.props.servers || []).map(this.renderServer) }
+					<${ AddServer } onAddServer=${ onAddServer } />
 				</ol>
 			</div>
 		</div>
@@ -259,31 +252,30 @@ class Sidebar extends React.PureComponent {
 }
 
 
-const SidebarContainer = () => html`
-<${ AppState.Consumer }>
-	${ ({
-		active,
-		backgrounds,
-		badges,
-		colors,
-		hosts,
-		sidebarVisible,
-		onActivateServer,
-		onSortServers,
-	}) => html`
-		<${ Sidebar }
-			active=${ active }
-			backgrounds=${ backgrounds }
-			badges=${ badges }
-			colors=${ colors }
-			hosts=${ hosts }
-			visible=${ sidebarVisible }
-			onActivateServer=${ onActivateServer }
-			onSortServers=${ onSortServers }
-		/>
-	` }
-</${ AppState.Consumer }>
-`;
-
-
-export default SidebarContainer;
+export default connect(({
+	activeServerUrl,
+	backgrounds,
+	badges,
+	colors,
+	servers,
+	sidebarVisible,
+	onActivateServer,
+	onAddServer,
+	onReloadServer,
+	onRemoveServer,
+	onOpenDevToolsForServer,
+	onSortServers,
+}) => ({
+	activeServerUrl,
+	backgrounds,
+	badges,
+	colors,
+	servers,
+	visible: sidebarVisible,
+	onActivateServer,
+	onAddServer,
+	onReloadServer,
+	onRemoveServer,
+	onOpenDevToolsForServer,
+	onSortServers,
+}))(Sidebar);

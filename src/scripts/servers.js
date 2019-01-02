@@ -8,52 +8,50 @@ class Servers extends EventEmitter {
 	constructor() {
 		super();
 
-		this.hosts = {};
+		this.items = {};
 		this.active = null;
 
 		ipcRenderer.on('add-host', this.handleAddHost.bind(this));
 	}
 
-	handleAddHost(event, ...urls) {
-		this.parseUrls(urls)
-			.forEach(async(host) => {
-				if (this.hosts[host.url]) {
-					this.setActive(host);
-					return;
-				}
+	async handleAddHost(event, ...urls) {
+		for (const server of this.parseUrls(urls)) {
+			if (this.items[server.url]) {
+				this.setActive(server);
+				continue;
+			}
 
-				if (!await this.validate(host)) {
-					this.emit('host-rejected', host);
-					return;
-				}
+			if (!await this.validate(server)) {
+				this.emit('host-rejected', server);
+				continue;
+			}
 
-				this.confirmNew(host);
-			});
+			this.confirmNew(server);
+		}
 	}
 
-	confirmNew(host) {
-		this.emit('host-requested', host, (accepted) => {
+	confirmNew(server) {
+		this.emit('host-requested', server, (accepted) => {
 			if (!accepted) {
 				return;
 			}
 
-			this.hosts = { ...this.hosts, [host.url]: host };
+			this.items = { ...this.items, [server.url]: server };
 			this.persist();
-			this.emit('host-added', host);
+			this.emit('host-added', server);
 		});
 	}
 
 	add(...urls) {
-		return this.parseUrls(urls)
-			.forEach((host) => {
-				if (this.hosts[host.url]) {
-					return;
-				}
+		for (const server of this.parseUrls(urls)) {
+			if (this.items[server.url]) {
+				return;
+			}
 
-				this.hosts = { ...this.hosts, [host.url]: host };
-				this.persist();
-				this.emit('host-added', host);
-			});
+			this.items = { ...this.items, [server.url]: server };
+			this.persist();
+			this.emit('host-added', server);
+		}
 	}
 
 	parseUrls(urls) {
@@ -105,48 +103,48 @@ class Servers extends EventEmitter {
 	}
 
 	update({ url, ...props }) {
-		if (!this.hosts[url]) {
+		if (!this.items[url]) {
 			return;
 		}
 
-		const host = { ...this.hosts[url], url, ...props };
+		const server = { ...this.items[url], url, ...props };
 
-		if (host.url === 'https://open.rocket.chat/') {
-			host.title = 'Rocket.Chat';
-		} else if (host.url === 'https://unstable.rocket.chat/') {
-			host.title = 'Rocket.Chat (unstable)';
-		} else if (host.title === 'Rocket.Chat' && host.url !== 'https://open.rocket.chat/') {
-			host.title = `${ host.title } - ${ host.url }`;
+		if (server.url === 'https://open.rocket.chat/') {
+			server.title = 'Rocket.Chat';
+		} else if (server.url === 'https://unstable.rocket.chat/') {
+			server.title = 'Rocket.Chat (unstable)';
+		} else if (server.title === 'Rocket.Chat' && server.url !== 'https://open.rocket.chat/') {
+			server.title = `${ server.title } - ${ server.url }`;
 		}
 
-		this.hosts = { ...this.hosts, [host.url]: host };
+		this.items = { ...this.items, [server.url]: server };
 		this.persist();
-		this.emit('title-setted', host);
+		this.emit('title-setted', server);
 	}
 
 	remove({ url }) {
-		const { [url]: host, ...hosts } = this.hosts;
+		const { [url]: server, ...items } = this.items;
 
-		if (!host) {
+		if (!server) {
 			return;
 		}
 
-		this.hosts = hosts;
+		this.items = items;
 		this.persist();
-		this.emit('host-removed', host);
+		this.emit('host-removed', server);
 
-		if (this.active === host.url) {
+		if (this.active === server.url) {
 			this.clearActive();
 		}
 
 		remote.getCurrentWebContents().session.clearStorageData({
-			origin: host.url,
+			origin: server.url,
 		});
 	}
 
 	get ordered() {
-		const hosts = Object.values(this.hosts);
-		return hosts.sort(({ order: a = hosts.length }, { order: b = hosts.length }) => a - b);
+		const items = Object.values(this.items);
+		return items.sort(({ order: a = items.length }, { order: b = items.length }) => a - b);
 	}
 
 	sort(orderedUrls) {
@@ -155,7 +153,7 @@ class Servers extends EventEmitter {
 		}
 
 		orderedUrls.forEach((url, i) => {
-			this.hosts[url].order = i;
+			this.items[url].order = i;
 		});
 
 		this.persist();
@@ -163,7 +161,7 @@ class Servers extends EventEmitter {
 	}
 
 	persist() {
-		localStorage.setItem('rocket.chat.hosts', JSON.stringify(this.hosts));
+		localStorage.setItem('rocket.chat.hosts', JSON.stringify(this.items));
 
 		if (this.active) {
 			localStorage.setItem('rocket.chat.currentHost', this.active);
@@ -173,56 +171,56 @@ class Servers extends EventEmitter {
 
 		localStorage.setItem('rocket.chat.sortOrder', JSON.stringify(this.ordered.map(({ url }) => url)));
 
-		ipcRenderer.sendSync('update-servers', this.hosts);
+		ipcRenderer.sendSync('update-servers', this.items);
 	}
 
 	load() {
 		try {
-			this.hosts = JSON.parse(localStorage.getItem('rocket.chat.hosts'));
+			this.items = JSON.parse(localStorage.getItem('rocket.chat.hosts'));
 		} catch (error) {
-			this.hosts = {};
+			this.items = {};
 		}
 
-		if (typeof this.hosts === 'string') {
-			this.hosts = this.parseUrls([this.hosts]);
+		if (typeof this.items === 'string') {
+			this.items = this.parseUrls([this.items]);
 		}
 
-		if (Array.isArray(this.hosts)) {
-			this.hosts = this.hosts.reduce((hosts, url) => {
-				const [host] = this.parseUrls([url]);
-				return ({ ...hosts, [host.url]: host });
+		if (Array.isArray(this.items)) {
+			this.items = this.items.reduce((items, url) => {
+				const [server] = this.parseUrls([url]);
+				return ({ ...items, [server.url]: server });
 			}, {});
 		}
 
-		if (Object.values(this.hosts).length === 0) {
-			this.hosts = ipcRenderer.sendSync('get-default-servers');
+		if (Object.values(this.items).length === 0) {
+			this.items = ipcRenderer.sendSync('get-default-servers');
 		}
 
-		for (const [url, host] of Object.entries(this.hosts)) {
-			if (url !== host.url) {
-				delete this.hosts[url];
-				this.hosts[host.url] = host;
+		for (const [url, server] of Object.entries(this.items)) {
+			if (url !== server.url) {
+				delete this.items[url];
+				this.items[server.url] = server;
 			}
 		}
 
 		try {
 			const orderedUrls = JSON.parse(localStorage.getItem('rocket.chat.sortOrder'));
 			Array.isArray(orderedUrls) && orderedUrls.forEach((url, i) => {
-				this.hosts[url].order = i;
+				this.items[url].order = i;
 			});
 		} catch (error) {
-			for (const host of Object.values(this.hosts)) {
-				delete host.order;
+			for (const server of Object.values(this.items)) {
+				delete server.order;
 			}
 		}
 
-		this.ordered.forEach((host, i) => {
-			host.order = i;
+		this.ordered.forEach((server, i) => {
+			server.order = i;
 		});
 
 		this.active = localStorage.getItem('rocket.chat.currentHost');
 
-		if (!this.hosts[this.active]) {
+		if (!this.items[this.active]) {
 			this.active = null;
 		}
 
@@ -231,16 +229,16 @@ class Servers extends EventEmitter {
 	}
 
 	getActive() {
-		return this.hosts[this.active];
+		return this.items[this.active];
 	}
 
 	setActive({ url }) {
-		const host = this.hosts[url];
-		this.active = host ? host.url : null;
+		const server = this.items[url];
+		this.active = server ? server.url : null;
 		this.persist();
 
-		if (host) {
-			this.emit('active-setted', host);
+		if (server) {
+			this.emit('active-setted', server);
 		} else {
 			this.emit('active-cleared');
 		}
