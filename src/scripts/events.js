@@ -21,6 +21,21 @@ const appState = {
 		onOpenDevToolsForServer: ({ url }) => webview.getByUrl(url).openDevTools(),
 		onAddServer: () => servers.clearActive(),
 		onSortServers: (orderedUrls) => servers.sort(orderedUrls),
+		onProcessServerUrl: async(value) => {
+			const defaultServerUrl = 'https://open.rocket.chat';
+
+			const filledValue = value.trim();
+			const [parsedUrl] = servers.parseUrls([filledValue]);
+			const url = parsedUrl ? parsedUrl.url : defaultServerUrl;
+
+			const result = await servers.validate({ url });
+
+			if (result === 'valid') {
+				servers.add(url);
+			}
+
+			return { url, result };
+		},
 	},
 
 	setState(partialState) {

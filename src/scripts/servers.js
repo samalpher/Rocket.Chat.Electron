@@ -91,14 +91,14 @@ class Servers extends EventEmitter {
 	async validate({ url }, timeout = 5000) {
 		try {
 			const response = await Promise.race([
-				fetch(`${ url }/api/info`),
+				fetch(`${ url.replace(/\/$/, '') }/api/info`),
 				new Promise((resolve, reject) => setTimeout(() => reject('timeout'), timeout)),
 			]);
 
-			return response.ok;
+			return response.ok ? 'valid' : 'invalid';
 		} catch (error) {
 			console.error(`Failed to fetch ${ url }: ${ error }`);
-			return false;
+			return 'invalid';
 		}
 	}
 

@@ -3,21 +3,26 @@
 	@import "app/webviews.less";
 	@import "app/landing.less";
 
-	user-select: none;
-	cursor: default;
+	position: relative;
+
+	display: flex;
+
 	box-sizing: border-box;
 	width: 100vw;
 	height: 100vh;
-	position: relative;
-	display: flex;
+
+	cursor: default;
+
+	user-select: none;
 	align-items: stretch;
 
 	.drag-region {
 		position: absolute;
-		-webkit-app-region: drag;
-		height: 22px;
-		width: 100%;
 		z-index: 3;
+
+		width: 100%;
+		height: 22px;
+		-webkit-app-region: drag;
 	}
 
 	&.app-page--loading {
@@ -25,7 +30,7 @@
 			display: flex;
 		}
 
-		#login-card {
+		.RegisterServer {
 			display: none;
 		}
 	}
@@ -40,72 +45,11 @@
 	}
 
 	.MainView {
-		flex: 1;
 		position: relative;
-	}
 
-}
+		flex: 1;
 
-.only-offline {
-	display: none;
-}
-
-body.offline #login-card *:not(.only-offline) {
-	display: none;
-}
-
-body.offline .only-offline {
-	display: block;
-}
-
-.wrong {
-	animation: wrong 1s;
-	-webkit-animation: wrong 1s;
-}
-
-@-webkit-keyframes wrong {
-	0%,
-	100% {
-		-webkit-transform: translate3d(0, 0, 0);
-		transform: translate3d(0, 0, 0);
-	}
-	10%,
-	30%,
-	50%,
-	70%,
-	90% {
-		-webkit-transform: translate3d(-10px, 0, 0);
-		transform: translate3d(-10px, 0, 0);
-	}
-	20%,
-	40%,
-	60%,
-	80% {
-		-webkit-transform: translate3d(10px, 0, 0);
-		transform: translate3d(10px, 0, 0);
-	}
-}
-
-@keyframes wrong {
-	0%,
-	100% {
-		-webkit-transform: translate3d(0, 0, 0);
-		transform: translate3d(0, 0, 0);
-	}
-	10%,
-	30%,
-	50%,
-	70%,
-	90% {
-		-webkit-transform: translate3d(-10px, 0, 0);
-		transform: translate3d(-10px, 0, 0);
-	}
-	20%,
-	40%,
-	60%,
-	80% {
-		-webkit-transform: translate3d(10px, 0, 0);
-		transform: translate3d(10px, 0, 0);
+		background-color: @primary-background-color;
 	}
 }
 
