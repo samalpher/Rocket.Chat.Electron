@@ -12,7 +12,7 @@ const appManifest = require('../package.json');
 
 const cached = {};
 
-const bundle = async(src, dest, { coverage = false, rollupPlugins = [] } = {}) => {
+const bundle = async(src, dest, { coverage = false } = {}) => {
 	const inputOptions = {
 		input: src,
 		external: [
@@ -22,7 +22,6 @@ const bundle = async(src, dest, { coverage = false, rollupPlugins = [] } = {}) =
 		],
 		cache: cached[src],
 		plugins: [
-			...rollupPlugins,
 			...(coverage ? [
 				istanbul({
 					exclude: ['**/*.spec.js', '**/*.specs.js'],

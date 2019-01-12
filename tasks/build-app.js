@@ -1,6 +1,5 @@
 const gulp = require('gulp');
 const batch = require('gulp-batch');
-const file = require('gulp-file');
 const less = require('gulp-less');
 const plumber = require('gulp-plumber');
 const watch = require('gulp-watch');

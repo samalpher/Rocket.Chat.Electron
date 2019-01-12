@@ -96,6 +96,10 @@ class RendererProcessI18n extends I18n {
 	}
 
 	translate(options) {
+		if (process.env.NODE_ENV === 'test') {
+			return options.phrase;
+		}
+
 		return ipcRenderer.sendSync('translate', options);
 	}
 }

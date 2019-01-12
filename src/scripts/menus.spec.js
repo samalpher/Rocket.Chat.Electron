@@ -5,12 +5,9 @@ import spies from 'chai-spies';
 import menus from './menus';
 const { Menu } = remote;
 
+use(spies);
 
 describe('menus', () => {
-	before(() => {
-		use(spies);
-	});
-
 	let menu;
 
 	beforeEach(async() => {
