@@ -1,5 +1,6 @@
 const builtinModules = require('builtin-modules');
 const jetpack = require('fs-jetpack');
+const minimist = require('minimist');
 const path = require('path');
 const { rollup } = require('rollup');
 const commonjs = require('rollup-plugin-commonjs');
@@ -7,8 +8,9 @@ const istanbul = require('rollup-plugin-istanbul');
 const json = require('rollup-plugin-json');
 const nodeResolve = require('rollup-plugin-node-resolve');
 const replace = require('rollup-plugin-replace');
-const { env } = require('./utils');
 const appManifest = require('../package.json');
+
+const { env } = minimist(process.argv, { default: { env: 'development' } });
 
 const cached = {};
 

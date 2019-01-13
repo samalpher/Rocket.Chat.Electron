@@ -82,8 +82,7 @@
     "target": [
       "tar.gz",
       "deb",
-      "rpm",
-      "snap"
+      "rpm"
     ],
     "executableName": "rocketchat-desktop",
     "category": "GNOME;GTK;Network;InstantMessaging",
