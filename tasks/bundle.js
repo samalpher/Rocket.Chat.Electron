@@ -2,10 +2,11 @@ const builtinModules = require('builtin-modules');
 const minimist = require('minimist');
 const path = require('path');
 const { rollup } = require('rollup');
+const babel = require('rollup-plugin-babel');
 const commonjs = require('rollup-plugin-commonjs');
+const globImport = require('rollup-plugin-glob-import');
 const istanbul = require('rollup-plugin-istanbul');
 const json = require('rollup-plugin-json');
-const globImport = require('rollup-plugin-glob-import');
 const nodeResolve = require('rollup-plugin-node-resolve');
 const replace = require('rollup-plugin-replace');
 const appManifest = require('../package.json');
@@ -35,6 +36,7 @@ const bundle = async(src, dest, { coverage = false } = {}) => {
 				'process.env.NODE_ENV': JSON.stringify(env),
 			}),
 			globImport(),
+			babel(),
 			nodeResolve(),
 			commonjs(),
 		],

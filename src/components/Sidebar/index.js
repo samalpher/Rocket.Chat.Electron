@@ -1,20 +1,12 @@
-import htm from 'htm';
 import React from 'react';
 import { connect } from '../AppState';
 import AddServer from './AddServer';
 import Server from './Server';
-const html = htm.bind(React.createElement);
 
 
 class Sidebar extends React.PureComponent {
-	constructor(props) {
-		super(props);
-
-		this.state = {
-			moving: false,
-		};
-
-		this.renderServer = this.renderServer.bind(this);
+	state = {
+		moving: false,
 	}
 
 	handleDragOver(server, event) {
@@ -63,50 +55,57 @@ class Sidebar extends React.PureComponent {
 		this.setState({ servers: null });
 	}
 
-	renderServer(server, i) {
-		const { activeServerUrl, badges = {}, onActivateServer, onReloadServer, onRemoveServer, onOpenDevToolsForServer } = this.props;
+	renderServer = (server, i) => {
+		const {
+			activeServerUrl,
+			badges = {},
+			onActivateServer,
+			onReloadServer,
+			onRemoveServer,
+			onOpenDevToolsForServer,
+		} = this.props;
 		const { moving } = this.state;
 
-		return html`
-		<${ Server }
-			key=${ server.url }
-			active=${ server.url === activeServerUrl }
-			badge=${ badges[server.url] }
-			index=${ i + 1 }
-			moving=${ server.url === moving }
-			title=${ server.title }
-			url=${ server.url }
-			onActivate=${ onActivateServer.bind(null, server) }
-			onReload=${ onReloadServer.bind(null, server) }
-			onRemove=${ onRemoveServer.bind(null, server) }
-			onOpenDevToolsFor=${ onOpenDevToolsForServer.bind(null, server) }
-			onDragOver=${ this.handleDragOver.bind(this, server) }
-			onDragStart=${ this.handleDragStart.bind(this, server) }
-			onDragEnter=${ this.handleDragEnter.bind(this, server) }
-			onDragEnd=${ this.handleDragEnd.bind(this, server) }
-			onDrop=${ this.handleDrop.bind(this, server) }
-		/>
-		`;
+		return (
+			<Server
+				key={ server.url }
+				active={ server.url === activeServerUrl }
+				badge={ badges[server.url] }
+				index={ i + 1 }
+				moving={ server.url === moving }
+				title={ server.title }
+				url={ server.url }
+				onActivate={ onActivateServer.bind(null, server) }
+				onReload={ onReloadServer.bind(null, server) }
+				onRemove={ onRemoveServer.bind(null, server) }
+				onOpenDevToolsFor={ onOpenDevToolsForServer.bind(null, server) }
+				onDragOver={ this.handleDragOver.bind(this, server) }
+				onDragStart={ this.handleDragStart.bind(this, server) }
+				onDragEnter={ this.handleDragEnter.bind(this, server) }
+				onDragEnd={ this.handleDragEnd.bind(this, server) }
+				onDrop={ this.handleDrop.bind(this, server) }
+			/>
+		);
 	}
 
 	render() {
 		const { activeServerUrl, backgrounds = {}, colors = {}, visible } = this.props;
 
-		return html`
-		<div
-			className=${ ['Sidebar', !visible && 'Sidebar--hidden'].filter(Boolean).join(' ') }
-			style=${ { background: backgrounds[activeServerUrl] || '', color: colors[activeServerUrl] || '' } }
-		>
+		return (
 			<div
-				className=${ ['Sidebar__inner', process.platform === 'darwin' && 'Sidebar__inner--mac'].filter(Boolean).join(' ') }
+				className={ ['Sidebar', !visible && 'Sidebar--hidden'].filter(Boolean).join(' ') }
+				style={ { background: backgrounds[activeServerUrl] || '', color: colors[activeServerUrl] || '' } }
 			>
-				<ol className="Sidebar__server-list ServerList">
-					${ (this.state.servers || this.props.servers || []).map(this.renderServer) }
-					<${ AddServer } />
-				</ol>
+				<div
+					className={ ['Sidebar__inner', process.platform === 'darwin' && 'Sidebar__inner--mac'].filter(Boolean).join(' ') }
+				>
+					<ol className="Sidebar__server-list ServerList">
+						{ (this.state.servers || this.props.servers || []).map(this.renderServer) }
+						<AddServer />
+					</ol>
+				</div>
 			</div>
-		</div>
-		`;
+		);
 	}
 }
 
