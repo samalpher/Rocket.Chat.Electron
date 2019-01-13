@@ -6,6 +6,7 @@ import setupLinksPreload from './preload/links';
 import setupNotificationsPreload from './preload/notifications';
 import setupSidebarPreload from './preload/sidebar';
 import setupSpellcheckingPreload from './preload/spellchecking';
+import { __ } from './i18n';
 
 
 setupContextMenuPreload();
@@ -17,4 +18,4 @@ setupSidebarPreload();
 setupSpellcheckingPreload();
 
 window.reloadServer = () => ipcRenderer.sendToHost('reload-server');
-window.i18n = require('./i18n');
+window.__ = __;
