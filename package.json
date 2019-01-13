@@ -34,21 +34,21 @@
     "pree2e": "gulp build-e2e-tests --env=test",
     "e2e": "xvfb-maybe mocha --require source-map-support/register app/e2e.js",
     "changelog": "conventional-changelog --config .github/changelog.js -i HISTORY.md -s",
-		"build:darwin": "electron-builder --publish=never --x64 --macos",
-		"build:win32": "electron-builder --publish=never --x64 --ia32 --windows",
-		"build:linux": "electron-builder --publish=never --x64 --ia32 --linux --c.productName=rocketchat",
+    "build:darwin": "electron-builder --publish=never --x64 --macos",
+    "build:win32": "electron-builder --publish=never --x64 --ia32 --windows",
+    "build:linux": "electron-builder --publish=never --x64 --ia32 --linux --c.productName=rocketchat",
     "build:snap": "electron-builder --publish=never --x64 --linux snap --c.productName=rocketchat",
     "build:mas-dev": "electron-builder --publish=never --x64 --mac mas-dev --c.mac.provisioningProfile=Development.provisionprofile",
-		"prerelease": "run-s \"bundle --env=production\"",
-		"release": "cross-os build -- --publish=onTagOrDraft"
+    "prerelease": "run-s \"bundle --env=production\"",
+    "release": "cross-os build -- --publish=onTagOrDraft"
   },
-	"cross-os": {
-		"build": {
-			"darwin": "run-s \"build:darwin {@}\" --",
-			"win32": "run-s \"build:win32 {@}\" --",
-			"linux": "run-s \"build:linux {@}\" \"build:snap {@}\" --"
-		}
-	},
+  "cross-os": {
+    "build": {
+      "darwin": "run-s \"build:darwin {@}\" --",
+      "win32": "run-s \"build:win32 {@}\" --",
+      "linux": "run-s \"build:linux {@}\" \"build:snap {@}\" --"
+    }
+  },
   "dependencies": {
     "@paulcbetts/system-idle-time": "^1.0.4",
     "electron-updater": "^4.0.6",
@@ -85,6 +85,7 @@
     "react-dom": "^16.7.0",
     "rollup": "^1.1.0",
     "rollup-plugin-commonjs": "^9.2.0",
+    "rollup-plugin-glob-import": "^0.3.1",
     "rollup-plugin-istanbul": "^2.0.1",
     "rollup-plugin-json": "^3.1.0",
     "rollup-plugin-node-resolve": "^4.0.0",
