@@ -9,7 +9,7 @@ import './background/screenshareDialog';
 import './background/updateDialog';
 import './background/servers';
 import './background/updates';
-import i18n from './i18n/index.js';
+import { __ } from './i18n';
 
 
 process.env.GOOGLE_API_KEY = 'AIzaSyADqUh_c1Qhji3Cp1NE43YrcpuPkmhXD-c';
@@ -24,7 +24,7 @@ const unsetDefaultApplicationMenu = () => {
 		label: app.getName(),
 		submenu: [
 			{
-				label: i18n.__('&Quit %s', app.getName()),
+				label: __('&Quit %s', app.getName()),
 				accelerator: 'CommandOrControl+Q',
 				click() {
 					app.quit();

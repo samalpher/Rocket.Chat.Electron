@@ -17,7 +17,6 @@ gulp.task('i18n', () => gulp.src('src/i18n/lang/**/*')
 gulp.task('bundle', () => Promise.all([
 	bundle('src/background.js', 'app/background.js'),
 	bundle('src/app.js', 'app/app.js'),
-	bundle('src/i18n/index.js', 'app/i18n/index.js'),
 	bundle('src/preload.js', 'app/preload.js'),
 ]));
 
@@ -35,18 +34,4 @@ gulp.task('watch', () => {
 	watch('src/i18n/lang/**/*', run('i18n'));
 	watch('src/**/*.js', run('bundle'));
 	watch('src/**/*.less', run('less'));
-});
-
-gulp.task('build-e2e-tests', ['build-app'], async() => {
-	await bundle('src/tests/e2e.js', 'app/e2e.js');
-});
-
-gulp.task('build-unit-tests', ['build-app'], async() => {
-	await bundle('src/tests/main.js', 'app/main.specs.js');
-	await bundle('src/tests/renderer.js', 'app/renderer.specs.js');
-});
-
-gulp.task('build-coverage-tests', ['build-app'], async() => {
-	await bundle('src/tests/main.js', 'app/main.specs.js', { coverage: true });
-	await bundle('src/tests/renderer.js', 'app/renderer.specs.js', { coverage: true });
 });
