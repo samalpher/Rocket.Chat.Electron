@@ -62,7 +62,7 @@ const destroyAll = () => {
 	try {
 		menus.unmount();
 		tray.destroy();
-		dock.destroy();
+		dock.unmount();
 		const mainWindow = getCurrentWindow();
 		mainWindow.removeListener('hide', updateWindowState);
 		mainWindow.removeListener('show', updateWindowState);
