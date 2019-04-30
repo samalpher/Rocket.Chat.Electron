@@ -4,22 +4,23 @@ import { getMainWindow } from './mainWindow';
 import i18n from '../i18n';
 
 
+let state = {};
+const events = new EventEmitter();
+
 const createTemplate = ({
 	appName,
 	servers = [],
 	currentServerUrl = null,
 	showTrayIcon = true,
-	showFullScreen = false,
 	showMenuBar = true,
 	showServerList = true,
 	showWindowOnUnreadChanged = false,
-}, events) => ([
+}) => ([
 	{
 		label: process.platform === 'darwin' ? appName : i18n.__('menus.fileMenu'),
 		submenu: [
 			...(process.platform === 'darwin' ? [
 				{
-					id: 'about',
 					label: i18n.__('menus.about', { appName }),
 					click: () => events.emit('about'),
 				},
@@ -59,7 +60,6 @@ const createTemplate = ({
 				type: 'separator',
 			},
 			{
-				id: 'quit',
 				label: i18n.__('menus.quit', { appName }),
 				accelerator: 'CommandOrControl+Q',
 				click: () => events.emit('quit'),
@@ -147,22 +147,14 @@ const createTemplate = ({
 				checked: showTrayIcon,
 				click: () => events.emit('toggle', 'showTrayIcon'),
 			},
-			...(process.platform === 'darwin' ? [
-				{
-					label: i18n.__('menus.showFullScreen'),
-					type: 'checkbox',
-					checked: showFullScreen,
-					accelerator: 'Control+Command+F',
-					click: () => events.emit('toggle', 'showFullScreen'),
-				},
-			] : [
+			...(process.platform !== 'darwin' ? [
 				{
 					label: i18n.__('menus.showMenuBar'),
 					type: 'checkbox',
 					checked: showMenuBar,
 					click: () => events.emit('toggle', 'showMenuBar'),
 				},
-			]),
+			] : []),
 			{
 				label: i18n.__('menus.showServerList'),
 				type: 'checkbox',
@@ -191,7 +183,6 @@ const createTemplate = ({
 	},
 	{
 		label: i18n.__('menus.windowMenu'),
-		id: 'window',
 		role: 'window',
 		submenu: [
 			...(process.platform === 'darwin' ? [
@@ -209,7 +200,6 @@ const createTemplate = ({
 				type: currentServerUrl ? 'radio' : 'normal',
 				checked: currentServerUrl === host.url,
 				accelerator: `CommandOrControl+${ i + 1 }`,
-				id: host.url,
 				click: () => events.emit('select-server', host),
 			})),
 			{
@@ -241,6 +231,13 @@ const createTemplate = ({
 				accelerator: 'CommandOrControl+M',
 				role: 'minimize',
 			},
+			...(process.platform === 'darwin' ? [
+				{
+					label: i18n.__('menus.showFullScreen'),
+					accelerator: 'Control+Command+F',
+					role: 'toggleFullScreen',
+				},
+			] : []),
 			{
 				label: i18n.__('menus.close'),
 				accelerator: 'CommandOrControl+W',
@@ -276,7 +273,6 @@ const createTemplate = ({
 			},
 			...(process.platform !== 'darwin' ? [
 				{
-					id: 'about',
 					label: i18n.__('menus.about', { appName }),
 					click: () => events.emit('about'),
 				},
@@ -285,41 +281,35 @@ const createTemplate = ({
 	},
 ]);
 
-class Menus extends EventEmitter {
-	constructor() {
-		super();
-		this.state = {};
+const update = async () => {
+	const template = createTemplate({ appName: app.getName(), ...state });
+	const menu = Menu.buildFromTemplate(template);
+	Menu.setApplicationMenu(menu);
+
+	if (process.platform !== 'darwin') {
+		const { showMenuBar } = state;
+		const mainWindow = await getMainWindow();
+		mainWindow.setAutoHideMenuBar(!showMenuBar);
+		mainWindow.setMenuBarVisibility(!!showMenuBar);
 	}
+};
 
-	setState(partialState) {
-		this.state = {
-			...this.state,
-			...partialState,
-		};
-		this.update();
-	}
+const setState = (partialState) => {
+	const previousState = state;
+	state = {
+		...state,
+		...partialState,
+	};
+	update(previousState);
+};
 
-	getItem(id) {
-		return Menu.getApplicationMenu().getMenuItemById(id);
-	}
+const mount = () => {
+	update();
+};
 
-	async update() {
-		const template = createTemplate({ appName: app.getName(), ...this.state }, this);
-		const menu = Menu.buildFromTemplate(template);
-		Menu.setApplicationMenu(menu);
+const unmount = () => {
+	events.removeAllListeners();
 
-		if (process.platform !== 'darwin') {
-			const { showMenuBar } = this.state;
-			const mainWindow = await getMainWindow();
-			mainWindow.setAutoHideMenuBar(!showMenuBar);
-			mainWindow.setMenuBarVisibility(!!showMenuBar);
-		}
-
-		this.emit('update');
-	}
-}
-
-const unsetDefaultApplicationMenu = () => {
 	if (process.platform !== 'darwin') {
 		Menu.setApplicationMenu(null);
 		return;
@@ -331,15 +321,17 @@ const unsetDefaultApplicationMenu = () => {
 			{
 				label: i18n.__('menus.quit', { appName: app.getName() }),
 				accelerator: 'CommandOrControl+Q',
-				click() {
-					app.quit();
-				},
+				click: () => app.quit(),
 			},
 		],
 	}];
 	Menu.setApplicationMenu(Menu.buildFromTemplate(emptyMenuTemplate));
 };
 
-app.once('start', unsetDefaultApplicationMenu);
+app.once('start', mount);
 
-export default new Menus();
+export default Object.assign(events, {
+	setState,
+	mount,
+	unmount,
+});

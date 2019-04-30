@@ -9,7 +9,6 @@ const { app, getCurrentWindow, shell } = remote;
 const { certificate, dock, menus, tray } = remote.require('./main');
 
 const updatePreferences = () => {
-	const mainWindow = getCurrentWindow();
 	const showWindowOnUnreadChanged = localStorage.getItem('showWindowOnUnreadChanged') === 'true';
 	const hasTrayIcon = localStorage.getItem('hideTray') ?
 		localStorage.getItem('hideTray') !== 'true' : (process.platform !== 'linux');
@@ -18,7 +17,6 @@ const updatePreferences = () => {
 
 	menus.setState({
 		showTrayIcon: hasTrayIcon,
-		showFullScreen: mainWindow.isFullScreen(),
 		showWindowOnUnreadChanged,
 		showMenuBar: hasMenuBar,
 		showServerList: hasSidebar,
@@ -62,7 +60,7 @@ const updateWindowState = () => tray.setState({ isMainWindowVisible: getCurrentW
 
 const destroyAll = () => {
 	try {
-		menus.removeAllListeners();
+		menus.unmount();
 		tray.destroy();
 		dock.destroy();
 		const mainWindow = getCurrentWindow();
@@ -132,12 +130,6 @@ export default () => {
 				const previousValue = localStorage.getItem('hideTray') !== 'true';
 				const newValue = !previousValue;
 				localStorage.setItem('hideTray', JSON.stringify(!newValue));
-				break;
-			}
-
-			case 'showFullScreen': {
-				const mainWindow = getCurrentWindow();
-				mainWindow.setFullScreen(!mainWindow.isFullScreen());
 				break;
 			}
 
