@@ -3,8 +3,8 @@ import { autoUpdater } from 'electron-updater';
 import jetpack from 'fs-jetpack';
 import { getMainWindow } from './mainWindow';
 import i18n from '../i18n';
-import aboutDialog from './dialogs/about';
-import updateDialog from './dialogs/update';
+import { aboutDialog } from './services/aboutDialog';
+import { updateDialog } from './services/updateDialog';
 
 
 const appDir = jetpack.cwd(app.getAppPath(), app.getAppPath().endsWith('app.asar') ? '..' : '.');

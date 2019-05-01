@@ -66,7 +66,7 @@ const selectSource = async (id) => {
 	}
 };
 
-export default {
+export const screenshareDialog = {
 	open,
 	close,
 	selectSource,

@@ -1,7 +1,7 @@
 import { app, Menu, webContents } from 'electron';
 import { EventEmitter } from 'events';
-import { getMainWindow } from './mainWindow';
-import i18n from '../i18n';
+import { getMainWindow } from '../mainWindow';
+import i18n from '../../i18n';
 
 
 let state = {};
@@ -330,7 +330,7 @@ const unmount = () => {
 
 app.once('start', mount);
 
-export default Object.assign(events, {
+export const menus = Object.assign(events, {
 	setState,
 	mount,
 	unmount,

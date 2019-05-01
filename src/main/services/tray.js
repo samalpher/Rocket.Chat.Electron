@@ -1,7 +1,7 @@
 import { app, Menu, systemPreferences, Tray } from 'electron';
 import { EventEmitter } from 'events';
-import i18n from '../i18n';
-import { getTrayIconImage } from './icon';
+import i18n from '../../i18n';
+import { getTrayIconImage } from '../icon';
 
 
 let state = {
@@ -113,7 +113,7 @@ const unmount = () => {
 	destroyIcon();
 };
 
-export default Object.assign(events, {
+export const tray = Object.assign(events, {
 	setState,
 	mount,
 	unmount,

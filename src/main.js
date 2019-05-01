@@ -6,12 +6,12 @@ import './main/systemIdleTime';
 import './main/updates';
 import { getMainWindow } from './main/mainWindow';
 import i18n from './i18n';
-export { default as aboutDialog } from './main/dialogs/about';
-export { default as screenshareDialog } from './main/dialogs/screenshare';
-export { default as updateDialog } from './main/dialogs/update';
-export { default as dock } from './main/dock';
-export { default as menus } from './main/menus';
-export { default as tray } from './main/tray';
+export { aboutDialog } from './main/services/aboutDialog';
+export { screenshareDialog } from './main/services/screenshareDialog';
+export { updateDialog } from './main/services/updateDialog';
+export { dock } from './main/services/dock';
+export { menus } from './main/services/menus';
+export { tray } from './main/services/tray';
 export { default as notifications } from './main/notifications';
 export { default as certificate } from './main/certificateStore';
 

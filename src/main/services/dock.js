@@ -1,7 +1,7 @@
 import { app } from 'electron';
 import { EventEmitter } from 'events';
-import { getMainWindow } from './mainWindow';
-import { getTrayIconImage, getAppIconImage } from './icon';
+import { getMainWindow } from '../mainWindow';
+import { getTrayIconImage, getAppIconImage } from '../icon';
 
 
 let state = {
@@ -66,7 +66,7 @@ const unmount = async () => {
 	mainWindow.flashFrame(false);
 };
 
-export default Object.assign(events, {
+export const dock = Object.assign(events, {
 	setState,
 	mount,
 	unmount,

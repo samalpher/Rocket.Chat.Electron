@@ -5,15 +5,15 @@ import i18n from '../../i18n';
 
 let window;
 
-const open = async () => {
+const open = async ({ currentVersion = app.getVersion(), newVersion } = {}) => {
 	if (window) {
 		return;
 	}
 
 	const mainWindow = await getMainWindow();
 	window = new BrowserWindow({
-		width: 400,
-		height: 300,
+		width: 600,
+		height: 330,
 		useContentSize: true,
 		center: true,
 		resizable: false,
@@ -22,7 +22,7 @@ const open = async () => {
 		fullscreen: false,
 		fullscreenable: false,
 		skipTaskbar: true,
-		title: i18n.__('dialog.about.title', { appName: app.getName() }),
+		title: i18n.__('dialog.update.title'),
 		show: false,
 		parent: mainWindow,
 		modal: process.platform !== 'darwin',
@@ -43,9 +43,9 @@ const open = async () => {
 		window = null;
 	});
 
-	window.params = { appName: app.getName(), appVersion: app.getVersion() };
+	window.params = { currentVersion, newVersion };
 
-	window.loadFile(`${ app.getAppPath() }/app/public/dialogs/about.html`);
+	window.loadFile(`${ app.getAppPath() }/app/public/dialogs/update.html`);
 };
 
 const close = () => {
@@ -56,7 +56,7 @@ const close = () => {
 	window.destroy();
 };
 
-export default {
+export const updateDialog = {
 	open,
 	close,
 };
