@@ -5,9 +5,7 @@ const { screenshareDialog } = remote.require('./main');
 
 
 class WebView extends EventEmitter {
-	constructor() {
-		super();
-
+	mount() {
 		this.webviewParentElement = document.body;
 
 		servers.forEach((host) => {

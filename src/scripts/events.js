@@ -282,8 +282,10 @@ export default () => {
 		setTouchBar();
 	}
 
-	servers.restoreActive();
+	servers.initialize();
 	sidebar.mount();
+	webview.mount();
+	servers.restoreActive();
 	updatePreferences();
 	updateServers();
 	updateWindowState();

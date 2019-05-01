@@ -6,8 +6,7 @@ const { relaunch } = remote.require('./main');
 
 
 class Servers extends EventEmitter {
-	constructor() {
-		super();
+	initialize() {
 		this.load();
 		const processProtocol = this.getProtocolUrlFromProcess(remote.process.argv);
 		if (processProtocol) {
