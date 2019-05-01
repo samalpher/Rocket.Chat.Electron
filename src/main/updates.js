@@ -1,7 +1,7 @@
 import { app, dialog, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import jetpack from 'fs-jetpack';
-import { getMainWindow } from './mainWindow';
+import { mainWindow } from './mainWindow';
 import i18n from '../i18n';
 import { aboutDialog } from './services/aboutDialog';
 import { updateDialog } from './services/updateDialog';
@@ -91,20 +91,8 @@ const checkForUpdates = async (event = null, { forced = false } = {}) => {
 	}
 };
 
-const sendToMainWindow = async (channel, ...args) => {
-	const mainWindow = await getMainWindow();
-	const send = () => mainWindow.send(channel, ...args);
-
-	if (mainWindow.webContents.isLoading()) {
-		mainWindow.webContents.on('dom-ready', send);
-		return;
-	}
-
-	send();
-};
-
 const handleCheckingForUpdate = () => {
-	sendToMainWindow('update-checking');
+	mainWindow.send('update-checking');
 };
 
 const handleUpdateAvailable = ({ version }) => {
@@ -120,7 +108,7 @@ const handleUpdateAvailable = ({ version }) => {
 };
 
 const handleUpdateNotAvailable = () => {
-	sendToMainWindow('update-not-available');
+	mainWindow.send('update-not-available');
 
 	if (checkForUpdatesEvent) {
 		checkForUpdatesEvent.sender.send('update-result', false);
@@ -129,9 +117,9 @@ const handleUpdateNotAvailable = () => {
 };
 
 const handleUpdateDownloaded = async () => {
-	const mainWindow = await getMainWindow();
+	const window = mainWindow.getBrowserWindow();
 
-	const response = dialog.showMessageBox(mainWindow, {
+	const response = dialog.showMessageBox(window, {
 		type: 'question',
 		title: i18n.__('dialog.updateReady.title'),
 		message: i18n.__('dialog.updateReady.message'),
@@ -143,7 +131,7 @@ const handleUpdateDownloaded = async () => {
 	});
 
 	if (response === 0) {
-		dialog.showMessageBox(mainWindow, {
+		dialog.showMessageBox(window, {
 			type: 'info',
 			title: i18n.__('dialog.updateInstallLater.title'),
 			message: i18n.__('dialog.updateInstallLater.message'),
@@ -153,7 +141,7 @@ const handleUpdateDownloaded = async () => {
 		return;
 	}
 
-	mainWindow.removeAllListeners();
+	window.removeAllListeners();
 	app.removeAllListeners('window-all-closed');
 	try {
 		autoUpdater.quitAndInstall();
@@ -163,7 +151,7 @@ const handleUpdateDownloaded = async () => {
 };
 
 const handleError = async (error) => {
-	sendToMainWindow('update-error', error);
+	mainWindow.send('update-error', error);
 
 	if (checkForUpdatesEvent) {
 		checkForUpdatesEvent.sender.send('update-result', false);

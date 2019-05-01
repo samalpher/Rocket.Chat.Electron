@@ -1,6 +1,6 @@
 import { app } from 'electron';
 import { EventEmitter } from 'events';
-import { getMainWindow } from '../mainWindow';
+import { mainWindow } from '../mainWindow';
 import { getTrayIconImage, getAppIconImage } from '../icon';
 
 
@@ -32,16 +32,16 @@ const update = async (previousState = {}) => {
 		}
 	}
 
-	const mainWindow = await getMainWindow();
+	const window = mainWindow.getBrowserWindow();
 
 	if (process.platform === 'linux' || process.platform === 'win32') {
 		const image = state.hasTrayIcon ? getAppIconImage() : getTrayIconImage({ badge: state.badge });
-		mainWindow.setIcon(image);
+		window.setIcon(image);
 	}
 
-	if (!mainWindow.isFocused()) {
+	if (!window.isFocused()) {
 		const count = Number.isInteger(state.badge) ? state.badge : 0;
-		mainWindow.flashFrame(count > 0);
+		window.flashFrame(count > 0);
 	}
 };
 
@@ -61,9 +61,9 @@ const mount = () => {
 const unmount = async () => {
 	events.removeAllListeners();
 
-	const mainWindow = await getMainWindow();
-	mainWindow.setIcon(getAppIconImage());
-	mainWindow.flashFrame(false);
+	const window = mainWindow.getBrowserWindow();
+	window.setIcon(getAppIconImage());
+	window.flashFrame(false);
 };
 
 export const dock = Object.assign(events, {

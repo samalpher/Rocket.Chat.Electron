@@ -1,6 +1,6 @@
 import querystring from 'querystring';
 import url from 'url';
-import { getMainWindow } from './mainWindow';
+import { mainWindow } from './mainWindow';
 
 
 const normalizeUrl = (hostUrl) => {
@@ -11,17 +11,17 @@ const normalizeUrl = (hostUrl) => {
 	return hostUrl;
 };
 
-const processAuth = async ({ host, token, userId }) => {
-	const mainWindow = await getMainWindow();
+const processAuth = ({ host, token, userId }) => {
+	const window = mainWindow.getBrowserWindow();
 	const hostUrl = normalizeUrl(host);
-	mainWindow.send('add-host', hostUrl, { token, userId });
+	window.send('add-host', hostUrl, { token, userId });
 };
 
-const processRoom = async ({ host, rid, path }) => {
-	const mainWindow = await getMainWindow();
+const processRoom = ({ host, rid, path }) => {
+	const window = mainWindow.getBrowserWindow();
 	const hostUrl = normalizeUrl(host);
-	mainWindow.send('add-host', hostUrl);
-	mainWindow.send('open-room', hostUrl, { rid, path });
+	window.send('add-host', hostUrl);
+	window.send('open-room', hostUrl, { rid, path });
 };
 
 export const processDeepLink = (link) => {

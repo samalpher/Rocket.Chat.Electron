@@ -1,16 +1,15 @@
 import { app, BrowserWindow } from 'electron';
-import { getMainWindow } from '../mainWindow';
+import { mainWindow } from '../mainWindow';
 import i18n from '../../i18n';
 
 
 let window;
 
-const open = async () => {
+const open = () => {
 	if (window) {
 		return;
 	}
 
-	const mainWindow = await getMainWindow();
 	window = new BrowserWindow({
 		width: 400,
 		height: 300,
@@ -24,7 +23,7 @@ const open = async () => {
 		skipTaskbar: true,
 		title: i18n.__('dialog.about.title', { appName: app.getName() }),
 		show: false,
-		parent: mainWindow,
+		parent: mainWindow.getBrowserWindow(),
 		modal: process.platform !== 'darwin',
 		backgroundColor: '#F4F4F4',
 		type: process.platform === 'darwin' ? 'desktop' : 'toolbar',

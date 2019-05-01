@@ -3,7 +3,7 @@ import jetpack from 'fs-jetpack';
 import './main/basicAuth';
 import { processDeepLink } from './main/deepLinks';
 import './main/updates';
-import { getMainWindow } from './main/mainWindow';
+import { mainWindow } from './main/mainWindow';
 import i18n from './i18n';
 export { aboutDialog } from './main/services/aboutDialog';
 export { dock } from './main/services/dock';
@@ -92,7 +92,7 @@ const attachAppEvents = () => {
 	attachAppEvents();
 	await app.whenReady();
 	await i18n.initialize();
+	await mainWindow.mount();
 	app.emit('start');
-	await getMainWindow();
 	args.forEach(processDeepLink);
 })();

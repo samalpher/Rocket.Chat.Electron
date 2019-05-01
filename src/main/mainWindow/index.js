@@ -2,11 +2,11 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 import { WindowStateHandler } from './state';
 
 
-let mainWindow = null;
-
 let state = {
 	hideOnClose: false,
 };
+
+let window = null;
 
 const setState = (partialState) => {
 	state = {
@@ -65,8 +65,32 @@ async function attachWindowStateHandling(mainWindow) {
 	mainWindow.on('set-state', setState);
 }
 
-async function createMainWindow() {
-	mainWindow = new BrowserWindow({
+export const focus = () => {
+	if (process.platform === 'win32') {
+		if (window.isVisible()) {
+			window.focus();
+		} else if (window.isMinimized()) {
+			window.restore();
+		} else {
+			window.show();
+		}
+
+		return;
+	}
+
+	if (window.isMinimized()) {
+		window.restore();
+		return;
+	}
+
+	window.show();
+	window.focus();
+};
+
+ipcMain.on('focus', focus);
+
+const mount = () => {
+	window = new BrowserWindow({
 		width: 1000,
 		height: 600,
 		minWidth: 600,
@@ -77,46 +101,33 @@ async function createMainWindow() {
 			nodeIntegration: true,
 		},
 	});
-	attachWindowStateHandling(mainWindow);
-	mainWindow.loadFile(`${ app.getAppPath() }/app/public/app.html`);
+	attachWindowStateHandling(window);
+	window.loadFile(`${ app.getAppPath() }/app/public/app.html`);
 
 	if (process.env.NODE_ENV === 'development') {
-		mainWindow.webContents.openDevTools();
+		window.webContents.openDevTools();
 	}
-}
+};
 
-export async function getMainWindow() {
-	await app.whenReady();
+const getBrowserWindow = () => window;
 
-	if (!mainWindow) {
-		await createMainWindow();
-	}
-
-	return mainWindow;
-}
-
-export async function focus() {
-	const mainWindow = await getMainWindow();
-
-	if (process.platform === 'win32') {
-		if (mainWindow.isVisible()) {
-			mainWindow.focus();
-		} else if (mainWindow.isMinimized()) {
-			mainWindow.restore();
-		} else {
-			mainWindow.show();
-		}
-
+const waitForDOM = () => new Promise((resolve) => {
+	if (window.webContents.isLoading()) {
+		window.webContents.on('dom-ready', resolve);
 		return;
 	}
 
-	if (mainWindow.isMinimized()) {
-		mainWindow.restore();
-		return;
-	}
+	resolve();
+});
 
-	mainWindow.show();
-	mainWindow.focus();
-}
+const send = async (channel, ...args) => {
+	await waitForDOM();
+	window.send(channel, ...args);
+};
 
-ipcMain.on('focus', focus);
+export const mainWindow = {
+	setState,
+	mount,
+	getBrowserWindow,
+	send,
+};

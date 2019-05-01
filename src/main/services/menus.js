@@ -1,6 +1,6 @@
 import { app, Menu, webContents } from 'electron';
 import { EventEmitter } from 'events';
-import { getMainWindow } from '../mainWindow';
+import { mainWindow } from '../mainWindow';
 import i18n from '../../i18n';
 
 
@@ -281,16 +281,16 @@ const createTemplate = ({
 	},
 ]);
 
-const update = async () => {
+const update = () => {
 	const template = createTemplate({ appName: app.getName(), ...state });
 	const menu = Menu.buildFromTemplate(template);
 	Menu.setApplicationMenu(menu);
 
 	if (process.platform !== 'darwin') {
 		const { showMenuBar } = state;
-		const mainWindow = await getMainWindow();
-		mainWindow.setAutoHideMenuBar(!showMenuBar);
-		mainWindow.setMenuBarVisibility(!!showMenuBar);
+		const window = mainWindow.getBrowserWindow();
+		window.setAutoHideMenuBar(!showMenuBar);
+		window.setMenuBarVisibility(!!showMenuBar);
 	}
 };
 

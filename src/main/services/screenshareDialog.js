@@ -1,16 +1,15 @@
 import { app, BrowserWindow } from 'electron';
-import { getMainWindow } from '../mainWindow';
+import { mainWindow } from '../mainWindow';
 import i18n from '../../i18n';
 
 
 let window;
 
-const open = async () => {
+const open = () => {
 	if (window) {
 		return;
 	}
 
-	const mainWindow = await getMainWindow();
 	window = new BrowserWindow({
 		width: 776,
 		height: 600,
@@ -24,7 +23,7 @@ const open = async () => {
 		skipTaskbar: true,
 		title: i18n.__('dialog.screenshare.title'),
 		show: false,
-		parent: mainWindow,
+		parent: mainWindow.getBrowserWindow(),
 		modal: process.platform !== 'darwin',
 		backgroundColor: '#F4F4F4',
 		type: process.platform === 'darwin' ? 'desktop' : 'toolbar',
@@ -41,7 +40,7 @@ const open = async () => {
 
 	window.once('closed', () => {
 		if (!window.resultSent) {
-			mainWindow.webContents.send('screenshare-result', 'PermissionDeniedError');
+			mainWindow.getBrowserWindow().webContents.send('screenshare-result', 'PermissionDeniedError');
 		}
 		window = null;
 	});
@@ -57,9 +56,8 @@ const close = () => {
 	window.destroy();
 };
 
-const selectSource = async (id) => {
-	const mainWindow = await getMainWindow();
-	mainWindow.webContents.send('screenshare-result', id);
+const selectSource = (id) => {
+	mainWindow.getBrowserWindow().webContents.send('screenshare-result', id);
 	if (window) {
 		window.resultSent = true;
 		close();
