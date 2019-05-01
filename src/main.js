@@ -12,12 +12,10 @@ import { tray } from './main/services/tray';
 const setupErrorHandling = () => {
 	process.on('uncaughtException', (error) => {
 		console.error(error && (error.stack || error));
-		app.exit(1);
 	});
 
 	process.on('unhandledRejection', (reason) => {
 		console.error(reason && (reason.stack || reason));
-		app.exit(1);
 	});
 };
 
