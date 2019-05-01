@@ -12,10 +12,12 @@ import { tray } from './main/services/tray';
 const setupErrorHandling = () => {
 	process.on('uncaughtException', (error) => {
 		console.error(error && (error.stack || error));
+		app.quit(1);
 	});
 
 	process.on('unhandledRejection', (reason) => {
 		console.error(reason && (reason.stack || reason));
+		app.quit(1);
 	});
 };
 
@@ -99,13 +101,11 @@ const setupUI = async () => {
 	args.forEach(processDeepLink);
 })();
 
-export { aboutDialog } from './main/services/aboutDialog';
 export { dock } from './main/services/dock';
 export { menus } from './main/services/menus';
 export { screenshareDialog } from './main/services/screenshareDialog';
 export { systemIdleTime } from './main/services/systemIdleTime';
 export { tray } from './main/services/tray';
-export { updateDialog } from './main/services/updateDialog';
 export { updates } from './main/services/updates';
 export { default as notifications } from './main/notifications';
 export { default as certificate } from './main/certificateStore';

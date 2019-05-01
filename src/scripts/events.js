@@ -1,12 +1,13 @@
 import { remote } from 'electron';
+import i18n from '../i18n';
+import { aboutModal } from './aboutModal';
+import { updateModal } from './updateModal';
 import servers from './servers';
 import sidebar from './sidebar';
 import webview from './webview';
 import setTouchBar from './touchBar';
-
-
-const { app, getCurrentWindow, shell } = remote;
-const { aboutDialog, certificate, dock, menus, tray } = remote.require('./main');
+const { app, dialog, getCurrentWindow, shell } = remote;
+const { certificate, dock, menus, tray, updates } = remote.require('./main');
 
 const updatePreferences = () => {
 	const showWindowOnUnreadChanged = localStorage.getItem('showWindowOnUnreadChanged') === 'true';
@@ -60,14 +61,39 @@ const updateServers = () => {
 
 const updateWindowState = () => tray.setState({ isMainWindowVisible: getCurrentWindow().isVisible() });
 
+
+const askWhenToInstallUpdate = () => new Promise((resolve) => {
+	dialog.showMessageBox(getCurrentWindow(), {
+		type: 'question',
+		title: i18n.__('dialog.updateReady.title'),
+		message: i18n.__('dialog.updateReady.message'),
+		buttons: [
+			i18n.__('dialog.updateReady.installLater'),
+			i18n.__('dialog.updateReady.installNow'),
+		],
+		defaultId: 1,
+	}, (response) => resolve(response === 0 ? 'later' : 'now'));
+});
+
+
+const warnDelayedUpdateInstall = () => new Promise ((resolve) => {
+	dialog.showMessageBox(getCurrentWindow(), {
+		type: 'info',
+		title: i18n.__('dialog.updateInstallLater.title'),
+		message: i18n.__('dialog.updateInstallLater.message'),
+		buttons: [i18n.__('dialog.updateInstallLater.ok')],
+		defaultId: 0,
+	}, () => resolve());
+});
+
+
 const destroyAll = () => {
 	try {
 		menus.unmount();
 		tray.unmount();
 		dock.unmount();
-		const mainWindow = getCurrentWindow();
-		mainWindow.removeListener('hide', updateWindowState);
-		mainWindow.removeListener('show', updateWindowState);
+		updates.removeAllListeners();
+		getCurrentWindow().removeAllListeners();
 	} catch (error) {
 		remote.getGlobal('console').error(error.stack || error);
 	}
@@ -77,8 +103,11 @@ export default () => {
 	window.addEventListener('beforeunload', destroyAll);
 	window.addEventListener('focus', () => webview.focusActive());
 
+	aboutModal.on('check-for-updates', () => updates.checkForUpdates());
+	aboutModal.on('set-check-for-updates-on-start', (checked) => updates.setAutoUpdate(checked));
+
 	menus.on('quit', () => app.quit());
-	menus.on('about', () => aboutDialog.open());
+	menus.on('about', () => aboutModal.setState({ visible: true }));
 	menus.on('open-url', (url) => shell.openExternal(url));
 
 	menus.on('add-new-server', () => {
@@ -224,6 +253,63 @@ export default () => {
 		(visible ? getCurrentWindow().show() : getCurrentWindow().hide()));
 	tray.on('quit', () => app.quit());
 
+	updateModal.on('skip', (newVersion) => {
+		dialog.showMessageBox(getCurrentWindow(), {
+			type: 'warning',
+			title: i18n.__('dialog.updateSkip.title'),
+			message: i18n.__('dialog.updateSkip.message'),
+			buttons: [i18n.__('dialog.updateSkip.ok')],
+			defaultId: 0,
+		}, () => {
+			updates.skipVersion(newVersion);
+			updateModal.setState({ visible: false });
+		});
+	});
+	updateModal.on('remind-later', () => {
+		updateModal.setState({ visible: false });
+	});
+	updateModal.on('install', () => {
+		dialog.showMessageBox(getCurrentWindow(), {
+			type: 'info',
+			title: i18n.__('dialog.updateDownloading.title'),
+			message: i18n.__('dialog.updateDownloading.message'),
+			buttons: [i18n.__('dialog.updateDownloading.ok')],
+			defaultId: 0,
+		}, () => {
+			updates.downloadUpdate();
+			updateModal.setState({ visible: false });
+		});
+	});
+
+	updates.on('configuration-set', ({ canUpdate, canAutoUpdate, canSetAutoUpdate }) => {
+		aboutModal.setState({ canUpdate, canAutoUpdate, canSetAutoUpdate });
+	});
+	updates.on('error', () => aboutModal.showUpdateError());
+	updates.on('checking-for-update', () => aboutModal.setState({ checking: true }));
+	updates.on('update-available', ({ version }) => {
+		aboutModal.setState({
+			visible: false,
+			checking: false,
+			checkingMessage: null,
+		});
+		updateModal.setState({
+			visible: true,
+			newVersion: version,
+		});
+	});
+	updates.on('update-not-available', () => aboutModal.showNoUpdateAvailable());
+	// updates.on('download-progress', ({ bytesPerSecond, percent, total, transferred }) => console.log(percent));
+	updates.on('update-downloaded', async () => {
+		const whenInstall = await askWhenToInstallUpdate();
+
+		if (whenInstall === 'later') {
+			await warnDelayedUpdateInstall();
+			return;
+		}
+
+		destroyAll();
+		updates.quitAndInstall();
+	});
 
 	webview.on('ipc-message-unread-changed', (hostUrl, [badge]) => {
 		if (typeof unread === 'number' && localStorage.getItem('showWindowOnUnreadChanged') === 'true') {
@@ -285,8 +371,13 @@ export default () => {
 	servers.initialize();
 	sidebar.mount();
 	webview.mount();
+	aboutModal.mount();
+	updateModal.mount();
 	servers.restoreActive();
+
 	updatePreferences();
 	updateServers();
 	updateWindowState();
+
+	updates.initialize();
 };

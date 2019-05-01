@@ -1,10 +1,8 @@
-import { ipcRenderer, remote } from 'electron';
+import { ipcRenderer } from 'electron';
 import attachEvents from './events';
 import servers from './servers';
 import i18n from '../i18n';
 
-
-const { updates } = remote.require('./main');
 
 async function setupLanding() {
 	function handleConnectionStatus() {
@@ -127,5 +125,4 @@ export async function start() {
 	await i18n.initialize();
 	await setupLanding();
 	await attachEvents();
-	await updates.checkForUpdates();
 }

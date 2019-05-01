@@ -1,190 +1,177 @@
-import { app, dialog } from 'electron';
+import { app } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import { EventEmitter } from 'events';
 import jetpack from 'fs-jetpack';
-import i18n from '../../i18n';
-import { mainWindow } from '../mainWindow';
-import { aboutDialog } from './aboutDialog';
-import { updateDialog } from './updateDialog';
 
 
+let settings = {
+	fromAdmin: true,
+	canUpdate: false,
+	canAutoUpdate: false,
+	canSetAutoUpdate: false,
+	skippedVersion: null,
+};
 const events = new EventEmitter();
 
-const appDir = jetpack.cwd(app.getAppPath(), app.getAppPath().endsWith('app.asar') ? '..' : '.');
-const userDataDir = jetpack.cwd(app.getPath('userData'));
-const updateSettingsFileName = 'update.json';
+const isUpdatePossible = (
+	(process.platform === 'linux' && Boolean(process.env.APPIMAGE)) ||
+	(process.platform === 'win32' && !process.windowsStore) ||
+	(process.platform === 'darwin' && !process.mas)
+);
 
-const loadUpdateSettings = (dir) => {
-	try {
-		return dir.read(updateSettingsFileName, 'json') || {};
-	} catch (error) {
-		console.error(error);
-		return {};
-	}
+const loadSettings = async () => {
+	const appDir = jetpack.cwd(app.getAppPath(), app.getAppPath().endsWith('app.asar') ? '..' : '.');
+	const userDataDir = jetpack.cwd(app.getPath('userData'));
+
+	const defaultSettings = { canUpdate: true, autoUpdate: true };
+	const appSettings = await appDir.readAsync('update.json', 'json')
+		.then((json) => (typeof json === 'object' ? json : {}), () => ({}));
+	const userSettings = await userDataDir.readAsync('update.json', 'json')
+		.then((json) => (typeof json === 'object' ? json : {}), () => ({}));
+	const mergedSettings = Object.assign({}, defaultSettings, appSettings, !appSettings.forced ? userSettings : undefined);
+
+	settings = {
+		...settings,
+		fromAdmin: !!appSettings.forced,
+		canUpdate: mergedSettings.canUpdate && isUpdatePossible,
+		canAutoUpdate: mergedSettings.autoUpdate !== false,
+		canSetAutoUpdate: !appSettings.forced || appSettings.autoUpdate !== false,
+		skippedVersion: mergedSettings.skip,
+	};
+	events.emit('configuration-set', settings);
 };
 
-const appUpdateSettings = loadUpdateSettings(appDir);
-const userUpdateSettings = loadUpdateSettings(userDataDir);
-const updateSettings = (() => {
-	const defaultUpdateSettings = { autoUpdate: true, canUpdate: true };
-
-	if (appUpdateSettings.forced) {
-		return Object.assign({}, defaultUpdateSettings, appUpdateSettings);
-	} else {
-		return Object.assign({}, defaultUpdateSettings, appUpdateSettings, userUpdateSettings);
-	}
-})();
-delete updateSettings.forced;
-
-const saveUpdateSettings = () => {
-	if (appUpdateSettings.forced) {
+const updateSettings = async (newSettings) => {
+	if (settings.fromAdmin) {
 		return;
 	}
 
-	userDataDir.write(updateSettingsFileName, userUpdateSettings, { atomic: true });
+	settings = {
+		...settings,
+		...newSettings,
+	};
+	events.emit('configuration-set', settings);
+
+	const data = {
+		canUpdate: settings.canUpdate,
+		autoUpdate: settings.canAutoUpdate,
+		...(settings.skippedVersion ? {
+			skip: settings.skippedVersion,
+		} : {}),
+	};
+
+	const userDataDir = jetpack.cwd(app.getPath('userData'));
+	await userDataDir.writeAsync('update.json', data, { atomic: true });
 };
 
-const canUpdate = () => updateSettings.canUpdate &&
-	(
-		(process.platform === 'linux' && Boolean(process.env.APPIMAGE)) ||
-		(process.platform === 'win32' && !process.windowsStore) ||
-		(process.platform === 'darwin' && !process.mas)
-	);
-
-const canAutoUpdate = () => updateSettings.autoUpdate !== false;
-
-const canSetAutoUpdate = () => !appUpdateSettings.forced || appUpdateSettings.autoUpdate !== false;
-
-const setAutoUpdate = (canAutoUpdate) => {
-	if (!canSetAutoUpdate()) {
+const setAutoUpdate = async (canAutoUpdate) => {
+	if (!settings.canSetAutoUpdate) {
 		return;
 	}
 
-	updateSettings.autoUpdate = userUpdateSettings.autoUpdate = Boolean(canAutoUpdate);
-	saveUpdateSettings();
+	await updateSettings({ canAutoUpdate: !!canAutoUpdate });
 };
 
-const skipUpdateVersion = (version) => {
-	userUpdateSettings.skip = version;
-	saveUpdateSettings();
+const skipVersion = async (version) => {
+	await updateSettings({ skippedVersion: version });
+};
+
+let isCheckingForUpdate = false;
+let isForcedChecking = false;
+
+const checkForUpdatesIfAllowed = async () => {
+	if (isCheckingForUpdate) {
+		return;
+	}
+
+	const { canUpdate, canAutoUpdate } = settings;
+
+	if (canUpdate && canAutoUpdate) {
+		isCheckingForUpdate = true;
+		isForcedChecking = false;
+		await autoUpdater.checkForUpdates();
+	}
+};
+
+const checkForUpdates = async () => {
+	if (isCheckingForUpdate) {
+		return;
+	}
+
+	const { canUpdate } = settings;
+
+	if (canUpdate) {
+		isCheckingForUpdate = true;
+		isForcedChecking = true;
+		await autoUpdater.checkForUpdates();
+	}
 };
 
 const downloadUpdate = async () => {
-	try {
-		await autoUpdater.downloadUpdate();
-	} catch (e) {
-		autoUpdater.emit('error', e);
-	}
+	await autoUpdater.downloadUpdate();
 };
 
-let checkForUpdatesEvent = null;
+const quitAndInstall = () => {
+	app.removeAllListeners('window-all-closed');
+	autoUpdater.quitAndInstall();
+};
 
-const checkForUpdates = async (event = null, { forced = false } = {}) => {
-	if (checkForUpdatesEvent) {
-		return;
-	}
-
-	if ((forced || canAutoUpdate()) && canUpdate()) {
-		checkForUpdatesEvent = event;
-		try {
-			await autoUpdater.checkForUpdates();
-		} catch (e) {
-			autoUpdater.emit('error', e);
-		}
-	}
+const handleError = (error) => {
+	isCheckingForUpdate = false;
+	events.emit('error', error);
 };
 
 const handleCheckingForUpdate = () => {
 	events.emit('checking-for-update');
-	mainWindow.send('update-checking');
 };
 
-const handleUpdateAvailable = ({ version }) => {
-	events.emit('update-available', { version });
-	if (checkForUpdatesEvent) {
-		checkForUpdatesEvent.sender.send('update-result', true);
-		checkForUpdatesEvent = null;
-	} else if (updateSettings.skip === version) {
-		return;
-	}
+const handleUpdateAvailable = (info) => {
+	isCheckingForUpdate = false;
 
-	aboutDialog.close();
-	updateDialog.open({ newVersion: version });
+	const { skippedVersion } = settings;
+	const { version } = info;
+	const shouldSkip = skippedVersion === version;
+
+	if (!isForcedChecking && shouldSkip) {
+		events.emit('update-not-available');
+	} else {
+		events.emit('update-available', info);
+	}
 };
 
 const handleUpdateNotAvailable = () => {
+	isCheckingForUpdate = false;
+
 	events.emit('update-not-available');
-	mainWindow.send('update-not-available');
-
-	if (checkForUpdatesEvent) {
-		checkForUpdatesEvent.sender.send('update-result', false);
-		checkForUpdatesEvent = null;
-	}
 };
 
-const handleDownloadProgress = (progress, bytesPerSecond, percent, total, transferred) => {
-	events.emit('download-progress', { progress, bytesPerSecond, percent, total, transferred });
+const handleDownloadProgress = (progress) => {
+	events.emit('download-progress', progress);
 };
 
-const handleUpdateDownloaded = async (info) => {
+const handleUpdateDownloaded = (info) => {
 	events.emit('update-downloaded', info);
-	const window = mainWindow.getBrowserWindow();
-
-	const response = dialog.showMessageBox(window, {
-		type: 'question',
-		title: i18n.__('dialog.updateReady.title'),
-		message: i18n.__('dialog.updateReady.message'),
-		buttons: [
-			i18n.__('dialog.updateReady.installLater'),
-			i18n.__('dialog.updateReady.installNow'),
-		],
-		defaultId: 1,
-	});
-
-	if (response === 0) {
-		dialog.showMessageBox(window, {
-			type: 'info',
-			title: i18n.__('dialog.updateInstallLater.title'),
-			message: i18n.__('dialog.updateInstallLater.message'),
-			buttons: [i18n.__('dialog.updateInstallLater.ok')],
-			defaultId: 0,
-		});
-		return;
-	}
-
-	window.removeAllListeners();
-	app.removeAllListeners('window-all-closed');
-	try {
-		autoUpdater.quitAndInstall();
-	} catch (e) {
-		autoUpdater.emit('error', e);
-	}
-};
-
-const handleError = async (error) => {
-	events.emit('error', error);
-	mainWindow.send('update-error', error);
-
-	if (checkForUpdatesEvent) {
-		checkForUpdatesEvent.sender.send('update-result', false);
-		checkForUpdatesEvent = null;
-	}
 };
 
 autoUpdater.autoDownload = false;
+autoUpdater.logger = null;
+autoUpdater.on('error', handleError);
 autoUpdater.on('checking-for-update', handleCheckingForUpdate);
 autoUpdater.on('update-available', handleUpdateAvailable);
 autoUpdater.on('update-not-available', handleUpdateNotAvailable);
 autoUpdater.on('download-progress', handleDownloadProgress);
 autoUpdater.on('update-downloaded', handleUpdateDownloaded);
-autoUpdater.on('error', handleError);
+
+const initialize = async () => {
+	await loadSettings();
+	await checkForUpdatesIfAllowed();
+};
 
 export const updates = Object.assign(events, {
-	canUpdate,
-	canAutoUpdate,
-	canSetAutoUpdate,
+	initialize,
 	setAutoUpdate,
 	checkForUpdates,
-	skipUpdateVersion,
+	skipVersion,
 	downloadUpdate,
+	quitAndInstall,
 });
