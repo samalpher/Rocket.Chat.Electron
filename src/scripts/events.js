@@ -35,6 +35,8 @@ const updatePreferences = () => {
 	});
 
 	webview.setSidebarPaddingEnabled(!hasSidebar);
+
+	getCurrentWindow().emit('set-state', { hideOnClose: hasTrayIcon });
 };
 
 
@@ -61,13 +63,13 @@ const updateWindowState = () => tray.setState({ isMainWindowVisible: getCurrentW
 const destroyAll = () => {
 	try {
 		menus.unmount();
-		tray.destroy();
+		tray.unmount();
 		dock.unmount();
 		const mainWindow = getCurrentWindow();
 		mainWindow.removeListener('hide', updateWindowState);
 		mainWindow.removeListener('show', updateWindowState);
 	} catch (error) {
-		remote.getGlobal('console').error(error);
+		remote.getGlobal('console').error(error.stack || error);
 	}
 };
 
@@ -218,8 +220,6 @@ export default () => {
 	getCurrentWindow().on('hide', updateWindowState);
 	getCurrentWindow().on('show', updateWindowState);
 
-	tray.on('created', () => getCurrentWindow().emit('set-state', { hideOnClose: true }));
-	tray.on('destroyed', () => getCurrentWindow().emit('set-state', { hideOnClose: false }));
 	tray.on('set-main-window-visibility', (visible) =>
 		(visible ? getCurrentWindow().show() : getCurrentWindow().hide()));
 	tray.on('quit', () => app.quit());
