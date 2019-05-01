@@ -328,8 +328,6 @@ const unmount = () => {
 	Menu.setApplicationMenu(Menu.buildFromTemplate(emptyMenuTemplate));
 };
 
-app.once('start', mount);
-
 export const menus = Object.assign(events, {
 	setState,
 	mount,

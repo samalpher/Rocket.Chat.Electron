@@ -7,7 +7,7 @@ import { getTrayIconImage } from '../icon';
 let state = {
 	badge: null,
 	isMainWindowVisible: true,
-	showIcon: true,
+	showIcon: false,
 };
 const events = new EventEmitter();
 

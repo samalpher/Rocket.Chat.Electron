@@ -1,19 +1,13 @@
 import { app } from 'electron';
 import jetpack from 'fs-jetpack';
+import i18n from './i18n';
 import './main/basicAuth';
 import { processDeepLink } from './main/deepLinks';
 import './main/updates';
 import { mainWindow } from './main/mainWindow';
-import i18n from './i18n';
-export { aboutDialog } from './main/services/aboutDialog';
-export { dock } from './main/services/dock';
-export { menus } from './main/services/menus';
-export { screenshareDialog } from './main/services/screenshareDialog';
-export { systemIdleTime } from './main/services/systemIdleTime';
-export { tray } from './main/services/tray';
-export { updateDialog } from './main/services/updateDialog';
-export { default as notifications } from './main/notifications';
-export { default as certificate } from './main/certificateStore';
+import { dock } from './main/services/dock';
+import { menus } from './main/services/menus';
+import { tray } from './main/services/tray';
 
 
 const setupErrorHandling = () => {
@@ -70,6 +64,15 @@ const attachAppEvents = () => {
 	});
 };
 
+const setupUI = async () => {
+	await i18n.initialize();
+
+	await mainWindow.mount();
+	await dock.mount();
+	await menus.mount();
+	await tray.mount();
+};
+
 (async () => {
 	setupErrorHandling();
 	setupAppParameters();
@@ -90,9 +93,21 @@ const attachAppEvents = () => {
 	}
 
 	attachAppEvents();
+
 	await app.whenReady();
-	await i18n.initialize();
-	await mainWindow.mount();
+
+	await setupUI();
+
 	app.emit('start');
 	args.forEach(processDeepLink);
 })();
+
+export { aboutDialog } from './main/services/aboutDialog';
+export { dock } from './main/services/dock';
+export { menus } from './main/services/menus';
+export { screenshareDialog } from './main/services/screenshareDialog';
+export { systemIdleTime } from './main/services/systemIdleTime';
+export { tray } from './main/services/tray';
+export { updateDialog } from './main/services/updateDialog';
+export { default as notifications } from './main/notifications';
+export { default as certificate } from './main/certificateStore';
