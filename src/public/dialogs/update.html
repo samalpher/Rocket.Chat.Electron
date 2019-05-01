@@ -6,9 +6,9 @@
 	<link rel="stylesheet" href="../../stylesheets/main.css" />
 	<script>
 		window.addEventListener('load', () => {
-			const { remote, remote: { dialog, getCurrentWindow }, ipcRenderer } = require('electron');
-			const { updateDialog } = remote.require('./main');
+			const { remote, remote: { dialog, getCurrentWindow } } = require('electron');
 			const { params: { currentVersion, newVersion} } = getCurrentWindow();
+			const { updates } = remote.require('./main');
 			const i18n = require('../../i18n');
 
 			document.title = i18n.__('dialog.update.title');
@@ -23,8 +23,8 @@
 			document.querySelector('.current-version .app-version-value').innerHTML = currentVersion;
 			document.querySelector('.new-version .app-version-value').innerHTML = newVersion;
 
-			document.querySelector('.update-skip-action').addEventListener('click', (e) => {
-				e.preventDefault();
+			document.querySelector('.update-skip-action').addEventListener('click', (event) => {
+				event.preventDefault();
 				dialog.showMessageBox(getCurrentWindow(), {
 					type: 'warning',
 					title: i18n.__('dialog.updateSkip.title'),
@@ -32,19 +32,18 @@
 					buttons: [i18n.__('dialog.updateSkip.ok')],
 					defaultId: 0,
 				}, () => {
-					updateDialog.close();
-					ipcRenderer.send('skip-update-version', newVersion);
+					updates.skipUpdateVersion(newVersion);
+					getCurrentWindow().destroy();
 				});
 			}, false);
 
-			document.querySelector('.update-remind-action').addEventListener('click', (e) => {
-				e.preventDefault();
-				updateDialog.close();
-				ipcRenderer.send('remind-update-later');
+			document.querySelector('.update-remind-action').addEventListener('click', (event) => {
+				event.preventDefault();
+				getCurrentWindow().destroy();
 			}, false);
 
-			document.querySelector('.update-install-action').addEventListener('click', (e) => {
-				e.preventDefault();
+			document.querySelector('.update-install-action').addEventListener('click', (event) => {
+				event.preventDefault();
 				dialog.showMessageBox(getCurrentWindow(), {
 					type: 'info',
 					title: i18n.__('dialog.updateDownloading.title'),
@@ -52,8 +51,8 @@
 					buttons: [i18n.__('dialog.updateDownloading.ok')],
 					defaultId: 0,
 				}, () => {
-						updateDialog.close();
-						ipcRenderer.send('download-update');
+						getCurrentWindow().destroy();
+						updates.downloadUpdate();
 				});
 			}, false);
 

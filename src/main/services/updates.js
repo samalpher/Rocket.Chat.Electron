@@ -1,11 +1,14 @@
-import { app, dialog, ipcMain } from 'electron';
+import { app, dialog } from 'electron';
 import { autoUpdater } from 'electron-updater';
+import { EventEmitter } from 'events';
 import jetpack from 'fs-jetpack';
-import { mainWindow } from './mainWindow';
-import i18n from '../i18n';
-import { aboutDialog } from './services/aboutDialog';
-import { updateDialog } from './services/updateDialog';
+import i18n from '../../i18n';
+import { mainWindow } from '../mainWindow';
+import { aboutDialog } from './aboutDialog';
+import { updateDialog } from './updateDialog';
 
+
+const events = new EventEmitter();
 
 const appDir = jetpack.cwd(app.getAppPath(), app.getAppPath().endsWith('app.asar') ? '..' : '.');
 const userDataDir = jetpack.cwd(app.getPath('userData'));
@@ -92,10 +95,12 @@ const checkForUpdates = async (event = null, { forced = false } = {}) => {
 };
 
 const handleCheckingForUpdate = () => {
+	events.emit('checking-for-update');
 	mainWindow.send('update-checking');
 };
 
 const handleUpdateAvailable = ({ version }) => {
+	events.emit('update-available', { version });
 	if (checkForUpdatesEvent) {
 		checkForUpdatesEvent.sender.send('update-result', true);
 		checkForUpdatesEvent = null;
@@ -108,6 +113,7 @@ const handleUpdateAvailable = ({ version }) => {
 };
 
 const handleUpdateNotAvailable = () => {
+	events.emit('update-not-available');
 	mainWindow.send('update-not-available');
 
 	if (checkForUpdatesEvent) {
@@ -116,7 +122,12 @@ const handleUpdateNotAvailable = () => {
 	}
 };
 
-const handleUpdateDownloaded = async () => {
+const handleDownloadProgress = (progress, bytesPerSecond, percent, total, transferred) => {
+	events.emit('download-progress', { progress, bytesPerSecond, percent, total, transferred });
+};
+
+const handleUpdateDownloaded = async (info) => {
+	events.emit('update-downloaded', info);
 	const window = mainWindow.getBrowserWindow();
 
 	const response = dialog.showMessageBox(window, {
@@ -151,6 +162,7 @@ const handleUpdateDownloaded = async () => {
 };
 
 const handleError = async (error) => {
+	events.emit('error', error);
 	mainWindow.send('update-error', error);
 
 	if (checkForUpdatesEvent) {
@@ -163,16 +175,16 @@ autoUpdater.autoDownload = false;
 autoUpdater.on('checking-for-update', handleCheckingForUpdate);
 autoUpdater.on('update-available', handleUpdateAvailable);
 autoUpdater.on('update-not-available', handleUpdateNotAvailable);
+autoUpdater.on('download-progress', handleDownloadProgress);
 autoUpdater.on('update-downloaded', handleUpdateDownloaded);
 autoUpdater.on('error', handleError);
 
-ipcMain.on('can-update', (e) => { e.returnValue = canUpdate(); });
-ipcMain.on('can-auto-update', (e) => { e.returnValue = canAutoUpdate(); });
-ipcMain.on('can-set-auto-update', (e) => { e.returnValue = canSetAutoUpdate(); });
-ipcMain.on('set-auto-update', (e, canAutoUpdate) => setAutoUpdate(canAutoUpdate));
-ipcMain.on('check-for-updates', (e, ...args) => checkForUpdates(e, ...args));
-ipcMain.on('skip-update-version', (e, ...args) => skipUpdateVersion(...args));
-ipcMain.on('remind-update-later', () => {});
-ipcMain.on('download-update', () => downloadUpdate());
-
-app.once('start', () => ipcMain.emit('check-for-updates'));
+export const updates = Object.assign(events, {
+	canUpdate,
+	canAutoUpdate,
+	canSetAutoUpdate,
+	setAutoUpdate,
+	checkForUpdates,
+	skipUpdateVersion,
+	downloadUpdate,
+});

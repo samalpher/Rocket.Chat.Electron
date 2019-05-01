@@ -3,7 +3,6 @@ import jetpack from 'fs-jetpack';
 import i18n from './i18n';
 import './main/basicAuth';
 import { processDeepLink } from './main/deepLinks';
-import './main/updates';
 import { mainWindow } from './main/mainWindow';
 import { dock } from './main/services/dock';
 import { menus } from './main/services/menus';
@@ -65,8 +64,6 @@ const attachAppEvents = () => {
 };
 
 const setupUI = async () => {
-	await i18n.initialize();
-
 	await mainWindow.mount();
 	await dock.mount();
 	await menus.mount();
@@ -96,6 +93,8 @@ const setupUI = async () => {
 
 	await app.whenReady();
 
+	await i18n.initialize();
+
 	await setupUI();
 
 	app.emit('start');
@@ -109,5 +108,6 @@ export { screenshareDialog } from './main/services/screenshareDialog';
 export { systemIdleTime } from './main/services/systemIdleTime';
 export { tray } from './main/services/tray';
 export { updateDialog } from './main/services/updateDialog';
+export { updates } from './main/services/updates';
 export { default as notifications } from './main/notifications';
 export { default as certificate } from './main/certificateStore';
