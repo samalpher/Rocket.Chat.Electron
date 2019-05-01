@@ -2,6 +2,7 @@ import jetpack from 'fs-jetpack';
 import { EventEmitter } from 'events';
 import { remote, ipcRenderer } from 'electron';
 import i18n from '../i18n';
+const { relaunch } = remote.require('./main');
 
 
 class Servers extends EventEmitter {
@@ -289,7 +290,7 @@ class Servers extends EventEmitter {
 			return;
 		}
 
-		ipcRenderer.send('reset-app-data');
+		relaunch('--reset-app-data');
 	}
 
 }

@@ -1,5 +1,5 @@
 import { app } from 'electron';
-import appData from './main/appData';
+import jetpack from 'fs-jetpack';
 import './main/basicAuth';
 import { processDeepLink } from './main/deepLinks';
 import './main/updates';
@@ -16,39 +16,46 @@ export { default as notifications } from './main/notifications';
 export { default as certificate } from './main/certificateStore';
 
 
-function handleUncaughtException(error) {
-	console.error(error);
-	app.exit(1);
-}
+const setupErrorHandling = () => {
+	process.on('uncaughtException', (error) => {
+		console.error(error && (error.stack || error));
+		app.exit(1);
+	});
 
-function handleUnhandledRejection(reason) {
-	console.error(reason);
-	app.exit(1);
-}
+	process.on('unhandledRejection', (reason) => {
+		console.error(reason && (reason.stack || reason));
+		app.exit(1);
+	});
+};
 
-async function prepareApp() {
-	process.on('uncaughtException', handleUncaughtException);
-	process.on('unhandledRejection', handleUnhandledRejection);
-
+const setupAppParameters = () => {
 	app.setAsDefaultProtocolClient('rocketchat');
 	app.setAppUserModelId('chat.rocket');
-
-	await appData.initialize();
-
-	const canStart = process.mas || app.requestSingleInstanceLock();
-
-	if (!canStart) {
-		app.quit();
-		return;
-	}
-
 	app.commandLine.appendSwitch('--autoplay-policy', 'no-user-gesture-required');
-
 	// TODO: make it a setting
 	if (process.platform === 'linux') {
 		app.disableHardwareAcceleration();
 	}
+};
 
+const setupUserDataPath = () => {
+	const appName = app.getName();
+	const dirName = process.env.NODE_ENV === 'production' ? appName : `${ appName } (${ process.env.NODE_ENV })`;
+
+	app.setPath('userData', jetpack.path(app.getPath('appData'), dirName));
+};
+
+const resetAppData = () => {
+	const dataDir = app.getPath('userData');
+	jetpack.remove(dataDir);
+};
+
+export const relaunch = (...args) => {
+	app.relaunch({ args: [process.argv[1], ...args] });
+	app.quit();
+};
+
+const attachAppEvents = () => {
 	app.on('window-all-closed', () => {
 		app.quit();
 	});
@@ -61,13 +68,31 @@ async function prepareApp() {
 	app.on('second-instance', (event, argv) => {
 		argv.slice(2).forEach(processDeepLink);
 	});
-}
+};
 
 (async () => {
-	await prepareApp();
+	setupErrorHandling();
+	setupAppParameters();
+	setupUserDataPath();
+
+	const args = process.argv.slice(2);
+
+	if (args.includes('--reset-app-data')) {
+		resetAppData();
+		relaunch();
+		return;
+	}
+
+	const canStart = process.mas || app.requestSingleInstanceLock();
+	if (!canStart) {
+		app.quit();
+		return;
+	}
+
+	attachAppEvents();
 	await app.whenReady();
 	await i18n.initialize();
 	app.emit('start');
 	await getMainWindow();
-	process.argv.slice(2).forEach(processDeepLink);
+	args.forEach(processDeepLink);
 })();
