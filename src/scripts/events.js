@@ -1,4 +1,4 @@
-import { remote, ipcRenderer } from 'electron';
+import { remote } from 'electron';
 import servers from './servers';
 import sidebar from './sidebar';
 import webview from './webview';
@@ -6,7 +6,7 @@ import setTouchBar from './touchBar';
 
 
 const { app, getCurrentWindow, shell } = remote;
-const { certificate, dock, menus, tray } = remote.require('./main');
+const { aboutDialog, certificate, dock, menus, tray } = remote.require('./main');
 
 const updatePreferences = () => {
 	const showWindowOnUnreadChanged = localStorage.getItem('showWindowOnUnreadChanged') === 'true';
@@ -78,7 +78,7 @@ export default () => {
 	window.addEventListener('focus', () => webview.focusActive());
 
 	menus.on('quit', () => app.quit());
-	menus.on('about', () => ipcRenderer.send('open-about-dialog'));
+	menus.on('about', () => aboutDialog.open());
 	menus.on('open-url', (url) => shell.openExternal(url));
 
 	menus.on('add-new-server', () => {

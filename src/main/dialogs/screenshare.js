@@ -1,11 +1,11 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow } from 'electron';
 import { getMainWindow } from '../mainWindow';
 import i18n from '../../i18n';
 
 
 let window;
 
-async function open() {
+const open = async () => {
 	if (window) {
 		return;
 	}
@@ -47,23 +47,27 @@ async function open() {
 	});
 
 	window.loadFile(`${ app.getAppPath() }/app/public/dialogs/screenshare.html`);
-}
+};
 
-function close() {
-	if (window) {
-		window.destroy();
+const close = () => {
+	if (!window) {
+		return;
 	}
-}
 
-async function selectSource(id) {
+	window.destroy();
+};
+
+const selectSource = async (id) => {
 	const mainWindow = await getMainWindow();
 	mainWindow.webContents.send('screenshare-result', id);
 	if (window) {
 		window.resultSent = true;
-		window.destroy();
+		close();
 	}
-}
+};
 
-ipcMain.on('open-screenshare-dialog', (e, ...args) => open(...args));
-ipcMain.on('close-screenshare-dialog', (e, ...args) => close(...args));
-ipcMain.on('select-screenshare-source', (e, ...args) => selectSource(...args));
+export default {
+	open,
+	close,
+	selectSource,
+};

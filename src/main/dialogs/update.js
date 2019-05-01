@@ -1,11 +1,11 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow } from 'electron';
 import { getMainWindow } from '../mainWindow';
 import i18n from '../../i18n';
 
 
 let window;
 
-async function open({ currentVersion = app.getVersion(), newVersion } = {}) {
+const open = async ({ currentVersion = app.getVersion(), newVersion } = {}) => {
 	if (window) {
 		return;
 	}
@@ -46,13 +46,17 @@ async function open({ currentVersion = app.getVersion(), newVersion } = {}) {
 	window.params = { currentVersion, newVersion };
 
 	window.loadFile(`${ app.getAppPath() }/app/public/dialogs/update.html`);
-}
+};
 
-function close() {
-	if (window) {
-		window.destroy();
+const close = () => {
+	if (!window) {
+		return;
 	}
-}
 
-ipcMain.on('open-update-dialog', (e, ...args) => open(...args));
-ipcMain.on('close-update-dialog', (e, ...args) => close(...args));
+	window.destroy();
+};
+
+export default {
+	open,
+	close,
+};

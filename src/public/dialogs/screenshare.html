@@ -6,8 +6,9 @@
 	<link rel="stylesheet" href="../../stylesheets/main.css" />
 	<script>
 		window.addEventListener('load', () => {
-			const { ipcRenderer, desktopCapturer } = require('electron');
+			const { desktopCapturer, ipcRenderer, remote } = require('electron');
 			const i18n = require('../../i18n');
+			const { screenshareDialog } = remote.require('./main');
 
 			document.title = i18n.__('dialog.screenshare.title');
 			document.querySelector('.screenshare-title').innerHTML = i18n.__('dialog.screenshare.announcement');
@@ -29,7 +30,7 @@
 					sourceView.querySelector('.screenshare-source-name').textContent = name;
 
 					sourceView.querySelector('.screenshare-source').addEventListener('click', (e) => {
-						ipcRenderer.send('select-screenshare-source', id);
+						screenshareDialog.selectSource(id);
 						window.close();
 					}, false);
 

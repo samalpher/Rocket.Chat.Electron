@@ -3,6 +3,8 @@ import { autoUpdater } from 'electron-updater';
 import jetpack from 'fs-jetpack';
 import { getMainWindow } from './mainWindow';
 import i18n from '../i18n';
+import aboutDialog from './dialogs/about';
+import updateDialog from './dialogs/update';
 
 
 const appDir = jetpack.cwd(app.getAppPath(), app.getAppPath().endsWith('app.asar') ? '..' : '.');
@@ -113,8 +115,8 @@ const handleUpdateAvailable = ({ version }) => {
 		return;
 	}
 
-	ipcMain.emit('close-about-dialog');
-	ipcMain.emit('open-update-dialog', undefined, { newVersion: version });
+	aboutDialog.close();
+	updateDialog.open({ newVersion: version });
 };
 
 const handleUpdateNotAvailable = () => {
