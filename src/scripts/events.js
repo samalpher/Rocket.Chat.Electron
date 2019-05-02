@@ -101,6 +101,9 @@ const destroyAll = () => {
 };
 
 export default () => {
+	let badges = {};
+	let styles = {};
+
 	window.addEventListener('beforeunload', destroyAll);
 	window.addEventListener('focus', () => webview.focusActive());
 
@@ -211,6 +214,8 @@ export default () => {
 		servers.clearActive();
 		webview.showLanding();
 		updateServers();
+		delete badges[hostUrl];
+		delete styles[hostUrl];
 	});
 
 	servers.on('active-setted', (hostUrl) => {
@@ -328,19 +333,17 @@ export default () => {
 			}
 		}
 
-		sidebar.setState({
-			badges: {
-				...sidebar.state.badges,
-				[hostUrl]: badge || null,
-			},
-		});
+		badges = {
+			...badges,
+			[hostUrl]: badge || null,
+		};
 
-		const mentionCount = Object.values(sidebar.state.badges)
+		sidebar.setState({ badges });
+
+		const mentionCount = Object.values(badges)
 			.filter((badge) => Number.isInteger(badge))
 			.reduce((sum, count) => sum + count, 0);
-		const globalBadge = mentionCount ||
-			(Object.values(sidebar.state.badges).some((badge) => !!badge) && '•') ||
-			null;
+		const globalBadge = mentionCount || (Object.values(badges).some((badge) => !!badge) && '•') || null;
 
 		tray.setState({ badge: globalBadge });
 		dock.setState({ badge: globalBadge });
@@ -355,12 +358,12 @@ export default () => {
 	});
 
 	webview.on('ipc-message-sidebar-style', (hostUrl, [style]) => {
-		sidebar.setState({
-			styles: {
-				...sidebar.state.styles,
-				[hostUrl]: style || null,
-			},
-		});
+		styles = {
+			...styles,
+			[hostUrl]: style || null,
+		};
+
+		sidebar.setState({ styles });
 	});
 
 	webview.on('ipc-message-get-sourceId', (hostUrl) => {
