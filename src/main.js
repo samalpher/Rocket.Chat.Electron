@@ -103,7 +103,6 @@ const setupUI = async () => {
 
 export { dock } from './main/services/dock';
 export { menus } from './main/services/menus';
-export { screenshareDialog } from './main/services/screenshareDialog';
 export { systemIdleTime } from './main/services/systemIdleTime';
 export { tray } from './main/services/tray';
 export { updates } from './main/services/updates';

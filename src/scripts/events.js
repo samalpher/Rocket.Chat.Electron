@@ -1,6 +1,7 @@
 import { remote } from 'electron';
 import i18n from '../i18n';
 import { aboutModal } from './aboutModal';
+import { screenshareModal } from './screenshareModal';
 import { updateModal } from './updateModal';
 import servers from './servers';
 import sidebar from './sidebar';
@@ -189,6 +190,12 @@ export default () => {
 		updatePreferences();
 	});
 
+	screenshareModal.on('select-source', ({ id, url }) => {
+		screenshareModal.setState({ visible: false });
+		const webviewObj = webview.getByUrl(url);
+		webviewObj.executeJavaScript(`window.parent.postMessage({ sourceId: '${ id }' }, '*');`);
+	});
+
 	servers.on('loaded', () => {
 		webview.loaded();
 		updateServers();
@@ -356,6 +363,10 @@ export default () => {
 		});
 	});
 
+	webview.on('ipc-message-get-sourceId', (hostUrl) => {
+		screenshareModal.setState({ visible: false, url: hostUrl });
+	});
+
 	webview.on('dom-ready', () => {
 		const hasSidebar = localStorage.getItem('sidebar-closed') !== 'true';
 		sidebar.setState({
@@ -372,6 +383,7 @@ export default () => {
 	sidebar.mount();
 	webview.mount();
 	aboutModal.mount();
+	screenshareModal.mount();
 	updateModal.mount();
 	servers.restoreActive();
 

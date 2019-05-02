@@ -1,7 +1,5 @@
-import { ipcRenderer, remote } from 'electron';
 import { EventEmitter } from 'events';
 import servers from './servers';
-const { screenshareDialog } = remote.require('./main');
 
 
 class WebView extends EventEmitter {
@@ -10,13 +8,6 @@ class WebView extends EventEmitter {
 
 		servers.forEach((host) => {
 			this.add(host);
-		});
-
-		ipcRenderer.on('screenshare-result', (e, id) => {
-			const webviewObj = this.getActive();
-			webviewObj.executeJavaScript(`
-				window.parent.postMessage({ sourceId: '${ id }' }, '*');
-			`);
 		});
 	}
 
@@ -55,9 +46,6 @@ class WebView extends EventEmitter {
 			this.emit(`ipc-message-${ event.channel }`, host.url, event.args);
 
 			switch (event.channel) {
-				case 'get-sourceId':
-					screenshareDialog.open();
-					break;
 				case 'reload-server': {
 					const webviewObj = this.getByUrl(host.url);
 					const server = webviewObj.getAttribute('server');
