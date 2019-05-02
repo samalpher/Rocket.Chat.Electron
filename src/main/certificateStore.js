@@ -35,7 +35,7 @@ class CertificateStore {
 				detail = i18n.__('error.differentCertificate', { detail });
 			}
 
-			dialog.showMessageBox(mainWindow.getBrowserWindow(), {
+			dialog.showMessageBox(mainWindow, {
 				title: i18n.__('dialog.certificateError.title'),
 				message: i18n.__('dialog.certificateError.message', { issuerName: certificate.issuerName }),
 				detail,

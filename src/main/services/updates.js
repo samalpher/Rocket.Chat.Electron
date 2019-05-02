@@ -1,7 +1,7 @@
 import { app } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import { EventEmitter } from 'events';
-import jetpack from 'fs-jetpack';
+import { loadJson, writeJson } from '../utils';
 
 
 let settings = {
@@ -20,14 +20,9 @@ const isUpdatePossible = (
 );
 
 const loadSettings = async () => {
-	const appDir = jetpack.cwd(app.getAppPath(), app.getAppPath().endsWith('app.asar') ? '..' : '.');
-	const userDataDir = jetpack.cwd(app.getPath('userData'));
-
 	const defaultSettings = { canUpdate: true, autoUpdate: true };
-	const appSettings = await appDir.readAsync('update.json', 'json')
-		.then((json) => (typeof json === 'object' ? json : {}), () => ({}));
-	const userSettings = await userDataDir.readAsync('update.json', 'json')
-		.then((json) => (typeof json === 'object' ? json : {}), () => ({}));
+	const appSettings = await loadJson('update.json', 'app');
+	const userSettings = await loadJson('update.json', 'user');
 	const mergedSettings = Object.assign({}, defaultSettings, appSettings, !appSettings.forced ? userSettings : undefined);
 
 	settings = {
@@ -60,8 +55,7 @@ const updateSettings = async (newSettings) => {
 		} : {}),
 	};
 
-	const userDataDir = jetpack.cwd(app.getPath('userData'));
-	await userDataDir.writeAsync('update.json', data, { atomic: true });
+	await writeJson('update.json', data);
 };
 
 const setAutoUpdate = async (canAutoUpdate) => {
@@ -112,7 +106,7 @@ const downloadUpdate = async () => {
 };
 
 const quitAndInstall = () => {
-	app.removeAllListeners('window-all-closed');
+	app.removeAllListeners();
 	autoUpdater.quitAndInstall();
 };
 

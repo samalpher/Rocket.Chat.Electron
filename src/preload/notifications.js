@@ -69,7 +69,7 @@ class Notification extends EventEmitter {
 	}
 
 	handleClick(event) {
-		ipcRenderer.send('focus');
+		remote.getCurrentWindow().forceFocus();
 		ipcRenderer.sendToHost('focus');
 		event.currentTarget = this;
 		this.onclick && this.onclick.call(this, event);

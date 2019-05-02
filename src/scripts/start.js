@@ -1,4 +1,4 @@
-import { ipcRenderer } from 'electron';
+import { ipcRenderer, remote } from 'electron';
 import attachEvents from './events';
 import servers from './servers';
 import i18n from '../i18n';
@@ -122,7 +122,11 @@ async function setupLanding() {
 }
 
 export async function start() {
-	await i18n.initialize();
-	await setupLanding();
-	await attachEvents();
+	try {
+		await i18n.initialize();
+		await setupLanding();
+		await attachEvents();
+	} finally {
+		remote.getCurrentWindow().showIfNeeded();
+	}
 }

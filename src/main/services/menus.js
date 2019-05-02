@@ -288,9 +288,8 @@ const update = () => {
 
 	if (process.platform !== 'darwin') {
 		const { showMenuBar } = state;
-		const window = mainWindow.getBrowserWindow();
-		window.setAutoHideMenuBar(!showMenuBar);
-		window.setMenuBarVisibility(!!showMenuBar);
+		mainWindow.setAutoHideMenuBar(!showMenuBar);
+		mainWindow.setMenuBarVisibility(!!showMenuBar);
 	}
 };
 

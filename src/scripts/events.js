@@ -38,7 +38,7 @@ const updatePreferences = () => {
 
 	webview.setSidebarPaddingEnabled(!hasSidebar);
 
-	getCurrentWindow().emit('set-state', { hideOnClose: hasTrayIcon });
+	getCurrentWindow().hasTrayIcon = hasTrayIcon;
 };
 
 
@@ -324,13 +324,9 @@ export default () => {
 	});
 
 	webview.on('ipc-message-unread-changed', (hostUrl, [badge]) => {
-		if (typeof unread === 'number' && localStorage.getItem('showWindowOnUnreadChanged') === 'true') {
+		if (typeof badge === 'number' && localStorage.getItem('showWindowOnUnreadChanged') === 'true') {
 			const mainWindow = remote.getCurrentWindow();
-			if (!mainWindow.isFocused()) {
-				mainWindow.once('focus', () => mainWindow.flashFrame(false));
-				mainWindow.showInactive();
-				mainWindow.flashFrame(true);
-			}
+			mainWindow.showInactive();
 		}
 
 		badges = {

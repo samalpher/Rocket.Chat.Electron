@@ -3,7 +3,7 @@ import jetpack from 'fs-jetpack';
 import i18n from './i18n';
 import './main/basicAuth';
 import { processDeepLink } from './main/deepLinks';
-import { mainWindow } from './main/mainWindow';
+import { mainWindow, createMainWindow } from './main/mainWindow';
 import { dock } from './main/services/dock';
 import { menus } from './main/services/menus';
 import { tray } from './main/services/tray';
@@ -49,6 +49,14 @@ export const relaunch = (...args) => {
 };
 
 const attachAppEvents = () => {
+	app.on('activate', () => {
+		mainWindow.show();
+	});
+
+	app.on('before-quit', () => {
+		mainWindow.removeAllListeners();
+	});
+
 	app.on('window-all-closed', () => {
 		app.quit();
 	});
@@ -59,12 +67,13 @@ const attachAppEvents = () => {
 	});
 
 	app.on('second-instance', (event, argv) => {
+		mainWindow.forceFocus();
 		argv.slice(2).forEach(processDeepLink);
 	});
 };
 
 const setupUI = async () => {
-	await mainWindow.mount();
+	await createMainWindow();
 	await dock.mount();
 	await menus.mount();
 	await tray.mount();

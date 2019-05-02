@@ -32,16 +32,14 @@ const update = async (previousState = {}) => {
 		}
 	}
 
-	const window = mainWindow.getBrowserWindow();
-
 	if (process.platform === 'linux' || process.platform === 'win32') {
 		const image = state.hasTrayIcon ? getAppIconImage() : getTrayIconImage({ badge: state.badge });
-		window.setIcon(image);
+		mainWindow.setIcon(image);
 	}
 
-	if (!window.isFocused()) {
+	if (!mainWindow.isFocused()) {
 		const count = Number.isInteger(state.badge) ? state.badge : 0;
-		window.flashFrame(count > 0);
+		mainWindow.flashFrame(count > 0);
 	}
 };
 
@@ -61,9 +59,8 @@ const mount = () => {
 const unmount = async () => {
 	events.removeAllListeners();
 
-	const window = mainWindow.getBrowserWindow();
-	window.setIcon(getAppIconImage());
-	window.flashFrame(false);
+	mainWindow.setIcon(getAppIconImage());
+	mainWindow.flashFrame(false);
 };
 
 export const dock = Object.assign(events, {

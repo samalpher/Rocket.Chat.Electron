@@ -12,16 +12,14 @@ const normalizeUrl = (hostUrl) => {
 };
 
 const processAuth = ({ host, token, userId }) => {
-	const window = mainWindow.getBrowserWindow();
 	const hostUrl = normalizeUrl(host);
-	window.send('add-host', hostUrl, { token, userId });
+	mainWindow.send('add-host', hostUrl, { token, userId });
 };
 
 const processRoom = ({ host, rid, path }) => {
-	const window = mainWindow.getBrowserWindow();
 	const hostUrl = normalizeUrl(host);
-	window.send('add-host', hostUrl);
-	window.send('open-room', hostUrl, { rid, path });
+	mainWindow.send('add-host', hostUrl);
+	mainWindow.send('open-room', hostUrl, { rid, path });
 };
 
 export const processDeepLink = (link) => {
