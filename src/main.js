@@ -4,9 +4,9 @@ import i18n from './i18n';
 import './main/basicAuth';
 import { processDeepLink } from './main/deepLinks';
 import { mainWindow, createMainWindow } from './main/mainWindow';
-import { dock } from './main/services/dock';
-import { menus } from './main/services/menus';
-import { tray } from './main/services/tray';
+import { dock } from './main/dock';
+import { menus } from './main/menus';
+import { tray } from './main/tray';
 
 
 const setupErrorHandling = () => {
@@ -110,10 +110,10 @@ const setupUI = async () => {
 	args.forEach(processDeepLink);
 })();
 
-export { dock } from './main/services/dock';
-export { menus } from './main/services/menus';
-export { systemIdleTime } from './main/services/systemIdleTime';
-export { tray } from './main/services/tray';
-export { updates } from './main/services/updates';
+export { dock } from './main/dock';
+export { menus } from './main/menus';
+export { systemIdleTime } from './main/systemIdleTime';
+export { tray } from './main/tray';
+export { updates } from './main/updates';
 export { default as notifications } from './main/notifications';
 export { default as certificate } from './main/certificateStore';

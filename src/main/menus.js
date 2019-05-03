@@ -1,7 +1,7 @@
 import { app, Menu, webContents } from 'electron';
 import { EventEmitter } from 'events';
-import { mainWindow } from '../mainWindow';
-import i18n from '../../i18n';
+import { mainWindow } from './mainWindow';
+import i18n from '../i18n';
 
 
 let state = {};

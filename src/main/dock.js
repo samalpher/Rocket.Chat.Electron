@@ -1,7 +1,7 @@
 import { app } from 'electron';
 import { EventEmitter } from 'events';
-import { mainWindow } from '../mainWindow';
-import { getTrayIconImage, getAppIconImage } from '../icon';
+import { mainWindow } from './mainWindow';
+import { getTrayIconImage, getAppIconImage } from './icon';
 
 
 let state = {
