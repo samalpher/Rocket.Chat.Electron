@@ -8,7 +8,7 @@ import sidebar from './sidebar';
 import webview from './webview';
 import setTouchBar from './touchBar';
 const { app, dialog, getCurrentWindow, shell } = remote;
-const { certificate, dock, menus, tray, updates } = remote.require('./main');
+const { certificates, dock, menus, tray, updates } = remote.require('./main');
 
 const updatePreferences = () => {
 	const showWindowOnUnreadChanged = localStorage.getItem('showWindowOnUnreadChanged') === 'true';
@@ -110,6 +110,22 @@ export default () => {
 	aboutModal.on('check-for-updates', () => updates.checkForUpdates());
 	aboutModal.on('set-check-for-updates-on-start', (checked) => updates.setAutoUpdate(checked));
 
+	certificates.on('ask-for-trust', ({ requestUrl, error, certificate, replace, callback }) => {
+		const detail = `URL: ${ requestUrl }\nError: ${ error }`;
+
+		dialog.showMessageBox(getCurrentWindow(), {
+			title: i18n.__('dialog.certificateError.title'),
+			message: i18n.__('dialog.certificateError.message', { issuerName: certificate.issuerName }),
+			detail: replace ? i18n.__('error.differentCertificate', { detail }) : detail,
+			type: 'warning',
+			buttons: [
+				i18n.__('dialog.certificateError.yes'),
+				i18n.__('dialog.certificateError.no'),
+			],
+			cancelId: 1,
+		}, (response) => callback(response === 0));
+	});
+
 	menus.on('quit', () => app.quit());
 	menus.on('about', () => aboutModal.setState({ visible: true }));
 	menus.on('open-url', (url) => shell.openExternal(url));
@@ -127,7 +143,7 @@ export default () => {
 
 	menus.on('reload-server', ({ ignoringCache = false, clearCertificates = false } = {}) => {
 		if (clearCertificates) {
-			certificate.clear();
+			certificates.clear();
 		}
 
 		const activeWebview = webview.getActive();
@@ -389,6 +405,4 @@ export default () => {
 	updatePreferences();
 	updateServers();
 	updateWindowState();
-
-	updates.initialize();
 };

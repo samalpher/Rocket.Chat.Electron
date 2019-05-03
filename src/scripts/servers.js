@@ -2,7 +2,7 @@ import jetpack from 'fs-jetpack';
 import { EventEmitter } from 'events';
 import { remote, ipcRenderer } from 'electron';
 import i18n from '../i18n';
-const { relaunch } = remote.require('./main');
+const { relaunch, servers } = remote.require('./main');
 
 
 class Servers extends EventEmitter {
@@ -105,7 +105,7 @@ class Servers extends EventEmitter {
 		}
 
 		this._hosts = hosts;
-		ipcRenderer.send('update-servers', this._hosts);
+		servers.set(this._hosts);
 		this.emit('loaded');
 	}
 
@@ -179,7 +179,7 @@ class Servers extends EventEmitter {
 		};
 		this.hosts = hosts;
 
-		ipcRenderer.send('update-servers', this._hosts);
+		servers.set(this._hosts);
 
 		this.emit('host-added', hostUrl);
 
@@ -192,7 +192,7 @@ class Servers extends EventEmitter {
 			delete hosts[hostUrl];
 			this.hosts = hosts;
 
-			ipcRenderer.send('update-servers', this._hosts);
+			servers.set(this._hosts);
 
 			if (this.active === hostUrl) {
 				this.clearActive();

@@ -94,11 +94,6 @@ async function setupLanding() {
 		validateHost().then(function() {}, function() {});
 	});
 
-	ipcRenderer.on('certificate-reload', (event, url) => {
-		hostField.value = url.replace(/\/api\/info$/, '');
-		validateHost().then(function() {}, function() {});
-	});
-
 	form.addEventListener('submit', (event) => {
 		event.preventDefault();
 		event.stopPropagation();

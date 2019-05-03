@@ -1,12 +1,14 @@
 import { app } from 'electron';
 import jetpack from 'fs-jetpack';
 import i18n from './i18n';
-import './main/basicAuth';
 import { processDeepLink } from './main/deepLinks';
 import { mainWindow, createMainWindow } from './main/mainWindow';
+import { certificates } from './main/certificates';
 import { dock } from './main/dock';
 import { menus } from './main/menus';
+import { servers } from './main/servers';
 import { tray } from './main/tray';
+import { updates } from './main/updates';
 
 
 const setupErrorHandling = () => {
@@ -70,6 +72,20 @@ const attachAppEvents = () => {
 		mainWindow.forceFocus();
 		argv.slice(2).forEach(processDeepLink);
 	});
+
+	app.on('login', (event, webContents, { url }, authInfo, callback) => {
+		event.preventDefault();
+		const server = servers.fromUrl(url);
+		if (server) {
+			const { username, password } = server;
+			callback(username, password);
+		}
+	});
+
+	app.on('certificate-error', (event, webContents, requestUrl, error, certificate, callback) => {
+		event.preventDefault();
+		certificates.handleTrustRequest({ requestUrl, error, certificate, callback });
+	});
 };
 
 const setupUI = async () => {
@@ -106,14 +122,18 @@ const setupUI = async () => {
 
 	await setupUI();
 
-	app.emit('start');
+	servers.initialize();
+	certificates.initialize();
+	updates.initialize();
+
 	args.forEach(processDeepLink);
 })();
 
+export { certificates } from './main/certificates';
 export { dock } from './main/dock';
 export { menus } from './main/menus';
+export { notifications } from './main/notifications';
 export { systemIdleTime } from './main/systemIdleTime';
+export { servers } from './main/servers';
 export { tray } from './main/tray';
 export { updates } from './main/updates';
-export { default as notifications } from './main/notifications';
-export { default as certificate } from './main/certificateStore';

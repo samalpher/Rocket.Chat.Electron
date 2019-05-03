@@ -10,6 +10,6 @@ function create({ icon, ...options }) {
 	return notification;
 }
 
-export default {
+export const notifications = {
 	create,
 };
