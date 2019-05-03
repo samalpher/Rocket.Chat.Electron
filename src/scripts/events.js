@@ -8,7 +8,7 @@ import sidebar from './sidebar';
 import webview from './webview';
 import setTouchBar from './touchBar';
 const { app, dialog, getCurrentWindow, shell } = remote;
-const { certificates, deepLinks, dock, menus, tray, updates } = remote.require('./main');
+const { certificates, deepLinks, dock, menus, relaunch, tray, updates } = remote.require('./main');
 
 const updatePreferences = () => {
 	const showWindowOnUnreadChanged = localStorage.getItem('showWindowOnUnreadChanged') === 'true';
@@ -107,7 +107,7 @@ const warnCertificateError = ({ requestUrl, error, certificate: { issuerName }, 
 });
 
 
-const askForServerAddition = ({ hostUrl }) => new Promise((resolve) => {
+const confirmServerAddition = ({ hostUrl }) => new Promise((resolve) => {
 	dialog.showMessageBox(getCurrentWindow(), {
 		title: i18n.__('dialog.addServer.title'),
 		message: i18n.__('dialog.addServer.message', { host: hostUrl }),
@@ -117,6 +117,21 @@ const askForServerAddition = ({ hostUrl }) => new Promise((resolve) => {
 			i18n.__('dialog.addServer.cancel'),
 		],
 		defaultId: 0,
+		cancelId: 1,
+	}, (response) => resolve(response === 0));
+});
+
+
+const confirmAppDataReset = () => new Promise((resolve) => {
+	dialog.showMessageBox({
+		title: i18n.__('dialog.resetAppData.title'),
+		message: i18n.__('dialog.resetAppData.message'),
+		type: 'question',
+		buttons: [
+			i18n.__('dialog.resetAppData.yes'),
+			i18n.__('dialog.resetAppData.cancel'),
+		],
+		defaultId: 1,
 		cancelId: 1,
 	}, (response) => resolve(response === 0));
 });
@@ -157,7 +172,7 @@ export default () => {
 			return;
 		}
 
-		const shouldAdd = await askForServerAddition({ hostUrl });
+		const shouldAdd = await confirmServerAddition({ hostUrl });
 		if (!shouldAdd) {
 			return;
 		}
@@ -221,7 +236,13 @@ export default () => {
 
 	menus.on('toggle-devtools', () => getCurrentWindow().toggleDevTools());
 
-	menus.on('reset-app-data', () => servers.resetAppData());
+	menus.on('reset-app-data', async () => {
+		const shouldReset = await confirmAppDataReset();
+
+		if (shouldReset) {
+			relaunch('--reset-app-data');
+		}
+	});
 
 	menus.on('toggle', (property) => {
 		switch (property) {

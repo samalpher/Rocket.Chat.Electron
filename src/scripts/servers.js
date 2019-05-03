@@ -1,8 +1,7 @@
 import { remote } from 'electron';
 import { EventEmitter } from 'events';
 import jetpack from 'fs-jetpack';
-import i18n from '../i18n';
-const { relaunch, servers } = remote.require('./main');
+const { servers } = remote.require('./main');
 
 
 class Servers extends EventEmitter {
@@ -226,23 +225,6 @@ class Servers extends EventEmitter {
 		this.hosts = hosts;
 		this.emit('title-setted', hostUrl, title);
 	}
-
-	resetAppData() {
-		const response = remote.dialog.showMessageBox({
-			type: 'question',
-			buttons: [i18n.__('dialog.resetAppData.yes'), i18n.__('dialog.resetAppData.cancel')],
-			defaultId: 1,
-			title: i18n.__('dialog.resetAppData.title'),
-			message: i18n.__('dialog.resetAppData.message'),
-		});
-
-		if (response !== 0) {
-			return;
-		}
-
-		relaunch('--reset-app-data');
-	}
-
 }
 
 export default new Servers();
