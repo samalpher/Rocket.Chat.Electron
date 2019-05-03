@@ -1,7 +1,7 @@
 import { app } from 'electron';
 import jetpack from 'fs-jetpack';
 import i18n from './i18n';
-import { processDeepLink } from './main/deepLinks';
+import { deepLinks } from './main/deepLinks';
 import { mainWindow, createMainWindow } from './main/mainWindow';
 import { certificates } from './main/certificates';
 import { dock } from './main/dock';
@@ -65,12 +65,12 @@ const attachAppEvents = () => {
 
 	app.on('open-url', (event, url) => {
 		event.preventDefault();
-		processDeepLink(url);
+		deepLinks.handle(url);
 	});
 
 	app.on('second-instance', (event, argv) => {
 		mainWindow.forceFocus();
-		argv.slice(2).forEach(processDeepLink);
+		argv.slice(2).forEach(deepLinks.handle);
 	});
 
 	app.on('login', (event, webContents, { url }, authInfo, callback) => {
@@ -86,13 +86,6 @@ const attachAppEvents = () => {
 		event.preventDefault();
 		certificates.handleTrustRequest({ requestUrl, error, certificate, callback });
 	});
-};
-
-const setupUI = async () => {
-	await createMainWindow();
-	await dock.mount();
-	await menus.mount();
-	await tray.mount();
 };
 
 (async () => {
@@ -119,17 +112,21 @@ const setupUI = async () => {
 	await app.whenReady();
 
 	await i18n.initialize();
-
-	await setupUI();
-
+	await createMainWindow();
+	await dock.mount();
+	await menus.mount();
+	await tray.mount();
 	servers.initialize();
 	certificates.initialize();
 	updates.initialize();
 
-	args.forEach(processDeepLink);
+	mainWindow.showIfNeeded();
+
+	args.forEach(deepLinks.handle);
 })();
 
 export { certificates } from './main/certificates';
+export { deepLinks } from './main/deepLinks';
 export { dock } from './main/dock';
 export { menus } from './main/menus';
 export { notifications } from './main/notifications';

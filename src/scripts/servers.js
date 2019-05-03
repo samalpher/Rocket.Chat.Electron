@@ -1,46 +1,12 @@
-import jetpack from 'fs-jetpack';
+import { remote } from 'electron';
 import { EventEmitter } from 'events';
-import { remote, ipcRenderer } from 'electron';
+import jetpack from 'fs-jetpack';
 import i18n from '../i18n';
 const { relaunch, servers } = remote.require('./main');
 
 
 class Servers extends EventEmitter {
 	initialize() {
-		this.load();
-		const processProtocol = this.getProtocolUrlFromProcess(remote.process.argv);
-		if (processProtocol) {
-			this.showHostConfirmation(processProtocol);
-		}
-		ipcRenderer.on('add-host', (e, host) => {
-			remote.getCurrentWindow().forceFocus();
-			if (this.hostExists(host)) {
-				this.setActive(host);
-			} else {
-				this.showHostConfirmation(host);
-			}
-		});
-	}
-
-	get hosts() {
-		return this._hosts;
-	}
-
-	set hosts(hosts) {
-		this._hosts = hosts;
-		this.save();
-		return true;
-	}
-
-	get hostsKey() {
-		return 'rocket.chat.hosts';
-	}
-
-	get activeKey() {
-		return 'rocket.chat.currentHost';
-	}
-
-	load() {
 		let hosts = localStorage.getItem(this.hostsKey);
 
 		try {
@@ -107,6 +73,24 @@ class Servers extends EventEmitter {
 		this._hosts = hosts;
 		servers.set(this._hosts);
 		this.emit('loaded');
+	}
+
+	get hosts() {
+		return this._hosts;
+	}
+
+	set hosts(hosts) {
+		this._hosts = hosts;
+		this.save();
+		return true;
+	}
+
+	get hostsKey() {
+		return 'rocket.chat.hosts';
+	}
+
+	get activeKey() {
+		return 'rocket.chat.currentHost';
 	}
 
 	save() {
@@ -241,39 +225,6 @@ class Servers extends EventEmitter {
 		hosts[hostUrl].title = title;
 		this.hosts = hosts;
 		this.emit('title-setted', hostUrl, title);
-	}
-	getProtocolUrlFromProcess(args) {
-		let site = null;
-		if (args.length > 1) {
-			const protocolURI = args.find((arg) => arg.startsWith('rocketchat://'));
-			if (protocolURI) {
-				site = protocolURI.split(/\/|\?/)[2];
-				if (site) {
-					let scheme = 'https://';
-					if (protocolURI.includes('insecure=true')) {
-						scheme = 'http://';
-					}
-					site = scheme + site;
-				}
-			}
-		}
-		return site;
-	}
-	showHostConfirmation(host) {
-		return remote.dialog.showMessageBox({
-			type: 'question',
-			buttons: [i18n.__('dialog.addServer.add'), i18n.__('dialog.addServer.cancel')],
-			defaultId: 0,
-			title: i18n.__('dialog.addServer.title'),
-			message: i18n.__('dialog.addServer.message', { host }),
-		}, (response) => {
-			if (response === 0) {
-				this.validateHost(host)
-					.then(() => this.addHost(host))
-					.then(() => this.setActive(host))
-					.catch(() => remote.dialog.showErrorBox(i18n.__('dialog.addServerError.title'), i18n.__('dialog.addServerError.message', { host })));
-			}
-		});
 	}
 
 	resetAppData() {

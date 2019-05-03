@@ -1,7 +1,9 @@
+import { EventEmitter } from 'events';
 import querystring from 'querystring';
 import url from 'url';
-import { mainWindow } from './mainWindow';
 
+
+const events = new EventEmitter();
 
 const normalizeUrl = (hostUrl) => {
 	if (!/^https?:\/\//.test(hostUrl)) {
@@ -13,16 +15,15 @@ const normalizeUrl = (hostUrl) => {
 
 const processAuth = ({ host, token, userId }) => {
 	const hostUrl = normalizeUrl(host);
-	mainWindow.send('add-host', hostUrl, { token, userId });
+	events.emit('auth', { hostUrl, token, userId });
 };
 
 const processRoom = ({ host, rid, path }) => {
 	const hostUrl = normalizeUrl(host);
-	mainWindow.send('add-host', hostUrl);
-	mainWindow.send('open-room', hostUrl, { rid, path });
+	events.emit('room', { hostUrl, rid, path });
 };
 
-export const processDeepLink = (link) => {
+const handle = (link) => {
 	const { protocol, hostname:	action, query } = url.parse(link);
 
 	if (protocol !== 'rocketchat:') {
@@ -40,3 +41,7 @@ export const processDeepLink = (link) => {
 		}
 	}
 };
+
+export const deepLinks = Object.assign(events, {
+	handle,
+});
