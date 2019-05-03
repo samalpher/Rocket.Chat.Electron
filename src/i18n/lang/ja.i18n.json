@@ -17,7 +17,6 @@
     },
     "dialog": {
         "about": {
-            "title": "{{- appName}} について",
             "version": "バージョン",
             "checkUpdates": "アップデートを確認",
             "checkUpdatesOnStart": "起動時に更新を確認",
@@ -56,11 +55,9 @@
             "cancel": "キャンセル"
         },
         "screenshare": {
-            "title": "画面共有",
             "announcement": "共有する画面を選択"
         },
         "update": {
-            "title": "利用可能な更新",
             "announcement": "新しい更新が利用可能です",
             "message": "Rocket.Chat デスクトップアプリの新しいバージョンが利用可能です!",
             "currentVersion": "現在のバージョン:",

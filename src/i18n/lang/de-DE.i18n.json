@@ -14,7 +14,6 @@
     },
     "dialog": {
         "about": {
-            "title": "Über {{- appName}}",
             "version": "Version",
             "checkUpdates": "Auf Aktualisierungen prüfen",
             "checkUpdatesOnStart": "Beim Start auf Aktualisierungen prüfen",
@@ -41,11 +40,9 @@
             "cancel": "Abbrechen"
         },
         "screenshare": {
-            "title": "Bildschirm teilen",
             "announcement": "Wählen Sie den zu teilenden Bildschirm aus"
         },
         "update": {
-            "title": "Aktualisierung verfügbar",
             "announcement": "Neue Aktualisierung verfügbar",
             "message": "Eine neue Version der Rocket.Chat Desktop App ist verfügbar!",
             "currentVersion": "Aktuelle Version:",

@@ -15,7 +15,6 @@
     },
     "dialog": {
         "about": {
-            "title": "О {{- appName}}",
             "version": "Версия",
             "checkUpdates": "Проверить обновления",
             "checkUpdatesOnStart": "Проверять обновления при запуске",
@@ -50,11 +49,9 @@
             "cancel": "Отменить"
         },
         "screenshare": {
-            "title": "Демонстрация Вашего экрана",
             "announcement": "Выберите экран для совместного использования"
         },
         "update": {
-            "title": "Доступно обновление",
             "announcement": "Доступно новое обновление",
             "message": "Доступна новая версия приложения Rocket.Chat!",
             "currentVersion": "Текущая версия:",

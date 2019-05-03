@@ -17,7 +17,6 @@
     },
     "dialog": {
         "about": {
-            "title": "關於 {{- appName}}",
             "version": "版本",
             "checkUpdates": "檢查更新",
             "checkUpdatesOnStart": "啟動時檢查更新",
@@ -56,11 +55,9 @@
             "cancel": "取消"
         },
         "screenshare": {
-            "title": "分享您的畫面",
             "announcement": "選擇要分享的畫面"
         },
         "update": {
-            "title": "可用的更新",
             "announcement": "有新的更新程式",
             "message": "有新版本的 Rocket.Chat 桌面應用程式！",
             "currentVersion": "目前版本:",
