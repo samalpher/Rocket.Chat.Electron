@@ -1,5 +1,5 @@
 import attachEvents from './events';
-import servers from './servers';
+import { servers } from './servers';
 import i18n from '../i18n';
 
 
@@ -42,7 +42,7 @@ async function setupLanding() {
 				connectButton.value = i18n.__('landing.validating');
 				connectButton.disabled = true;
 
-				servers.validateHost(host, 2000)
+				servers.validate(host, 2000)
 					.then(() => {
 						connectButton.value = i18n.__('landing.connect');
 						connectButton.disabled = false;
@@ -105,7 +105,7 @@ async function setupLanding() {
 				url = defaultInstance;
 			}
 
-			url = servers.addHost(url);
+			url = servers.add(url);
 			if (url !== false) {
 				servers.setActive(url);
 			}

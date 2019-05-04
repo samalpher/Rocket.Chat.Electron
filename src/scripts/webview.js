@@ -1,14 +1,9 @@
 import { EventEmitter } from 'events';
-import servers from './servers';
 
 
 class WebView extends EventEmitter {
 	mount() {
 		this.webviewParentElement = document.body;
-
-		servers.forEach((host) => {
-			this.add(host);
-		});
 	}
 
 	loaded() {
@@ -32,9 +27,9 @@ class WebView extends EventEmitter {
 		webviewObj.setAttribute('allowpopups', 'on');
 		webviewObj.setAttribute('disablewebsecurity', 'on');
 
-		webviewObj.addEventListener('did-navigate-in-page', (lastPath) => {
-			if ((lastPath.url).includes(host.url)) {
-				this.saveLastPath(host.url, lastPath.url);
+		webviewObj.addEventListener('did-navigate-in-page', ({ url }) => {
+			if (url.indexOf(host.url) === 0) {
+				this.emit('did-navigate', { serverUrl: host.url, url });
 			}
 		});
 
@@ -83,12 +78,6 @@ class WebView extends EventEmitter {
 		if (el) {
 			el.remove();
 		}
-	}
-
-	saveLastPath(hostUrl, lastPathUrl) {
-		const { hosts } = servers;
-		hosts[hostUrl].lastPath = lastPathUrl;
-		servers.hosts = hosts;
 	}
 
 	getByUrl(hostUrl) {

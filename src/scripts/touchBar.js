@@ -1,5 +1,5 @@
 import { remote } from 'electron';
-import servers from './servers';
+import { servers } from './servers';
 import webview from './webview';
 import i18n from '../i18n';
 
@@ -20,7 +20,7 @@ export class SelectServerPanel {
 	}
 
 	_getActiveServerIndex() {
-		return this._hosts.findIndex((value) => value.host === servers.active);
+		return this._hosts.findIndex((value) => value.host === servers.getActive());
 	}
 
 	_setActiveServer() {
@@ -32,7 +32,7 @@ export class SelectServerPanel {
 	}
 
 	_setHostsArray() {
-		this._hosts = Object.values(servers.hosts).map((value) => ({ label: value.title, host: value.url }));
+		this._hosts = Object.values(servers.getAll()).map((value) => ({ label: value.title, host: value.url }));
 		this._hosts = this._trimHostsNames(this._hosts);
 	}
 
@@ -112,8 +112,8 @@ export class SelectServerPanel {
 
 	_subscribe() {
 		servers.on('active-setted', () => this._setActiveServer());
-		servers.on('host-added', () => this._update());
-		servers.on('host-removed', () => this._update());
+		servers.on('added', () => this._update());
+		servers.on('removed', () => this._update());
 		servers.on('title-setted', () => this._update());
 	}
 

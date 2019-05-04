@@ -3,7 +3,7 @@ import i18n from '../i18n';
 import { aboutModal } from './aboutModal';
 import { screenshareModal } from './screenshareModal';
 import { updateModal } from './updateModal';
-import servers from './servers';
+import { servers } from './servers';
 import sidebar from './sidebar';
 import webview from './webview';
 import setTouchBar from './touchBar';
@@ -55,16 +55,16 @@ const updateServers = () => {
 	const sorting = JSON.parse(localStorage.getItem('rocket.chat.sortOrder')) || [];
 
 	menus.setState({
-		servers: Object.values(servers.hosts)
+		servers: Object.values(servers.getAll())
 			.sort(({ url: a }, { url: b }) => (sidebar ? (sorting.indexOf(a) - sorting.indexOf(b)) : 0))
 			.map(({ title, url }) => ({ title, url })),
-		currentServerUrl: servers.active,
+		currentServerUrl: servers.getActive(),
 	});
 
 	sidebar.setState({
-		hosts: servers.hosts,
+		hosts: servers.getAll(),
 		sorting,
-		active: servers.active,
+		active: servers.getActive(),
 	});
 };
 
@@ -178,27 +178,27 @@ export default () => {
 		callback(isTrusted);
 	});
 
-	deepLinks.on('auth', async ({ hostUrl }) => {
+	deepLinks.on('auth', async ({ hostUrl: serverUrl }) => {
 		getCurrentWindow().forceFocus();
 
-		if (servers.hostExists(hostUrl)) {
-			servers.setActive(hostUrl);
+		if (servers.has(serverUrl)) {
+			servers.setActive(serverUrl);
 			return;
 		}
 
-		const shouldAdd = await confirmServerAddition({ hostUrl });
+		const shouldAdd = await confirmServerAddition({ hostUrl: serverUrl });
 		if (!shouldAdd) {
 			return;
 		}
 
 		try {
-			await servers.validateHost(hostUrl);
-			servers.addHost(hostUrl);
-			servers.setActive(hostUrl);
+			await servers.validate(serverUrl);
+			servers.add(serverUrl);
+			servers.setActive(serverUrl);
 		} catch (error) {
 			dialog.showErrorBox(
 				i18n.__('dialog.addServerError.title'),
-				i18n.__('dialog.addServerError.message', { host: hostUrl })
+				i18n.__('dialog.addServerError.message', { host: serverUrl })
 			);
 		}
 	});
@@ -209,7 +209,7 @@ export default () => {
 
 	menus.on('add-new-server', () => {
 		getCurrentWindow().show();
-		servers.clearActive();
+		servers.setActive(null);
 		webview.showLanding();
 	});
 
@@ -298,32 +298,38 @@ export default () => {
 		webviewObj.executeJavaScript(`window.parent.postMessage({ sourceId: '${ id }' }, '*');`);
 	});
 
-	servers.on('loaded', () => {
+	servers.on('loaded', (entries, fromDefaults) => {
+		if (fromDefaults) {
+			if (Object.keys(entries).length === 1) {
+				localStorage.setItem('sidebar-closed', JSON.stringify(true));
+			}
+		}
+		Object.values(entries).forEach((server) => webview.add(server));
 		webview.loaded();
 		updateServers();
 	});
 
-	servers.on('host-added', (hostUrl) => {
-		webview.add(servers.get(hostUrl));
+	servers.on('added', (entry) => {
+		webview.add(entry);
 		updateServers();
 	});
 
-	servers.on('host-removed', (hostUrl) => {
-		webview.remove(hostUrl);
-		servers.clearActive();
+	servers.on('removed', ({ url }) => {
+		webview.remove(url);
+		servers.setActive(null);
 		webview.showLanding();
 		updateServers();
-		delete badges[hostUrl];
-		delete styles[hostUrl];
+		delete badges[url];
+		delete styles[url];
 	});
 
-	servers.on('active-setted', (hostUrl) => {
-		webview.setActive(hostUrl);
+	servers.on('active-setted', ({ url }) => {
+		webview.setActive(url);
 		updateServers();
 	});
 
-	servers.on('active-cleared', (hostUrl) => {
-		webview.deactiveAll(hostUrl);
+	servers.on('active-cleared', () => {
+		webview.deactiveAll();
 		updateServers();
 	});
 
@@ -335,12 +341,12 @@ export default () => {
 		servers.setActive(hostUrl);
 	});
 
-	sidebar.on('reload-server', (hostUrl) => {
-		webview.getByUrl(hostUrl).reload();
+	sidebar.on('reload-server', (serverUrl) => {
+		webview.getByUrl(serverUrl).reload();
 	});
 
-	sidebar.on('remove-server', (hostUrl) => {
-		servers.removeHost(hostUrl);
+	sidebar.on('remove-server', (serverUrl) => {
+		servers.remove(serverUrl);
 	});
 
 	sidebar.on('open-devtools-for-server', (hostUrl) => {
@@ -348,7 +354,7 @@ export default () => {
 	});
 
 	sidebar.on('add-server', () => {
-		servers.clearActive();
+		servers.setActive(null);
 		webview.showLanding();
 	});
 
@@ -445,7 +451,7 @@ export default () => {
 	});
 
 	webview.on('ipc-message-title-changed', (hostUrl, [title]) => {
-		servers.setHostTitle(hostUrl, title);
+		servers.setTitle(hostUrl, title);
 	});
 
 	webview.on('ipc-message-focus', (hostUrl) => {
@@ -473,17 +479,21 @@ export default () => {
 		webview.setSidebarPaddingEnabled(!hasSidebar);
 	});
 
+	webview.on('did-navigate', ({ serverUrl, url }) => {
+		servers.setLastPath(serverUrl, url);
+	});
+
 	if (process.platform === 'darwin') {
 		setTouchBar();
 	}
 
-	servers.initialize();
 	sidebar.mount();
 	webview.mount();
 	aboutModal.mount();
 	screenshareModal.mount();
 	updateModal.mount();
-	servers.restoreActive();
+
+	servers.initialize();
 
 	updatePreferences();
 	updateServers();
