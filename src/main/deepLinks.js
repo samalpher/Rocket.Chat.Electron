@@ -1,25 +1,18 @@
 import { EventEmitter } from 'events';
 import querystring from 'querystring';
 import url from 'url';
+import { normalizeServerUrl } from '../utils';
 
 
 const events = new EventEmitter();
 
-const normalizeUrl = (hostUrl) => {
-	if (!/^https?:\/\//.test(hostUrl)) {
-		return `https://${ hostUrl }`;
-	}
-
-	return hostUrl;
-};
-
 const processAuth = ({ host, token, userId }) => {
-	const hostUrl = normalizeUrl(host);
+	const hostUrl = normalizeServerUrl(host);
 	events.emit('auth', { hostUrl, token, userId });
 };
 
 const processRoom = ({ host, rid, path }) => {
-	const hostUrl = normalizeUrl(host);
+	const hostUrl = normalizeServerUrl(host);
 	events.emit('room', { hostUrl, rid, path });
 };
 
