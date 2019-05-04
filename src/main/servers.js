@@ -2,12 +2,12 @@ import { loadJson } from './utils';
 import { normalizeServerUrl } from '../utils';
 
 
-let entries = {};
+let defaultServers = {};
 
 const initialize = async () => {
 	const appEntries = await loadJson('servers.json', 'app');
 	const userEntries = await loadJson('servers.json', 'user');
-	entries = {
+	defaultServers = {
 		...(
 			Object.entries(appEntries)
 				.map(([title, url]) => [title, normalizeServerUrl(url)])
@@ -21,23 +21,9 @@ const initialize = async () => {
 	};
 };
 
-const get = () => entries;
-
-const set = (newEntries) => {
-	entries = newEntries;
-};
-
-const fromUrl = (url) => {
-	for (const [key, entry] of Object.entries(entries)) {
-		if (url.indexOf(key) === 0) {
-			return entry;
-		}
-	}
-};
+const getDefault = () => defaultServers;
 
 export const servers = {
 	initialize,
-	get,
-	set,
-	fromUrl,
+	getDefault,
 };

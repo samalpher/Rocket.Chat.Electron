@@ -1,7 +1,7 @@
 import { remote } from 'electron';
 import { EventEmitter } from 'events';
 import jetpack from 'fs-jetpack';
-const { servers } = remote.require('./main');
+// const { servers } = remote.require('./main');
 
 
 class Servers extends EventEmitter {
@@ -70,7 +70,6 @@ class Servers extends EventEmitter {
 		}
 
 		this._hosts = hosts;
-		servers.set(this._hosts);
 		this.emit('loaded');
 	}
 
@@ -162,8 +161,6 @@ class Servers extends EventEmitter {
 		};
 		this.hosts = hosts;
 
-		servers.set(this._hosts);
-
 		this.emit('host-added', hostUrl);
 
 		return hostUrl;
@@ -174,8 +171,6 @@ class Servers extends EventEmitter {
 		if (hosts[hostUrl]) {
 			delete hosts[hostUrl];
 			this.hosts = hosts;
-
-			servers.set(this._hosts);
 
 			if (this.active === hostUrl) {
 				this.clearActive();
@@ -227,4 +222,16 @@ class Servers extends EventEmitter {
 	}
 }
 
-export default new Servers();
+const events = new Servers();
+
+const fromUrl = (url) => {
+	for (const [key, entry] of Object.entries(events._hosts)) {
+		if (url.indexOf(key) === 0) {
+			return entry;
+		}
+	}
+};
+
+export default Object.assign(events, {
+	fromUrl,
+});

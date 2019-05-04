@@ -21,7 +21,9 @@ const clear = async () => {
 
 const trustRequests = {};
 
-const handleTrustRequest = async ({ requestUrl, error, certificate, callback }) => {
+const handleCertificateError = async (event, webContents, requestUrl, error, certificate, callback) => {
+	event.preventDefault();
+
 	const { host } = url.parse(requestUrl);
 	const { issuerName, data, fingerprint } = certificate;
 	const entry = `${ issuerName }\n${ data.toString() }`;
@@ -54,5 +56,5 @@ const handleTrustRequest = async ({ requestUrl, error, certificate, callback }) 
 export const certificates = Object.assign(events, {
 	initialize,
 	clear,
-	handleTrustRequest,
+	handleCertificateError,
 });

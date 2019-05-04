@@ -8,7 +8,16 @@ import sidebar from './sidebar';
 import webview from './webview';
 import setTouchBar from './touchBar';
 const { app, dialog, getCurrentWindow, shell } = remote;
-const { certificates, deepLinks, dock, menus, relaunch, tray, updates } = remote.require('./main');
+const {
+	basicAuth,
+	certificates,
+	deepLinks,
+	dock,
+	menus,
+	relaunch,
+	tray,
+	updates,
+} = remote.require('./main');
 
 const updatePreferences = () => {
 	const showWindowOnUnreadChanged = localStorage.getItem('showWindowOnUnreadChanged') === 'true';
@@ -158,6 +167,11 @@ export default () => {
 
 	aboutModal.on('check-for-updates', () => updates.checkForUpdates());
 	aboutModal.on('set-check-for-updates-on-start', (checked) => updates.setAutoUpdate(checked));
+
+	basicAuth.on('login-requested', ({ request: { url }, callback }) => {
+		const { username, password } = servers.fromUrl(url) || {};
+		callback((username && password) ? [username, password] : null);
+	});
 
 	certificates.on('ask-for-trust', async ({ requestUrl, error, certificate, replace, callback }) => {
 		const isTrusted = await warnCertificateError({ requestUrl, error, certificate, replace });

@@ -3,6 +3,7 @@ import jetpack from 'fs-jetpack';
 import i18n from './i18n';
 import { deepLinks } from './main/deepLinks';
 import { mainWindow, createMainWindow } from './main/mainWindow';
+import { basicAuth } from './main/basicAuth';
 import { certificates } from './main/certificates';
 import { dock } from './main/dock';
 import { menus } from './main/menus';
@@ -73,19 +74,9 @@ const attachAppEvents = () => {
 		argv.slice(2).forEach(deepLinks.handle);
 	});
 
-	app.on('login', (event, webContents, { url }, authInfo, callback) => {
-		event.preventDefault();
-		const server = servers.fromUrl(url);
-		if (server) {
-			const { username, password } = server;
-			callback(username, password);
-		}
-	});
+	app.on('login', basicAuth.handleLoginEvent);
 
-	app.on('certificate-error', (event, webContents, requestUrl, error, certificate, callback) => {
-		event.preventDefault();
-		certificates.handleTrustRequest({ requestUrl, error, certificate, callback });
-	});
+	app.on('certificate-error', certificates.handleCertificateError);
 };
 
 (async () => {
@@ -112,10 +103,13 @@ const attachAppEvents = () => {
 	await app.whenReady();
 
 	await i18n.initialize();
+
 	await createMainWindow();
+
 	await dock.mount();
 	await menus.mount();
 	await tray.mount();
+
 	servers.initialize();
 	certificates.initialize();
 	updates.initialize();
@@ -125,6 +119,7 @@ const attachAppEvents = () => {
 	args.forEach(deepLinks.handle);
 })();
 
+export { basicAuth } from './main/basicAuth';
 export { certificates } from './main/certificates';
 export { deepLinks } from './main/deepLinks';
 export { dock } from './main/dock';
