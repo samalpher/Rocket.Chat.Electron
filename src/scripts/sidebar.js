@@ -242,7 +242,7 @@ const mount = () => {
 	update();
 };
 
-export default Object.assign(events, {
+export const sidebar = Object.assign(events, {
 	mount,
 	setState,
 });

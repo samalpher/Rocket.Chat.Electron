@@ -4,7 +4,7 @@ import { aboutModal } from './aboutModal';
 import { screenshareModal } from './screenshareModal';
 import { updateModal } from './updateModal';
 import { servers } from './servers';
-import sidebar from './sidebar';
+import { sidebar } from './sidebar';
 import webview from './webview';
 import setTouchBar from './touchBar';
 const { app, dialog, getCurrentWindow, shell } = remote;
