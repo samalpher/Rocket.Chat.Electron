@@ -5,8 +5,8 @@ import { screenshareModal } from './screenshareModal';
 import { updateModal } from './updateModal';
 import { servers } from './servers';
 import { sidebar } from './sidebar';
+import { touchBar } from './touchBar';
 import { webviews } from './webviews';
-import setTouchBar from './touchBar';
 const { app, dialog, getCurrentWindow, shell } = remote;
 const {
 	basicAuth,
@@ -67,13 +67,20 @@ const updateServers = () => {
 		servers: Object.values(servers.getAll())
 			.sort(({ url: a }, { url: b }) => (sidebar ? (sorting.indexOf(a) - sorting.indexOf(b)) : 0))
 			.map(({ title, url }) => ({ title, url })),
-		currentServerUrl: servers.getActive(),
+		activeServerUrl: servers.getActive(),
 	});
 
 	sidebar.setState({
 		hosts: servers.getAll(),
 		sorting,
 		active: servers.getActive(),
+	});
+
+	touchBar.setState({
+		servers: Object.values(servers.getAll())
+			.sort(({ url: a }, { url: b }) => (sidebar ? (sorting.indexOf(a) - sorting.indexOf(b)) : 0))
+			.map(({ title, url }) => ({ title, url })),
+		activeServerUrl: servers.getActive(),
 	});
 };
 
@@ -349,8 +356,8 @@ export default () => {
 		updateServers();
 	});
 
-	sidebar.on('select-server', (hostUrl) => {
-		servers.setActive(hostUrl);
+	sidebar.on('select-server', (serverUrl) => {
+		servers.setActive(serverUrl);
 	});
 
 	sidebar.on('reload-server', (serverUrl) => {
@@ -378,6 +385,29 @@ export default () => {
 
 	getCurrentWindow().on('hide', updateWindowState);
 	getCurrentWindow().on('show', updateWindowState);
+
+	touchBar.on('format', (buttonId) => {
+		const legacyButtonIconClass = {
+			bold: 'bold',
+			italic: 'italic',
+			strike: 'strike',
+			inline_code: 'code',
+			multi_line: 'multi-line',
+		}[buttonId];
+
+		webviews.getActive().executeJavaScript(`((buttonId, legacyButtonIconClass) => {
+			let button = document.querySelector(\`.js-format[data-id="${ buttonId }"]\`);
+			if (!button) {
+				const svg = document.querySelector(\`.js-md svg[class$="${ legacyButtonIconClass }"]\`);
+				button = svg && svg.parentNode;
+			}
+			button && button.click();
+		})('${ legacyButtonIconClass }', '${ buttonId }')`);
+	});
+
+	touchBar.on('select-server', (serverUrl) => {
+		servers.setActive(serverUrl);
+	});
 
 	tray.on('set-main-window-visibility', (visible) =>
 		(visible ? getCurrentWindow().show() : getCurrentWindow().hide()));
@@ -500,12 +530,9 @@ export default () => {
 		servers.setLastPath(serverUrl, url);
 	});
 
-	if (process.platform === 'darwin') {
-		setTouchBar();
-	}
-
 	sidebar.mount();
 	webviews.mount();
+	touchBar.mount();
 	aboutModal.mount();
 	screenshareModal.mount();
 	updateModal.mount();

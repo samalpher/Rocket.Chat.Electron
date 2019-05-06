@@ -1,226 +1,116 @@
 import { remote } from 'electron';
-import { servers } from './servers';
-import { webviews } from './webviews';
 import i18n from '../i18n';
+import { EventEmitter } from 'events';
+const { getCurrentWindow, nativeImage, TouchBar } = remote;
+const {
+	TouchBarButton,
+	TouchBarLabel,
+	TouchBarSegmentedControl,
+	TouchBarScrubber,
+	TouchBarPopover,
+	TouchBarGroup,
+} = TouchBar;
 
-const { TouchBar, nativeImage, getCurrentWindow } = remote;
-const { TouchBarButton, TouchBarLabel, TouchBarSegmentedControl, TouchBarScrubber, TouchBarPopover, TouchBarGroup } = TouchBar;
 
-export class SelectServerPanel {
-	constructor() {
-		this._MAX_LENGTH_FOR_SEGMENTS_CONTROL = 76 - i18n.__('touchBar.selectServer').length;
-		this._hosts = [];
+let state = {
+	servers: [],
+	activeServerUrl: null,
+};
+const events = new EventEmitter();
 
-		this._setHostsArray();
-		this._subscribe();
-	}
+let isUsingSegmentedControl;
+let selectServerControl;
 
-	_isSegmentedControl() {
-		return this.control && this.control.hasOwnProperty('selectedIndex');
-	}
+const createSegmentedControl = () => (
+	new TouchBarSegmentedControl({
+		segmentStyle: 'separated',
+		segments: state.servers.map((server) => ({ label: server.title, server })),
+		selectedIndex: state.servers.findIndex(({ url }) => url === state.activeServerUrl),
+		change: (index) => events.emit('select-server', state.servers[index].server.url),
+	})
+);
 
-	_getActiveServerIndex() {
-		return this._hosts.findIndex((value) => value.host === servers.getActive());
-	}
+const createScrubber = () => (
+	new TouchBarScrubber({
+		items: state.servers.map((server) => ({ label: server.title, server })),
+		highlight: (index) => events.emit('select-server', state.servers[index].server.url),
+		selectedStyle: 'background',
+		showArrowButtons: true,
+		mode: 'fixed',
+	})
+);
 
-	_setActiveServer() {
-		if (this._isSegmentedControl()) {
-			this.control.selectedIndex = this._getActiveServerIndex();
-		} else {
-			this._update();
-		}
-	}
-
-	_setHostsArray() {
-		this._hosts = Object.values(servers.getAll()).map((value) => ({ label: value.title, host: value.url }));
-		this._hosts = this._trimHostsNames(this._hosts);
-	}
-
-	_getTotalLengthOfHostsNames() {
-		return this._hosts.reduce((acc, host) => acc + host.label.length, 0);
-	}
-
-	_update() {
-		this._setHostsArray();
-		if (this.control) {
-			if (this._isSegmentedControl()) {
-				this.control.segments = this._hosts;
-			} else {
-				this.control.items = this._hosts;
-			}
-		} else {
-			this.build();
-		}
-	}
-
-	build() {
-		const popoverItems = this._buildSelectServersPopoverItems();
-
-		this.touchBarPopover = new TouchBarPopover({
-			label: i18n.__('touchBar.selectServer'),
-			items: new TouchBar({
-				items: popoverItems,
+const createTouchBar = (selectServerControl) => (
+	new TouchBar({
+		items: [
+			new TouchBarPopover({
+				label: i18n.__('touchBar.selectServer'),
+				items: new TouchBar({
+					items: [
+						new TouchBarLabel({ label: i18n.__('touchBar.selectServer') }),
+						selectServerControl,
+					],
+				}),
 			}),
-		});
-		return this.touchBarPopover;
+			new TouchBarGroup({
+				items: [
+					new TouchBarLabel({ label: i18n.__('touchBar.formatting') }),
+					...(
+						['bold', 'italic', 'strike', 'inline_code', 'multi_line']
+							.map((buttonId) => new TouchBarButton({
+								backgroundColor: '#A4A4A4',
+								icon: nativeImage.createFromPath(`${ __dirname }/images/touch-bar/${ buttonId }.png`),
+								click: () => events.emit('format', buttonId),
+							}))
+					),
+				],
+			}),
+		],
+	})
+);
+
+const update = () => {
+	if (process.platform !== 'darwin') {
+		return;
 	}
 
-	_buildSelectServersPopoverItems() {
-		const items = [
-			new TouchBarLabel({ label: i18n.__('touchBar.selectServer') }),
-		];
+	const { servers, activeServerUrl } = state;
+	const serverTitlesLength = servers.reduce((length, { title }) => length + title.length, 0);
+	const maxLengthForSegmentsControl = 76 - i18n.__('touchBar.selectServer').length;
+	const shouldUseSegmentedControl = serverTitlesLength <= maxLengthForSegmentsControl;
 
-		// The maximum length of available display area is limited. If exceed the length of displayed data, then
-		// touchbar element is not displayed. If the length of displayed host names exceeds the limit, then
-		// the touchBarScrubber is used. In other case SegmentedControl is used.
-		const hostsNamesLength = this._getTotalLengthOfHostsNames();
-
-		if (this._hosts.length) {
-			if (hostsNamesLength <= this._MAX_LENGTH_FOR_SEGMENTS_CONTROL) {
-				items.push(this._buildTouchBarSegmentedControl());
-			} else {
-				items.push(this._buildTouchBarScrubber());
-			}
-		}
-		return items;
+	if (isUsingSegmentedControl !== shouldUseSegmentedControl) {
+		selectServerControl = shouldUseSegmentedControl ? createSegmentedControl() : createScrubber();
+		getCurrentWindow().setTouchBar(createTouchBar(selectServerControl));
+		isUsingSegmentedControl = shouldUseSegmentedControl;
 	}
 
-	_buildTouchBarSegmentedControl() {
-		this.control = new TouchBarSegmentedControl({
-			segmentStyle: 'separated',
-			selectedIndex: this._getActiveServerIndex(),
-			segments: this._hosts,
-			change: (index) => {
-				servers.setActive(this._hosts[index].host);
-			},
-		});
-		return this.control;
+	if (isUsingSegmentedControl) {
+		selectServerControl.segments = servers.map((server) => ({ label: server.title, server }));
+		selectServerControl.selectedIndex = servers.findIndex(({ url }) => url === activeServerUrl);
+	} else {
+		selectServerControl.items = servers.map((server) => ({ label: server.title, server }));
+	}
+};
+
+const setState = (partialState) => {
+	const previousState = state;
+	state = {
+		...state,
+		...partialState,
+	};
+	update(previousState);
+};
+
+const mount = () => {
+	if (process.platform !== 'darwin') {
+		return;
 	}
 
-	_buildTouchBarScrubber() {
-		this.control = new TouchBarScrubber({
-			selectedStyle: 'background',
-			showArrowButtons: true,
-			mode: 'fixed',
-			items: this._hosts,
-			highlight: (index) => {
-				servers.setActive(this._hosts[index].host);
-			},
-		});
-		return this.control;
-	}
+	update();
+};
 
-	_subscribe() {
-		servers.on('active-setted', () => this._setActiveServer());
-		servers.on('added', () => this._update());
-		servers.on('removed', () => this._update());
-		servers.on('title-setted', () => this._update());
-	}
-
-	/**
-	 * If it is possible to fit the hosts names to the specific limit, then trim the hosts names to the format "open.rocke.."
-	 * @param arr {Array} array of hosts
-	 * @returns {Array} array of hosts
-	 */
-	_trimHostsNames(arr) {
-		const hostsNamesLength = this._getTotalLengthOfHostsNames();
-
-		if (hostsNamesLength <= this._MAX_LENGTH_FOR_SEGMENTS_CONTROL) {
-			return arr;
-		}
-
-		// The total length of hosts names with reserved space for '..' characters
-		const amountOfCharsToDisplay = this._MAX_LENGTH_FOR_SEGMENTS_CONTROL - 2 * arr.length;
-		const amountOfCharsPerHost = Math.floor(amountOfCharsToDisplay / arr.length);
-
-		if (amountOfCharsPerHost > 0) {
-			let additionChars = amountOfCharsToDisplay % arr.length;
-			return arr.map((host) => {
-				if (amountOfCharsPerHost < host.label.length) {
-					let additionChar = 0;
-					if (additionChars) {
-						additionChar = 1;
-						additionChars--;
-					}
-					host.label = `${ host.label.slice(0, amountOfCharsPerHost + additionChar) }..`;
-				}
-				return host;
-			});
-		}
-		return arr;
-	}
-}
-
-export class FormattingPanel {
-	constructor() {
-		this._buttonClasses = ['bold', 'italic', 'strike', 'code', 'multi-line'];
-		this._BACKGROUND_COLOR = '#A4A4A4';
-	}
-
-	build() {
-		const formatButtons = [];
-
-		this._buttonClasses.forEach((buttonClass) => {
-			const touchBarButton = new TouchBarButton({
-				backgroundColor: this._BACKGROUND_COLOR,
-				icon: nativeImage.createFromPath(`${ __dirname }/images/icon-${ buttonClass }.png`),
-				click: () => {
-					webviews.getActive().executeJavaScript(`
-						var svg = document.querySelector("button svg[class$='${ buttonClass }']");
-						svg && svg.parentNode.click();
-						`.trim());
-				},
-			});
-			formatButtons.push(touchBarButton);
-		});
-
-		this._touchBarGroup = new TouchBarGroup({
-			items: [
-				new TouchBarLabel({ label: i18n.__('touchBar.formatting') }),
-				...formatButtons,
-			],
-		});
-		return this._touchBarGroup;
-	}
-}
-
-export class TouchBarBuilder {
-	constructor() {
-		this._touchBarElements = {};
-	}
-
-	build() {
-		this._touchBar = new TouchBar({
-			items: Object.values(this._touchBarElements).map((element) => element.build()),
-		});
-		return this._touchBar;
-	}
-
-	addSelectServerPanel(panel) {
-		if (this._isPanel(panel)) {
-			this._touchBarElements.selectServerPanel = panel;
-		}
-		return this;
-	}
-
-	addFormattingPanel(panel) {
-		if (this._isPanel(panel)) {
-			this._touchBarElements.formattingtPanel = panel;
-		}
-		return this;
-	}
-
-	_isPanel(panel) {
-		return panel && typeof panel.build === 'function';
-	}
-}
-
-export default function setTouchBar() {
-	servers.once('active-setted', () => {
-		const touchBar = new TouchBarBuilder()
-			.addSelectServerPanel(new SelectServerPanel())
-			.addFormattingPanel(new FormattingPanel())
-			.build();
-		getCurrentWindow().setTouchBar(touchBar);
-	});
-}
+export const touchBar = Object.assign(events, {
+	mount,
+	setState,
+});

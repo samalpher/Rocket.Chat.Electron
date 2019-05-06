@@ -10,7 +10,7 @@ const events = new EventEmitter();
 const createTemplate = ({
 	appName,
 	servers = [],
-	currentServerUrl = null,
+	activeServerUrl = null,
 	showTrayIcon = true,
 	showMenuBar = true,
 	showServerList = true,
@@ -197,8 +197,8 @@ const createTemplate = ({
 			] : []),
 			...servers.map((host, i) => ({
 				label: host.title.replace(/&/g, '&&'),
-				type: currentServerUrl ? 'radio' : 'normal',
-				checked: currentServerUrl === host.url,
+				type: activeServerUrl ? 'radio' : 'normal',
+				checked: activeServerUrl === host.url,
 				accelerator: `CommandOrControl+${ i + 1 }`,
 				click: () => events.emit('select-server', host),
 			})),
