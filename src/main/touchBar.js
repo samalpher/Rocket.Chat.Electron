@@ -1,7 +1,7 @@
-import { remote } from 'electron';
-import i18n from '../i18n';
+import { nativeImage, TouchBar } from 'electron';
 import { EventEmitter } from 'events';
-const { getCurrentWindow, nativeImage, TouchBar } = remote;
+import i18n from '../i18n';
+import { mainWindow } from './mainWindow';
 const {
 	TouchBarButton,
 	TouchBarLabel,
@@ -81,7 +81,7 @@ const update = () => {
 
 	if (isUsingSegmentedControl !== shouldUseSegmentedControl) {
 		selectServerControl = shouldUseSegmentedControl ? createSegmentedControl() : createScrubber();
-		getCurrentWindow().setTouchBar(createTouchBar(selectServerControl));
+		mainWindow.setTouchBar(createTouchBar(selectServerControl));
 		isUsingSegmentedControl = shouldUseSegmentedControl;
 	}
 

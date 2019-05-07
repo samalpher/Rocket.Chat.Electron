@@ -8,6 +8,7 @@ import { certificates } from './main/certificates';
 import { dock } from './main/dock';
 import { menus } from './main/menus';
 import { servers } from './main/servers';
+import { touchBar } from './main/touchBar';
 import { tray } from './main/tray';
 import { updates } from './main/updates';
 
@@ -108,6 +109,7 @@ const attachAppEvents = () => {
 
 	await dock.mount();
 	await menus.mount();
+	await touchBar.mount();
 	await tray.mount();
 
 	servers.initialize();
@@ -127,5 +129,6 @@ export { menus } from './main/menus';
 export { notifications } from './main/notifications';
 export { systemIdleTime } from './main/systemIdleTime';
 export { servers } from './main/servers';
+export { touchBar } from './main/touchBar';
 export { tray } from './main/tray';
 export { updates } from './main/updates';

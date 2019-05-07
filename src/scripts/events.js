@@ -5,7 +5,6 @@ import { screenshareModal } from './screenshareModal';
 import { updateModal } from './updateModal';
 import { servers } from './servers';
 import { sidebar } from './sidebar';
-import { touchBar } from './touchBar';
 import { webviews } from './webviews';
 const { app, dialog, getCurrentWindow, shell } = remote;
 const {
@@ -15,6 +14,7 @@ const {
 	dock,
 	menus,
 	relaunch,
+	touchBar,
 	tray,
 	updates,
 } = remote.require('./main');
