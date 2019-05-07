@@ -97,7 +97,7 @@ const handleDrop = (event) => {
 	events.emit('select-server', serverElement.dataset.url);
 };
 
-const renderHost = ({ url, title, order, active, hasUnreadMessages, mentionCount }) => {
+const renderServer = ({ url, title, order, active, hasUnreadMessages, mentionCount }) => {
 	const initials = (
 		title
 			.replace(url, parseUrl(url).hostname)
@@ -185,17 +185,17 @@ const update = () => {
 	root.style.setProperty('--background', style.background || '');
 	root.style.setProperty('--color', style.color || '');
 
-	const hostUrls = servers.map(({ url }) => url);
+	const serverUrls = servers.map(({ url }) => url);
 	Array.from(serverList.querySelectorAll('.server'))
-		.filter((serverElement) => !hostUrls.includes(serverElement.dataset.url))
+		.filter((serverElement) => !serverUrls.includes(serverElement.dataset.url))
 		.forEach((serverElement) => serverElement.remove());
 
-	servers.forEach((host, order) => renderHost({
-		...host,
+	servers.forEach((server, order) => renderServer({
+		...server,
 		order,
-		active: activeServerUrl === host.url,
-		hasUnreadMessages: !!badges[host.url],
-		mentionCount: (badges[host.url] || badges[host.url] === 0) ? parseInt(badges[host.url], 10) : null,
+		active: activeServerUrl === server.url,
+		hasUnreadMessages: !!badges[server.url],
+		mentionCount: (badges[server.url] || badges[server.url] === 0) ? parseInt(badges[server.url], 10) : null,
 	}));
 };
 

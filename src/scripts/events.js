@@ -57,7 +57,9 @@ const updatePreferences = () => {
 		visible: hasSidebar,
 	});
 
-	webviews.setSidebarPaddingEnabled(!hasSidebar);
+	webviews.setState({
+		hasSidebar,
+	});
 
 	getCurrentWindow().hasTrayIcon = hasTrayIcon;
 };
@@ -65,26 +67,18 @@ const updatePreferences = () => {
 
 const updateServers = () => {
 	const sorting = JSON.parse(localStorage.getItem('rocket.chat.sortOrder')) || [];
-	const sortedServers = (
-		Object.values(servers.getAll())
-			.sort(({ url: a }, { url: b }) => sorting.indexOf(a) - sorting.indexOf(b))
-	);
-	const activeServerUrl = servers.getActive();
+	const partialState = {
+		servers: (
+			Object.values(servers.getAll())
+				.sort(({ url: a }, { url: b }) => sorting.indexOf(a) - sorting.indexOf(b))
+		),
+		activeServerUrl: servers.getActive(),
+	};
 
-	menus.setState({
-		servers: sortedServers,
-		activeServerUrl,
-	});
-
-	sidebar.setState({
-		servers: sortedServers,
-		activeServerUrl,
-	});
-
-	touchBar.setState({
-		servers: sortedServers,
-		activeServerUrl,
-	});
+	menus.setState(partialState);
+	sidebar.setState(partialState);
+	touchBar.setState(partialState);
+	webviews.setState(partialState);
 };
 
 const updateWindowState = () => tray.setState({ isMainWindowVisible: getCurrentWindow().isVisible() });
@@ -134,10 +128,10 @@ const warnCertificateError = ({ requestUrl, error, certificate: { issuerName }, 
 });
 
 
-const confirmServerAddition = ({ hostUrl }) => new Promise((resolve) => {
+const confirmServerAddition = ({ serverUrl }) => new Promise((resolve) => {
 	dialog.showMessageBox(getCurrentWindow(), {
 		title: i18n.__('dialog.addServer.title'),
-		message: i18n.__('dialog.addServer.message', { host: hostUrl }),
+		message: i18n.__('dialog.addServer.message', { host: serverUrl }),
 		type: 'question',
 		buttons: [
 			i18n.__('dialog.addServer.add'),
@@ -178,7 +172,6 @@ const destroyAll = () => {
 
 export default () => {
 	window.addEventListener('beforeunload', destroyAll);
-	window.addEventListener('focus', () => webviews.focusActive());
 
 	aboutModal.on('check-for-updates', () => updates.checkForUpdates());
 	aboutModal.on('set-check-for-updates-on-start', (checked) => updates.setAutoUpdate(checked));
@@ -193,7 +186,7 @@ export default () => {
 		callback(isTrusted);
 	});
 
-	deepLinks.on('auth', async ({ hostUrl: serverUrl }) => {
+	deepLinks.on('auth', async ({ serverUrl }) => {
 		getCurrentWindow().forceFocus();
 
 		if (servers.has(serverUrl)) {
@@ -201,7 +194,7 @@ export default () => {
 			return;
 		}
 
-		const shouldAdd = await confirmServerAddition({ hostUrl: serverUrl });
+		const shouldAdd = await confirmServerAddition({ serverUrl });
 		if (!shouldAdd) {
 			return;
 		}
@@ -239,28 +232,24 @@ export default () => {
 			certificates.clear();
 		}
 
-		const activeWebview = webviews.getActive();
-		if (!activeWebview) {
-			return;
-		}
-
-		if (ignoringCache) {
-			activeWebview.reloadIgnoringCache();
-			return;
-		}
-
-		activeWebview.reload();
+		const webview = webviews.getActive();
+		webview && (ignoringCache ? webview.reloadIgnoringCache() : webview.reload());
 	});
 
 	menus.on('open-devtools-for-server', () => {
-		const activeWebview = webviews.getActive();
-		if (activeWebview) {
-			activeWebview.openDevTools();
-		}
+		const webview = webviews.getActive();
+		webview && webview.openDevTools();
 	});
 
-	menus.on('go-back', () => webviews.goBack());
-	menus.on('go-forward', () => webviews.goForward());
+	menus.on('go-back', () => {
+		const webview = webviews.getActive();
+		webview && webview.goBack();
+	});
+
+	menus.on('go-forward', () => {
+		const webview = webviews.getActive();
+		webview.goForward();
+	});
 
 	menus.on('reload-app', () => getCurrentWindow().reload());
 
@@ -310,8 +299,8 @@ export default () => {
 
 	screenshareModal.on('select-source', ({ id, url }) => {
 		screenshareModal.setState({ visible: false });
-		const webviewObj = webviews.get(url);
-		webviewObj.executeJavaScript(`window.parent.postMessage({ sourceId: '${ id }' }, '*');`);
+		const webview = webviews.get(url);
+		webview.executeJavaScript(`window.parent.postMessage({ sourceId: '${ id }' }, '*');`);
 	});
 
 	servers.on('loaded', (entries, fromDefaults) => {
@@ -320,18 +309,15 @@ export default () => {
 				localStorage.setItem('sidebar-closed', JSON.stringify(true));
 			}
 		}
-		Object.values(entries).forEach((server) => webviews.add(server));
 		setLoadingVisible(false);
 		updateServers();
 	});
 
-	servers.on('added', (entry) => {
-		webviews.add(entry);
+	servers.on('added', (/* entry */) => {
 		updateServers();
 	});
 
 	servers.on('removed', (entry) => {
-		webviews.remove(entry);
 		servers.setActive(null);
 		setLoadingVisible(false);
 		setLandingVisible(true);
@@ -340,14 +326,12 @@ export default () => {
 		delete styles[entry.url];
 	});
 
-	servers.on('active-setted', ({ url }) => {
-		webviews.setActive(url);
+	servers.on('active-setted', (/* entry */) => {
 		setLandingVisible(false);
 		updateServers();
 	});
 
 	servers.on('active-cleared', () => {
-		webviews.deactiveAll();
 		setLandingVisible(true);
 		updateServers();
 	});
@@ -361,15 +345,17 @@ export default () => {
 	});
 
 	sidebar.on('reload-server', (serverUrl) => {
-		webviews.get(serverUrl).reload();
+		const webview = webviews.get(serverUrl);
+		webview && webview.reload();
 	});
 
 	sidebar.on('remove-server', (serverUrl) => {
 		servers.remove(serverUrl);
 	});
 
-	sidebar.on('open-devtools-for-server', (hostUrl) => {
-		webviews.get(hostUrl).openDevTools();
+	sidebar.on('open-devtools-for-server', (serverUrl) => {
+		const webview = webviews.get(serverUrl);
+		webview.openDevTools();
 	});
 
 	sidebar.on('add-server', () => {
@@ -395,7 +381,9 @@ export default () => {
 			multi_line: 'multi-line',
 		}[buttonId];
 
-		webviews.getActive().executeJavaScript(`((buttonId, legacyButtonIconClass) => {
+		const webview = webviews.getActive();
+
+		webview && webview.executeJavaScript(`((buttonId, legacyButtonIconClass) => {
 			let button = document.querySelector(\`.js-format[data-id="${ buttonId }"]\`);
 			if (!button) {
 				const svg = document.querySelector(\`.js-md svg[class$="${ legacyButtonIconClass }"]\`);
@@ -515,15 +503,14 @@ export default () => {
 	});
 
 	webviews.on('ipc-message-reload-server', ({ url: serverUrl }) => {
-		webviews.get(serverUrl).loadURL(serverUrl);
+		const webview = webviews.get(serverUrl);
+		webview && webview.loadURL(serverUrl);
 	});
 
 	webviews.on('dom-ready', () => {
 		const hasSidebar = localStorage.getItem('sidebar-closed') !== 'true';
-		sidebar.setState({
-			visible: hasSidebar,
-		});
-		webviews.setSidebarPaddingEnabled(!hasSidebar);
+		sidebar.setState({ visible: hasSidebar });
+		webviews.setState({ hasSidebar });
 	});
 
 	webviews.on('did-navigate', ({ serverUrl, url }) => {

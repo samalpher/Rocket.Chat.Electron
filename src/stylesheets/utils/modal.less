@@ -1,20 +1,21 @@
 .modal {
-	display: none;
 	top: 0;
+	right: 0;
 	bottom: 0;
 	left: 0;
-	right: 0;
 
-	flex-flow: column nowrap;
+	display: none;
 
 	padding: 0.25rem 0.75rem;
-	border: 1px solid @primary-font-color;
 
 	cursor: default;
 	user-select: none;
 
 	color: @primary-font-color;
+	border: 1px solid @primary-font-color;
 	background-color: @secondary-background-color;
+
+	flex-flow: column nowrap;
 
 	&::backdrop {
 		background-color: rgba(0, 0, 0, 0.5);
@@ -26,9 +27,9 @@
 
 	&__actions {
 		display: flex;
-		flex-flow: row nowrap;
 
 		flex: 0 0 auto;
+		flex-flow: row nowrap;
 		justify-content: flex-end;
 
 		.modal__action--special {

@@ -1,65 +1,18 @@
 import { EventEmitter } from 'events';
 
 
+let state = {
+	servers: [],
+	activeServerUrl: null,
+	hasSidebar: true,
+};
 const events = new EventEmitter();
 
-let parentElement;
+let root;
 
-const mount = () => {
-	parentElement = document.body;
-};
+const get = (serverUrl) => root.querySelector(`.webview[data-url="${ serverUrl }"]`);
 
-const get = (serverUrl) => parentElement.querySelector(`.webview[data-server="${ serverUrl }"]`);
-
-const getActive = () => parentElement.querySelector('.webview.active');
-
-const isActive = (serverUrl) => !!parentElement.querySelector(`.webview.active[data-server="${ serverUrl }"]`);
-
-const deactiveAll = () => {
-	let item;
-	while (!(item = getActive()) === false) {
-		item.classList.remove('active');
-	}
-	document.querySelector('.landing-page').classList.add('hide');
-};
-
-const focusActive = () => {
-	const active = getActive();
-	if (active) {
-		active.focus();
-	}
-};
-
-const setActive = (serverUrl) => {
-	if (isActive(serverUrl)) {
-		return;
-	}
-
-	deactiveAll();
-	const item = get(serverUrl);
-	if (item) {
-		item.classList.add('active');
-	}
-	focusActive();
-};
-
-const goBack = () => getActive().goBack();
-const goForward = () => getActive().goForward();
-
-const setSidebarPaddingEnabled = (enabled) => {
-	if (process.platform !== 'darwin') {
-		return;
-	}
-
-	Array.from(document.querySelectorAll('.webview.ready'))
-		.filter((webviewObj) => webviewObj.insertCSS)
-		.forEach((webviewObj) => webviewObj.insertCSS(`
-			.sidebar {
-				padding-top: ${ enabled ? '10px' : '0' };
-				transition: margin .5s ease-in-out;
-			}
-		`));
-};
+const getActive = () => root.querySelector('.webview.webview--active');
 
 const handleDidNavigateInPage = ({ url: serverUrl }, webview, { url }) => {
 	if (url.indexOf(serverUrl) === 0) {
@@ -84,7 +37,7 @@ const handleIpcMessage = (server, webview, { channel, args }) => {
 };
 
 const handleDomReady = ({ url: serverUrl }, webview) => {
-	webview.classList.add('ready');
+	webview.classList.add('webview--ready');
 	events.emit('dom-ready', webview, serverUrl);
 };
 
@@ -100,49 +53,111 @@ const handleDidGetResponseDetails = (server, webview, { resourceType, httpRespon
 	}
 };
 
-const add = (server) => {
-	let webview = get(server.url);
-	if (webview) {
+const setTitleBarButtonsPadding = (webview, hasSidebar) => {
+	if (process.platform !== 'darwin') {
 		return;
 	}
 
-	webview = document.createElement('webview');
-	webview.classList.add('webview');
-	webview.dataset.server = server.url;
-	webview.setAttribute('preload', '../preload.js');
-	webview.setAttribute('allowpopups', 'on');
-	webview.setAttribute('disablewebsecurity', 'on');
-
-	webview.addEventListener('did-navigate-in-page', handleDidNavigateInPage.bind(null, server, webview));
-	webview.addEventListener('console-message', handleConsoleMessage.bind(null, server, webview));
-	webview.addEventListener('ipc-message', handleIpcMessage.bind(null, server, webview));
-	webview.addEventListener('dom-ready', handleDomReady.bind(null, server, webview));
-	webview.addEventListener('did-fail-load', handleDidFailLoad.bind(null, server, webview));
-	webview.addEventListener('did-get-response-details', handleDidGetResponseDetails.bind(null, server, webview));
-
-	parentElement.appendChild(webview);
-
-	webview.setAttribute('src', server.lastPath || server.url);
+	webview.executeJavaScript(`(() => {
+		const style = document.getElementById('electronStyle') || document.createElement('style');
+		style.setAttribute('id', 'electronStyle');
+		style.innerHTML = \`
+		.sidebar {
+			padding-top: ${ hasSidebar ? '0' : '10px' };
+			transition:
+				padding .5s ease-in-out,
+				margin .5s ease-in-out;
+		}
+		\`;
+		document.head.appendChild(style);
+	})()`);
 };
 
-const remove = ({ url: serverUrl }) => {
-	const webview = get(serverUrl);
-	if (webview) {
-		webview.remove();
+const renderServer = ({ active, hasSidebar, ...server }) => {
+	const { url, lastPath } = server;
+	const webviewNode = root.querySelector(`.webview[data-url="${ url }"]`);
+	const shouldAppend = !webviewNode;
+	const isReady = webviewNode && webviewNode.classList.contains('webview--ready');
+
+	const webview = webviewNode ? webviewNode : document.createElement('webview');
+
+	webview.classList.add('webview');
+	webview.classList.toggle('webview--active', active);
+
+	if (shouldAppend) {
+		webview.dataset.url = url;
+		webview.setAttribute('preload', '../preload.js');
+		webview.setAttribute('allowpopups', 'on');
+		webview.setAttribute('disablewebsecurity', 'on');
+
+		webview.addEventListener('did-navigate-in-page', handleDidNavigateInPage.bind(null, server, webview));
+		webview.addEventListener('console-message', handleConsoleMessage.bind(null, server, webview));
+		webview.addEventListener('ipc-message', handleIpcMessage.bind(null, server, webview));
+		webview.addEventListener('dom-ready', handleDomReady.bind(null, server, webview));
+		webview.addEventListener('did-fail-load', handleDidFailLoad.bind(null, server, webview));
+		webview.addEventListener('did-get-response-details', handleDidGetResponseDetails.bind(null, server, webview));
+
+		root.appendChild(webview);
+		webview.setAttribute('src', lastPath || url);
 	}
+
+	if (isReady) {
+		setTitleBarButtonsPadding(webview, hasSidebar);
+	} else {
+		webview.addEventListener('dom-ready', setTitleBarButtonsPadding.bind(null, webview, hasSidebar));
+	}
+
+	if (active) {
+		webview.blur();
+		webview.focus();
+	}
+};
+
+const update = () => {
+	if (!root) {
+		return;
+	}
+
+	const {
+		servers,
+		activeServerUrl,
+		hasSidebar,
+	} = state;
+
+	const serverUrls = servers.map(({ url }) => url);
+	Array.from(root.querySelectorAll('.webview'))
+		.filter((webview) => !serverUrls.includes(webview.dataset.url))
+		.forEach((webview) => webview.remove());
+
+	servers.forEach((server) => renderServer({
+		...server,
+		active: activeServerUrl === server.url,
+		hasSidebar,
+	}));
+};
+
+const setState = (partialState) => {
+	const previousState = state;
+	state = {
+		...state,
+		...partialState,
+	};
+	update(previousState);
+};
+
+const handleWindowFocus = () => {
+	const active = getActive();
+	active && active.focus();
+};
+
+const mount = () => {
+	root = document.body;
+	window.addEventListener('focus', handleWindowFocus);
 };
 
 export const webviews = Object.assign(events, {
 	mount,
-	add,
-	remove,
+	setState,
 	get,
 	getActive,
-	isActive,
-	deactiveAll,
-	focusActive,
-	setActive,
-	goBack,
-	goForward,
-	setSidebarPaddingEnabled,
 });

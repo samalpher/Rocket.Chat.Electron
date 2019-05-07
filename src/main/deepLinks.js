@@ -7,13 +7,13 @@ import { normalizeServerUrl } from '../utils';
 const events = new EventEmitter();
 
 const processAuth = ({ host, token, userId }) => {
-	const hostUrl = normalizeServerUrl(host);
-	events.emit('auth', { hostUrl, token, userId });
+	const serverUrl = normalizeServerUrl(host);
+	events.emit('auth', { serverUrl, token, userId });
 };
 
 const processRoom = ({ host, rid, path }) => {
-	const hostUrl = normalizeServerUrl(host);
-	events.emit('room', { hostUrl, rid, path });
+	const serverUrl = normalizeServerUrl(host);
+	events.emit('room', { serverUrl, rid, path });
 };
 
 const handle = (link) => {
