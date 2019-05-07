@@ -20,6 +20,9 @@ const {
 } = remote.require('./main');
 
 
+let badges = {};
+let styles = {};
+
 const setLoadingVisible = (visible) => {
 	document.querySelector('.app-page').classList[visible ? 'add' : 'remove']('app-page--loading');
 };
@@ -62,25 +65,25 @@ const updatePreferences = () => {
 
 const updateServers = () => {
 	const sorting = JSON.parse(localStorage.getItem('rocket.chat.sortOrder')) || [];
+	const sortedServers = (
+		Object.values(servers.getAll())
+			.sort(({ url: a }, { url: b }) => sorting.indexOf(a) - sorting.indexOf(b))
+	);
+	const activeServerUrl = servers.getActive();
 
 	menus.setState({
-		servers: Object.values(servers.getAll())
-			.sort(({ url: a }, { url: b }) => (sidebar ? (sorting.indexOf(a) - sorting.indexOf(b)) : 0))
-			.map(({ title, url }) => ({ title, url })),
-		activeServerUrl: servers.getActive(),
+		servers: sortedServers,
+		activeServerUrl,
 	});
 
 	sidebar.setState({
-		hosts: servers.getAll(),
-		sorting,
-		active: servers.getActive(),
+		servers: sortedServers,
+		activeServerUrl,
 	});
 
 	touchBar.setState({
-		servers: Object.values(servers.getAll())
-			.sort(({ url: a }, { url: b }) => (sidebar ? (sorting.indexOf(a) - sorting.indexOf(b)) : 0))
-			.map(({ title, url }) => ({ title, url })),
-		activeServerUrl: servers.getActive(),
+		servers: sortedServers,
+		activeServerUrl,
 	});
 };
 
@@ -174,9 +177,6 @@ const destroyAll = () => {
 };
 
 export default () => {
-	let badges = {};
-	let styles = {};
-
 	window.addEventListener('beforeunload', destroyAll);
 	window.addEventListener('focus', () => webviews.focusActive());
 

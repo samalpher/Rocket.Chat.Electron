@@ -8,9 +8,8 @@ const { getCurrentWindow, Menu } = remote;
 const faviconCacheBustingTime = 15 * 60 * 1000;
 
 let state = {
-	hosts: {},
-	sorting: [],
-	active: null,
+	servers: [],
+	activeServerUrl: null,
 	badges: {},
 	styles: {},
 	showShortcuts: false,
@@ -171,9 +170,8 @@ const update = () => {
 	}
 
 	const {
-		hosts,
-		sorting,
-		active,
+		servers,
+		activeServerUrl,
 		badges,
 		styles,
 		showShortcuts,
@@ -183,22 +181,19 @@ const update = () => {
 	root.classList.toggle('sidebar--hidden', !visible);
 	serverList.classList.toggle('sidebar__server-list--shortcuts', showShortcuts);
 
-	const style = styles[active] || {};
+	const style = styles[activeServerUrl] || {};
 	root.style.setProperty('--background', style.background || '');
 	root.style.setProperty('--color', style.color || '');
 
-	const orderedHosts = Object.values(hosts)
-		.sort(({ url: a }, { url: b }) => sorting.indexOf(a) - sorting.indexOf(b));
-
-	const hostUrls = orderedHosts.map(({ url }) => url);
+	const hostUrls = servers.map(({ url }) => url);
 	Array.from(serverList.querySelectorAll('.server'))
 		.filter((serverElement) => !hostUrls.includes(serverElement.dataset.url))
 		.forEach((serverElement) => serverElement.remove());
 
-	orderedHosts.forEach((host, order) => renderHost({
+	servers.forEach((host, order) => renderHost({
 		...host,
 		order,
-		active: active === host.url,
+		active: activeServerUrl === host.url,
 		hasUnreadMessages: !!badges[host.url],
 		mentionCount: (badges[host.url] || badges[host.url] === 0) ? parseInt(badges[host.url], 10) : null,
 	}));
@@ -210,7 +205,6 @@ const setState = (partialState) => {
 		...state,
 		...partialState,
 	};
-
 	update(previousState);
 };
 
