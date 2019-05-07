@@ -3,6 +3,7 @@ import i18n from '../i18n';
 import { aboutModal } from './aboutModal';
 import { screenshareModal } from './screenshareModal';
 import { updateModal } from './updateModal';
+import { landing } from './landing';
 import { servers } from './servers';
 import { sidebar } from './sidebar';
 import { webviews } from './webviews';
@@ -25,10 +26,6 @@ let styles = {};
 
 const setLoadingVisible = (visible) => {
 	document.querySelector('.app-page').classList[visible ? 'add' : 'remove']('app-page--loading');
-};
-
-const setLandingVisible = (visible) => {
-	document.querySelector('.landing-page').classList[visible ? 'remove' : 'add']('hide');
 };
 
 const updatePreferences = () => {
@@ -170,7 +167,17 @@ const destroyAll = () => {
 	}
 };
 
-export default () => {
+const handleConnectionStatus = () => {
+	document.body.classList.toggle('offline', !navigator.onLine);
+};
+
+export default async () => {
+	await i18n.initialize();
+
+	window.addEventListener('online', handleConnectionStatus);
+	window.addEventListener('offline', handleConnectionStatus);
+	handleConnectionStatus();
+
 	window.addEventListener('beforeunload', destroyAll);
 
 	aboutModal.on('check-for-updates', () => updates.checkForUpdates());
@@ -211,6 +218,15 @@ export default () => {
 		}
 	});
 
+	landing.on('add-server', (serverUrl) => {
+		servers.add(serverUrl);
+		servers.setActive(serverUrl);
+	});
+
+	landing.on('validate', async (serverUrl, callback) => {
+		callback(await servers.validate(serverUrl));
+	});
+
 	menus.on('quit', () => app.quit());
 	menus.on('about', () => aboutModal.setState({ visible: true }));
 	menus.on('open-url', (url) => shell.openExternal(url));
@@ -219,7 +235,7 @@ export default () => {
 		getCurrentWindow().show();
 		servers.setActive(null);
 		setLoadingVisible(false);
-		setLandingVisible(true);
+		landing.setState({ visible: true });
 	});
 
 	menus.on('select-server', ({ url }) => {
@@ -320,19 +336,19 @@ export default () => {
 	servers.on('removed', (entry) => {
 		servers.setActive(null);
 		setLoadingVisible(false);
-		setLandingVisible(true);
+		landing.setState({ visible: true });
 		updateServers();
 		delete badges[entry.url];
 		delete styles[entry.url];
 	});
 
 	servers.on('active-setted', (/* entry */) => {
-		setLandingVisible(false);
+		landing.setState({ visible: false });
 		updateServers();
 	});
 
 	servers.on('active-cleared', () => {
-		setLandingVisible(true);
+		landing.setState({ visible: true });
 		updateServers();
 	});
 
@@ -361,7 +377,7 @@ export default () => {
 	sidebar.on('add-server', () => {
 		servers.setActive(null);
 		setLoadingVisible(false);
-		setLandingVisible(true);
+		landing.setState({ visible: true });
 	});
 
 	sidebar.on('servers-sorted', (sorting) => {
@@ -518,6 +534,7 @@ export default () => {
 	});
 
 	sidebar.mount();
+	landing.mount();
 	webviews.mount();
 	touchBar.mount();
 	aboutModal.mount();

@@ -1,4 +1,4 @@
-import { start } from './scripts/start';
+import start from './scripts/events';
 
 
 window.addEventListener('load', start, false);

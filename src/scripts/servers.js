@@ -110,7 +110,7 @@ const initialize = () => {
 };
 
 const fromUrl = (url) => {
-	for (const [key, entry] of Object.entries(events._hosts)) {
+	for (const [key, entry] of Object.entries(entries)) {
 		if (url.indexOf(key) === 0) {
 			return entry;
 		}
@@ -194,13 +194,28 @@ const validate = async (serverUrl, timeout = 5000) => {
 		headers.set('Authorization', `Basic ${ btoa(`${ url.username }:${ url.password }`) }`);
 	}
 
-	const response = await Promise.race([
-		fetch(`${ serverUrl }/api/info`, { headers }),
-		new Promise((resolve, reject) => setTimeout(() => reject('timeout'), timeout)),
-	]);
+	try {
+		const response = await Promise.race([
+			fetch(`${ serverUrl }/api/info`, { headers }),
+			new Promise((resolve, reject) => setTimeout(() => reject('timeout'), timeout)),
+		]);
 
-	if (!response.ok) {
-		throw 'invalid';
+		if (response.status === 401) {
+			return 'basic-auth';
+		}
+
+		if (!response.ok) {
+			return 'invalid';
+		}
+
+		const { success } = await response.json();
+		if (!success) {
+			return 'invalid';
+		}
+
+		return 'valid';
+	} catch (error) {
+		return 'invalid';
 	}
 };
 
