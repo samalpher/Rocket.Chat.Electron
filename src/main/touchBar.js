@@ -58,7 +58,7 @@ const createTouchBar = (selectServerControl) => (
 						['bold', 'italic', 'strike', 'inline_code', 'multi_line']
 							.map((buttonId) => new TouchBarButton({
 								backgroundColor: '#A4A4A4',
-								icon: nativeImage.createFromPath(`${ __dirname }/images/touch-bar/${ buttonId }.png`),
+								icon: nativeImage.createFromPath(`${ __dirname }/public/images/touch-bar/${ buttonId }.png`),
 								click: () => events.emit('format', buttonId),
 							}))
 					),
