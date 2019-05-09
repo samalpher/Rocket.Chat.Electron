@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import url from 'url';
-import { loadJson, writeJson } from './utils';
+import { loadJson, writeJson } from '../utils';
 
 
 let entries = {};

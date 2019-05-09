@@ -10,7 +10,6 @@ const events = new EventEmitter();
 const createTemplate = ({
 	appName,
 	servers = [],
-	activeServerUrl = null,
 	showTrayIcon = true,
 	showMenuBar = true,
 	showServerList = true,
@@ -195,12 +194,12 @@ const createTemplate = ({
 					type: 'separator',
 				},
 			] : []),
-			...servers.map((host, i) => ({
-				label: host.title.replace(/&/g, '&&'),
-				type: activeServerUrl ? 'radio' : 'normal',
-				checked: activeServerUrl === host.url,
+			...servers.map((server, i) => ({
+				label: server.title.replace(/&/g, '&&'),
+				type: server.active ? 'radio' : 'normal',
+				checked: server.active,
 				accelerator: `CommandOrControl+${ i + 1 }`,
-				click: () => events.emit('select-server', host),
+				click: () => events.emit('select-server', server),
 			})),
 			{
 				type: 'separator',

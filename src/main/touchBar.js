@@ -14,7 +14,6 @@ const {
 
 let state = {
 	servers: [],
-	activeServerUrl: null,
 };
 const events = new EventEmitter();
 
@@ -25,7 +24,7 @@ const createSegmentedControl = () => (
 	new TouchBarSegmentedControl({
 		segmentStyle: 'separated',
 		segments: state.servers.map((server) => ({ label: server.title, server })),
-		selectedIndex: state.servers.findIndex(({ url }) => url === state.activeServerUrl),
+		selectedIndex: state.servers.findIndex(({ active }) => active),
 		change: (index) => events.emit('select-server', state.servers[index].server.url),
 	})
 );
@@ -74,7 +73,7 @@ const update = () => {
 		return;
 	}
 
-	const { servers, activeServerUrl } = state;
+	const { servers } = state;
 	const serverTitlesLength = servers.reduce((length, { title }) => length + title.length, 0);
 	const maxLengthForSegmentsControl = 76 - i18n.__('touchBar.selectServer').length;
 	const shouldUseSegmentedControl = serverTitlesLength <= maxLengthForSegmentsControl;
@@ -87,7 +86,7 @@ const update = () => {
 
 	if (isUsingSegmentedControl) {
 		selectServerControl.segments = servers.map((server) => ({ label: server.title, server }));
-		selectServerControl.selectedIndex = servers.findIndex(({ url }) => url === activeServerUrl);
+		selectServerControl.selectedIndex = servers.findIndex(({ active }) => active);
 	} else {
 		selectServerControl.items = servers.map((server) => ({ label: server.title, server }));
 	}

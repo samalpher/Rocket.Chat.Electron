@@ -9,9 +9,6 @@ const faviconCacheBustingTime = 15 * 60 * 1000;
 
 let state = {
 	servers: [],
-	activeServerUrl: null,
-	badges: {},
-	styles: {},
 	showShortcuts: false,
 	visible: false,
 };
@@ -97,7 +94,9 @@ const handleDrop = (event) => {
 	events.emit('select-server', serverElement.dataset.url);
 };
 
-const renderServer = ({ url, title, order, active, hasUnreadMessages, mentionCount }) => {
+const renderServer = ({ url, title, order, active, badge }) => {
+	const hasUnreadMessages = !!badge;
+	const mentionCount = (badge || badge === 0) ? parseInt(badge, 10) : null;
 	const initials = (
 		title
 			.replace(url, parseUrl(url).hostname)
@@ -118,7 +117,9 @@ const renderServer = ({ url, title, order, active, hasUnreadMessages, mentionCou
 
 	serverElement.setAttribute('draggable', 'true');
 	serverElement.dataset.url = url;
-	serverElement.dataset.tooltip = title;
+	serverElement.dataset.tooltip = (
+		(url !== 'https://open.rocket.chat' && title === 'Rocket.Chat') ? `${ title } - ${ url }` : title
+	);
 	serverElement.classList.add('sidebar__list-item');
 	serverElement.classList.add('server');
 	serverElement.classList.toggle('server--active', active);
@@ -171,9 +172,6 @@ const update = () => {
 
 	const {
 		servers,
-		activeServerUrl,
-		badges,
-		styles,
 		showShortcuts,
 		visible,
 	} = state;
@@ -181,7 +179,7 @@ const update = () => {
 	root.classList.toggle('sidebar--hidden', !visible);
 	serverList.classList.toggle('sidebar__server-list--shortcuts', showShortcuts);
 
-	const style = styles[activeServerUrl] || {};
+	const style = servers.filter(({ active }) => active).map(({ style }) => style)[0] || {};
 	root.style.setProperty('--background', style.background || '');
 	root.style.setProperty('--color', style.color || '');
 
@@ -190,13 +188,7 @@ const update = () => {
 		.filter((serverElement) => !serverUrls.includes(serverElement.dataset.url))
 		.forEach((serverElement) => serverElement.remove());
 
-	servers.forEach((server, order) => renderServer({
-		...server,
-		order,
-		active: activeServerUrl === server.url,
-		hasUnreadMessages: !!badges[server.url],
-		mentionCount: (badges[server.url] || badges[server.url] === 0) ? parseInt(badges[server.url], 10) : null,
-	}));
+	servers.forEach((server, order) => renderServer({ ...server, order }));
 };
 
 const setState = (partialState) => {

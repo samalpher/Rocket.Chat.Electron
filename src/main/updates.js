@@ -1,7 +1,7 @@
 import { app } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import { EventEmitter } from 'events';
-import { loadJson, writeJson } from './utils';
+import { loadJson, writeJson } from '../utils';
 
 
 let settings = {

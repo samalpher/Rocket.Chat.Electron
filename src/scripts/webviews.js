@@ -3,7 +3,6 @@ import { EventEmitter } from 'events';
 
 let state = {
 	servers: [],
-	activeServerUrl: null,
 	hasSidebar: true,
 };
 const events = new EventEmitter();
@@ -120,7 +119,6 @@ const update = () => {
 
 	const {
 		servers,
-		activeServerUrl,
 		hasSidebar,
 	} = state;
 
@@ -131,7 +129,6 @@ const update = () => {
 
 	servers.forEach((server) => renderServer({
 		...server,
-		active: activeServerUrl === server.url,
 		hasSidebar,
 	}));
 };

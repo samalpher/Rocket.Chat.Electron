@@ -1,5 +1,5 @@
 import { app, BrowserWindow, screen } from 'electron';
-import { loadJson, writeJson } from './utils';
+import { loadJson, writeJson } from '../utils';
 
 
 export let mainWindow = null;

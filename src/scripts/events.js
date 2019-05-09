@@ -21,11 +21,8 @@ const {
 } = remote.require('./main');
 
 
-let badges = {};
-let styles = {};
-
 const setLoadingVisible = (visible) => {
-	document.querySelector('.app-page').classList[visible ? 'add' : 'remove']('app-page--loading');
+	document.querySelector('.app-page').classList.toggle('app-page--loading', visible);
 };
 
 const updatePreferences = () => {
@@ -63,19 +60,23 @@ const updatePreferences = () => {
 
 
 const updateServers = () => {
-	const sorting = JSON.parse(localStorage.getItem('rocket.chat.sortOrder')) || [];
-	const partialState = {
-		servers: (
-			Object.values(servers.getAll())
-				.sort(({ url: a }, { url: b }) => sorting.indexOf(a) - sorting.indexOf(b))
-		),
-		activeServerUrl: servers.getActive(),
-	};
+	const allServers = servers.getAll();
 
-	menus.setState(partialState);
-	sidebar.setState(partialState);
-	touchBar.setState(partialState);
-	webviews.setState(partialState);
+	menus.setState({ servers: allServers });
+	sidebar.setState({ servers: allServers });
+	touchBar.setState({ servers: allServers });
+	webviews.setState({ servers: allServers });
+
+	const badges = allServers.map(({ badge }) => badge);
+	const mentionCount = (
+		badges
+			.filter((badge) => Number.isInteger(badge))
+			.reduce((sum, count) => sum + count, 0)
+	);
+	const globalBadge = mentionCount || (badges.some((badge) => !!badge) && '•') || null;
+
+	tray.setState({ badge: globalBadge });
+	dock.setState({ badge: globalBadge });
 };
 
 const updateWindowState = () => tray.setState({ isMainWindowVisible: getCurrentWindow().isVisible() });
@@ -333,13 +334,18 @@ export default async () => {
 		updateServers();
 	});
 
-	servers.on('removed', (entry) => {
-		servers.setActive(null);
+	servers.on('removed', (/* entry */) => {
 		setLoadingVisible(false);
 		landing.setState({ visible: true });
 		updateServers();
-		delete badges[entry.url];
-		delete styles[entry.url];
+	});
+
+	servers.on('updated', (/* entry */) => {
+		updateServers();
+	});
+
+	servers.on('sorted', () => {
+		updateServers();
 	});
 
 	servers.on('active-setted', (/* entry */) => {
@@ -380,9 +386,8 @@ export default async () => {
 		landing.setState({ visible: true });
 	});
 
-	sidebar.on('servers-sorted', (sorting) => {
-		localStorage.setItem('rocket.chat.sortOrder', JSON.stringify(sorting));
-		updateServers();
+	sidebar.on('servers-sorted', (urls) => {
+		servers.sort(urls);
 	});
 
 	getCurrentWindow().on('hide', updateWindowState);
@@ -481,24 +486,11 @@ export default async () => {
 			mainWindow.showInactive();
 		}
 
-		badges = {
-			...badges,
-			[serverUrl]: badge || null,
-		};
-
-		sidebar.setState({ badges });
-
-		const mentionCount = Object.values(badges)
-			.filter((badge) => Number.isInteger(badge))
-			.reduce((sum, count) => sum + count, 0);
-		const globalBadge = mentionCount || (Object.values(badges).some((badge) => !!badge) && '•') || null;
-
-		tray.setState({ badge: globalBadge });
-		dock.setState({ badge: globalBadge });
+		servers.set(serverUrl, { badge });
 	});
 
 	webviews.on('ipc-message-title-changed', ({ url: serverUrl }, title) => {
-		servers.setTitle(serverUrl, title);
+		servers.set(serverUrl, { title });
 	});
 
 	webviews.on('ipc-message-focus', ({ url: serverUrl }) => {
@@ -506,12 +498,7 @@ export default async () => {
 	});
 
 	webviews.on('ipc-message-sidebar-style', ({ url: serverUrl }, style) => {
-		styles = {
-			...styles,
-			[serverUrl]: style || null,
-		};
-
-		sidebar.setState({ styles });
+		servers.set(serverUrl, { style });
 	});
 
 	webviews.on('ipc-message-get-sourceId', ({ url: serverUrl }) => {
@@ -530,7 +517,7 @@ export default async () => {
 	});
 
 	webviews.on('did-navigate', ({ serverUrl, url }) => {
-		servers.setLastPath(serverUrl, url);
+		servers.set(serverUrl, { lastPath: url });
 	});
 
 	sidebar.mount();
@@ -541,7 +528,7 @@ export default async () => {
 	screenshareModal.mount();
 	updateModal.mount();
 
-	servers.initialize();
+	await servers.initialize();
 
 	updatePreferences();
 	updateServers();

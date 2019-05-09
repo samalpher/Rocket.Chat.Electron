@@ -1,124 +1,65 @@
-import { remote } from 'electron';
 import { EventEmitter } from 'events';
 import url from 'url';
-import { normalizeServerUrl } from '../utils';
-const { servers: remoteServers } = remote.require('./main');
+import { normalizeServerUrl, loadJson } from '../utils';
 
+
+let entries = [];
 
 const events = new EventEmitter();
 
-const getEntriesFromLocalStorage = () => {
-	const value = localStorage.getItem('rocket.chat.hosts');
+const has = (serverUrl) => entries.some(({ url }) => url === serverUrl);
 
-	if (typeof value !== 'string') {
-		return {};
-	}
+const get = (serverUrl) => entries.find(({ url }) => url === serverUrl);
 
-	if (value.match(/^https?:\/\//)) {
-		const url = normalizeServerUrl(value);
-		return {
-			[url]: {
-				title: url,
-				url,
-			},
-		};
-	}
-
-	try {
-		const entries = JSON.parse(value);
-
-		if (Array.isArray(entries)) {
-			return (
-				entries
-					.filter(normalizeServerUrl)
-					.reduce((entries, url) => ({
-						...entries,
-						[url]: {
-							title: url,
-							url,
-						},
-					}), {})
-			);
-		}
-
-		if (typeof entries !== 'object') {
-			return {};
-		}
-
-		return entries;
-	} catch (error) {
-		return {};
-	}
-};
-
-const getActiveFromLocalStorage = () => {
-	const value = localStorage.getItem('rocket.chat.currentHost');
-	return (!value || value === 'null') ? null : normalizeServerUrl(value);
-};
-
-let entries = {};
-let active = null;
+const fromUrl = (serverUrl) => entries.find(({ url }) => serverUrl.indexOf(url) === 0);
 
 const getAll = () => entries;
 
-const get = (serverUrl) => entries[serverUrl];
-
-const has = (serverUrl) => !!get(serverUrl);
-
-const set = (newEntries) => {
-	entries = newEntries;
-	localStorage.setItem('rocket.chat.hosts', JSON.stringify(entries));
+const load = () => {
+	try {
+		return JSON.parse(localStorage.getItem('servers')) || [];
+	} catch (error) {
+		return [];
+	}
 };
 
-const upsert = (entry) => {
-	set({
-		...entries,
-		[entry.url]: entry,
-	});
-};
-
-const getActive = () => active;
+const persist = () => localStorage.setItem('servers', JSON.stringify(entries));
 
 const setActive = (serverUrl) => {
-	active = has(serverUrl) ? serverUrl : null;
+	for (const entry of entries) {
+		entry.active = entry.url === serverUrl;
+	}
+	persist();
 
-	if (!active) {
-		localStorage.removeItem('rocket.chat.currentHost');
-		events.emit('active-cleared');
+	const activatedServer = entries.find(({ active }) => active);
+	activatedServer ? events.emit('active-setted', activatedServer) : events.emit('active-cleared');
+};
+
+const set = (serverUrl, { url, active, ...entry }) => {
+	const index = entries.findIndex(({ url }) => url === serverUrl);
+	if (index < 0) {
 		return;
 	}
 
-	localStorage.setItem('rocket.chat.currentHost', serverUrl);
-	events.emit('active-setted', entries[active]);
-};
+	const isTitleChanging = entries[index].title !== entry.title;
 
-const initialize = () => {
-	let persistedEntries = getEntriesFromLocalStorage();
-	let fromDefaults = false;
+	entries[index] = {
+		...entries[index],
+		...entry,
+	};
+	persist();
 
-	if (Object.keys(persistedEntries).length === 0) {
-		persistedEntries = JSON.parse(JSON.stringify(remoteServers.getDefault()));
-		fromDefaults = true;
+	if (isTitleChanging) {
+		events.emit('title-setted', entries[index]);
+		return;
 	}
 
-	set(persistedEntries);
-
-	events.emit('loaded', entries, fromDefaults);
-
-	const persistedActive = getActiveFromLocalStorage();
-	setActive(persistedActive);
-};
-
-const fromUrl = (url) => {
-	for (const [key, entry] of Object.entries(entries)) {
-		if (url.indexOf(key) === 0) {
-			return entry;
-		}
-	}
+	events.emit('updated', entries[index]);
 };
 
 const add = (serverUrl) => {
-	if (has(serverUrl)) {
+	const index = entries.findIndex(({ url }) => url === serverUrl);
+	if (index > -1) {
 		setActive(serverUrl);
 		return;
 	}
@@ -138,51 +79,149 @@ const add = (serverUrl) => {
 
 	entry.title = entry.url;
 
-	upsert(entry);
+	entries.push(entry);
+	persist();
 
 	events.emit('added', entry);
-
-	return serverUrl;
 };
 
 const remove = (serverUrl) => {
-	const entry = entries[serverUrl];
-	delete entries[serverUrl];
-
-	if (!entry) {
+	const index = entries.findIndex(({ url }) => url === serverUrl);
+	if (index < 0) {
 		return;
 	}
 
-	set(entries);
+	const entry = entries[index];
+	delete entries[index];
+	persist();
 
-	if (getActive() === serverUrl) {
-		setActive(null);
+	if (!entries.some(({ active }) => active)) {
+		const activatedServer = entries.find(({ active }) => active);
+		activatedServer ? events.emit('active-setted', activatedServer) : events.emit('active-cleared');
 	}
 
 	events.emit('removed', entry);
 };
 
-const setTitle = (serverUrl, title) => {
-	if (title === 'Rocket.Chat' && serverUrl.indexOf('https://open.rocket.chat') === 0) {
-		title += ` - ${ serverUrl }`;
-	}
+const sort = (urls) => {
+	entries = entries.sort(({ url: a }, { url: b }) => urls.indexOf(a) - urls.indexOf(b));
+	persist();
 
-	const entry = {
-		...entries[serverUrl],
-		title,
-	};
-
-	upsert(entry);
-
-	events.emit('title-setted', entry);
+	events.emit('sorted');
 };
 
-const setLastPath = (serverUrl, lastPath) => {
-	const server = get(serverUrl);
-	upsert({
-		...server,
-		lastPath,
-	});
+const migrateFromLocalStorage = () => {
+	const value = localStorage.getItem('rocket.chat.hosts');
+
+	if (typeof value !== 'string') {
+		return;
+	}
+
+	if (value.match(/^https?:\/\//)) {
+		const url = normalizeServerUrl(value);
+		entries = [
+			{
+				url,
+				title: url,
+				active: true,
+			},
+		];
+		return;
+	}
+
+	try {
+		const parsedEntries = JSON.parse(value);
+		const active = (() => {
+			try {
+				const value = localStorage.getItem('rocket.chat.currentHost');
+				return (!value || value === 'null') ? null : normalizeServerUrl(value);
+			} catch (error) {
+				return null;
+			}
+		})();
+		const sorting = (() => {
+			try {
+				return JSON.parse(localStorage.getItem('rocket.chat.sortOrder')) || [];
+			} catch (error) {
+				return [];
+			}
+		})();
+
+		if (Array.isArray(parsedEntries)) {
+			entries = (
+				parsedEntries
+					.map(normalizeServerUrl)
+					.map((url) => ({
+						url,
+						title: url,
+						active: url === active,
+					}))
+					.sort(({ url: a }, { url: b }) => sorting.indexOf(a) - sorting.indexOf(b))
+			);
+			return;
+		}
+
+		if (typeof parsedEntries !== 'object') {
+			return;
+		}
+
+		entries = (
+			Object.values(parsedEntries)
+				.map(({ url, ...props }) => ({
+					url,
+					...props,
+					active: url === active,
+				}))
+				.sort(({ url: a }, { url: b }) => sorting.indexOf(a) - sorting.indexOf(b))
+		);
+	} catch (error) {
+		entries = [];
+	}
+
+	localStorage.removeItem('rocket.chat.hosts');
+	localStorage.removeItem('rocket.chat.currentHost');
+	localStorage.removeItem('rocket.chat.sortOrder');
+};
+
+const migrateFromDefaults = async () => {
+	const appEntries = await loadJson('servers.json', 'app');
+	const userEntries = await loadJson('servers.json', 'user');
+	entries = [
+		...(
+			Object.entries(appEntries)
+				.map(([title, url]) => ({
+					url: normalizeServerUrl(url),
+					title,
+				}))
+		),
+		...(
+			Object.entries(userEntries)
+				.map(([title, url]) => ({
+					url: normalizeServerUrl(url),
+					title,
+				}))
+		),
+	];
+	entries[0].active = true;
+};
+
+const initialize = async () => {
+	if (localStorage.getItem('rocket.chat.hosts')) {
+		await migrateFromLocalStorage();
+		await persist();
+		events.emit('loaded', entries);
+		return;
+	}
+
+	if (!localStorage.getItem('servers')) {
+		await migrateFromDefaults();
+		await persist();
+		events.emit('loaded', entries, true);
+		return;
+	}
+
+	entries = await load();
+	events.emit('loaded', entries);
 };
 
 const validate = async (serverUrl, timeout = 5000) => {
@@ -221,16 +260,14 @@ const validate = async (serverUrl, timeout = 5000) => {
 
 export const servers = Object.assign(events, {
 	initialize,
-	fromUrl,
-	getActive,
-	setActive,
-	getAll,
 	has,
 	get,
-	upsert,
+	fromUrl,
+	getAll,
+	setActive,
+	set,
 	add,
 	remove,
-	setTitle,
-	setLastPath,
+	sort,
 	validate,
 });
