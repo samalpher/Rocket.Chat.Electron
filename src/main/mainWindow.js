@@ -155,6 +155,7 @@ export const createMainWindow = async () => {
 		show: false,
 		webPreferences: {
 			nodeIntegration: true,
+			webviewTag: true,
 		},
 	});
 
