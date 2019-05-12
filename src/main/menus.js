@@ -14,6 +14,14 @@ const createTemplate = ({
 	showMenuBar = true,
 	showServerList = true,
 	showWindowOnUnreadChanged = false,
+	canUndo = true,
+	canRedo = true,
+	canCut = true,
+	canCopy = true,
+	canPaste = true,
+	canSelectAll = true,
+	canGoBack = true,
+	canGoForward = true,
 }) => ([
 	{
 		label: process.platform === 'darwin' ? appName : i18n.__('menus.fileMenu'),
@@ -71,11 +79,13 @@ const createTemplate = ({
 			{
 				label: i18n.__('menus.undo'),
 				accelerator: 'CommandOrControl+Z',
+				enabled: canUndo,
 				click: () => events.emit('undo'),
 			},
 			{
 				label: i18n.__('menus.redo'),
 				accelerator: process.platform === 'win32' ? 'Control+Y' : 'CommandOrControl+Shift+Z',
+				enabled: canRedo,
 				click: () => events.emit('redo'),
 			},
 			{
@@ -84,21 +94,25 @@ const createTemplate = ({
 			{
 				label: i18n.__('menus.cut'),
 				accelerator: 'CommandOrControl+X',
+				enabled: canCut,
 				click: () => events.emit('cut'),
 			},
 			{
 				label: i18n.__('menus.copy'),
 				accelerator: 'CommandOrControl+C',
+				enabled: canCopy,
 				click: () => events.emit('copy'),
 			},
 			{
 				label: i18n.__('menus.paste'),
 				accelerator: 'CommandOrControl+V',
+				enabled: canPaste,
 				click: () => events.emit('paste'),
 			},
 			{
 				label: i18n.__('menus.selectAll'),
 				accelerator: 'CommandOrControl+A',
+				enabled: canSelectAll,
 				click: () => events.emit('select-all'),
 			},
 		],
@@ -130,11 +144,13 @@ const createTemplate = ({
 			{
 				label: i18n.__('menus.back'),
 				accelerator: process.platform === 'darwin' ? 'Command+[' : 'Alt+Left',
+				enabled: canGoBack,
 				click: () => events.emit('go-back'),
 			},
 			{
 				label: i18n.__('menus.forward'),
 				accelerator: process.platform === 'darwin' ? 'Command+]' : 'Alt+Right',
+				enabled: canGoForward,
 				click: () => events.emit('go-forward'),
 			},
 			{

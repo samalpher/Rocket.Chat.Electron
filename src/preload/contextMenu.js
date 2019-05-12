@@ -148,42 +148,42 @@ const createDefaultMenuTemplate = ({
 } = {}) => [
 	{
 		label: i18n.__('contextMenu.undo'),
-		role: 'undo',
 		accelerator: 'CommandOrControl+Z',
 		enabled: canUndo,
+		click: () => getCurrentWebContents().undo(),
 	},
 	{
 		label: i18n.__('contextMenu.redo'),
-		role: 'redo',
 		accelerator: process.platform === 'win32' ? 'Control+Y' : 'CommandOrControl+Shift+Z',
 		enabled: canRedo,
+		click: () => getCurrentWebContents().redo(),
 	},
 	{
 		type: 'separator',
 	},
 	{
 		label: i18n.__('contextMenu.cut'),
-		role: 'cut',
 		accelerator: 'CommandOrControl+X',
 		enabled: canCut,
+		click: () => getCurrentWebContents().cut(),
 	},
 	{
 		label: i18n.__('contextMenu.copy'),
-		role: 'copy',
 		accelerator: 'CommandOrControl+C',
 		enabled: canCopy,
+		click: () => getCurrentWebContents().copy(),
 	},
 	{
 		label: i18n.__('contextMenu.paste'),
-		role: 'paste',
 		accelerator: 'CommandOrControl+V',
 		enabled: canPaste,
+		click: () => getCurrentWebContents().paste(),
 	},
 	{
 		label: i18n.__('contextMenu.selectAll'),
-		role: 'selectall',
 		accelerator: 'CommandOrControl+A',
 		enabled: canSelectAll,
+		click: () => getCurrentWebContents().selectAll(),
 	},
 ];
 

@@ -8,10 +8,14 @@ let state = {
 const events = new EventEmitter();
 
 let root;
+let activeWebview;
+let focusedWebview;
 
 const get = (serverUrl) => root.querySelector(`.webview[data-url="${ serverUrl }"]`);
 
-const getActive = () => root.querySelector('.webview.webview--active');
+const getActive = () => activeWebview;
+
+const getFocused = () => focusedWebview;
 
 const handleDidNavigateInPage = ({ url: serverUrl }, webview, { url }) => {
 	if (url.indexOf(serverUrl) === 0) {
@@ -32,7 +36,7 @@ const handleConsoleMessage = ({ url: serverUrl }, webview, { level, line, messag
 };
 
 const handleIpcMessage = (server, webview, { channel, args }) => {
-	events.emit(`ipc-message-${ channel }`, server, ...args);
+	events.emit(`ipc-message-${ channel }`, webview, server, ...args);
 };
 
 const handleDomReady = ({ url: serverUrl }, webview) => {
@@ -41,14 +45,25 @@ const handleDomReady = ({ url: serverUrl }, webview) => {
 };
 
 const handleDidFailLoad = (server, webview, { isMainFrame }) => {
-	if (isMainFrame) {
-		webview.loadURL(`file://${ __dirname }/loading-error.html`);
+	if (!isMainFrame) {
+		return;
 	}
+	webview.loadURL(`file://${ __dirname }/loading-error.html`);
 };
 
 const handleDidGetResponseDetails = (server, webview, { resourceType, httpResponseCode }) => {
 	if (resourceType === 'mainFrame' && httpResponseCode >= 500) {
 		webview.loadURL(`file://${ __dirname }/loading-error.html`);
+	}
+};
+
+const handleFocus = (webview) => {
+	focusedWebview = webview;
+};
+
+const handleBlur = (webview) => {
+	if (focusedWebview === webview) {
+		focusedWebview = null;
 	}
 };
 
@@ -97,6 +112,8 @@ const renderServer = ({ active, hasSidebar, ...server }) => {
 		webview.addEventListener('dom-ready', handleDomReady.bind(null, server, webview));
 		webview.addEventListener('did-fail-load', handleDidFailLoad.bind(null, server, webview));
 		webview.addEventListener('did-get-response-details', handleDidGetResponseDetails.bind(null, server, webview));
+		webview.addEventListener('focus', handleFocus.bind(null, webview));
+		webview.addEventListener('blur', handleBlur.bind(null, webview));
 
 		root.appendChild(webview);
 		webview.setAttribute('src', lastPath || url);
@@ -110,6 +127,7 @@ const renderServer = ({ active, hasSidebar, ...server }) => {
 
 	if (active) {
 		webview.focus();
+		activeWebview = webview;
 	}
 };
 
@@ -158,4 +176,5 @@ export const webviews = Object.assign(events, {
 	setState,
 	get,
 	getActive,
+	getFocused,
 });

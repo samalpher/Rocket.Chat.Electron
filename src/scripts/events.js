@@ -172,6 +172,27 @@ const handleConnectionStatus = () => {
 	document.body.classList.toggle('offline', !navigator.onLine);
 };
 
+const queryEditFlags = () => ({
+	canUndo: document.queryCommandEnabled('undo'),
+	canRedo: document.queryCommandEnabled('redo'),
+	canCut: document.queryCommandEnabled('cut'),
+	canCopy: document.queryCommandEnabled('copy'),
+	canPaste: document.queryCommandEnabled('paste'),
+	canSelectAll: document.queryCommandEnabled('selectAll'),
+});
+
+const handleSelectionChangeEventListener = () => {
+	menus.setState({
+		...queryEditFlags(),
+		canGoBack: false,
+		canGoForward: false,
+	});
+};
+
+const getFocusedWebContents = () => (
+	(webviews.getFocused() && webviews.getFocused().getWebContents()) || getCurrentWindow().webContents
+);
+
 export default async () => {
 	await i18n.initialize();
 
@@ -180,6 +201,8 @@ export default async () => {
 	handleConnectionStatus();
 
 	window.addEventListener('beforeunload', destroyAll);
+
+	document.addEventListener('selectionchange', handleSelectionChangeEventListener);
 
 	aboutModal.on('check-for-updates', () => updates.checkForUpdates());
 	aboutModal.on('set-check-for-updates-on-start', (checked) => updates.setAutoUpdate(checked));
@@ -232,12 +255,12 @@ export default async () => {
 	menus.on('about', () => aboutModal.setState({ visible: true }));
 	menus.on('open-url', (url) => shell.openExternal(url));
 
-	menus.on('undo', () => webviews.getActive().undo());
-	menus.on('redo', () => webviews.getActive().redo());
-	menus.on('cut', () => webviews.getActive().cut());
-	menus.on('copy', () => webviews.getActive().copy());
-	menus.on('paste', () => webviews.getActive().paste());
-	menus.on('select-all', () => webviews.getActive().selectAll());
+	menus.on('undo', () => getFocusedWebContents().undo());
+	menus.on('redo', () => getFocusedWebContents().redo());
+	menus.on('cut', () => getFocusedWebContents().cut());
+	menus.on('copy', () => getFocusedWebContents().copy());
+	menus.on('paste', () => getFocusedWebContents().paste());
+	menus.on('select-all', () => getFocusedWebContents().selectAll());
 
 	menus.on('reset-zoom', () => webviews.getActive().setZoomLevel(0));
 	menus.on('zoom-in', () => webviews.getActive().setZoomLevel(webviews.getActive().getZoomLevel() + 1));
@@ -491,7 +514,7 @@ export default async () => {
 		updates.quitAndInstall();
 	});
 
-	webviews.on('ipc-message-unread-changed', ({ url: serverUrl }, badge) => {
+	webviews.on('ipc-message-unread-changed', (webview, { url: serverUrl }, badge) => {
 		if (typeof badge === 'number' && localStorage.getItem('showWindowOnUnreadChanged') === 'true') {
 			const mainWindow = remote.getCurrentWindow();
 			mainWindow.showInactive();
@@ -500,25 +523,32 @@ export default async () => {
 		servers.set(serverUrl, { badge });
 	});
 
-	webviews.on('ipc-message-title-changed', ({ url: serverUrl }, title) => {
+	webviews.on('ipc-message-title-changed', (webview, { url: serverUrl }, title) => {
 		servers.set(serverUrl, { title });
 	});
 
-	webviews.on('ipc-message-focus', ({ url: serverUrl }) => {
+	webviews.on('ipc-message-focus', (webview, { url: serverUrl }) => {
 		servers.setActive(serverUrl);
 	});
 
-	webviews.on('ipc-message-sidebar-style', ({ url: serverUrl }, style) => {
+	webviews.on('ipc-message-sidebar-style', (webview, { url: serverUrl }, style) => {
 		servers.set(serverUrl, { style });
 	});
 
-	webviews.on('ipc-message-get-sourceId', ({ url: serverUrl }) => {
+	webviews.on('ipc-message-get-sourceId', (webview, { url: serverUrl }) => {
 		screenshareModal.setState({ visible: false, url: serverUrl });
 	});
 
-	webviews.on('ipc-message-reload-server', ({ url: serverUrl }) => {
-		const webview = webviews.get(serverUrl);
-		webview && webview.loadURL(serverUrl);
+	webviews.on('ipc-message-reload-server', (webview, { url: serverUrl }) => {
+		webview.loadURL(serverUrl);
+	});
+
+	webviews.on('ipc-message-edit-flags-changed', (webview, server, editFlags) => {
+		menus.setState({
+			...editFlags,
+			canGoBack: webview.canGoBack(),
+			canGoForward: webview.canGoForward(),
+		});
 	});
 
 	webviews.on('dom-ready', () => {
