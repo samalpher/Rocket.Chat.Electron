@@ -232,6 +232,17 @@ export default async () => {
 	menus.on('about', () => aboutModal.setState({ visible: true }));
 	menus.on('open-url', (url) => shell.openExternal(url));
 
+	menus.on('undo', () => webviews.getActive().undo());
+	menus.on('redo', () => webviews.getActive().redo());
+	menus.on('cut', () => webviews.getActive().cut());
+	menus.on('copy', () => webviews.getActive().copy());
+	menus.on('paste', () => webviews.getActive().paste());
+	menus.on('select-all', () => webviews.getActive().selectAll());
+
+	menus.on('reset-zoom', () => webviews.getActive().setZoomLevel(0));
+	menus.on('zoom-in', () => webviews.getActive().setZoomLevel(webviews.getActive().getZoomLevel() + 1));
+	menus.on('zoom-out', () => webviews.getActive().setZoomLevel(webviews.getActive().getZoomLevel() - 1));
+
 	menus.on('add-new-server', () => {
 		getCurrentWindow().show();
 		servers.setActive(null);

@@ -1,4 +1,4 @@
-import { app, Menu, webContents } from 'electron';
+import { app, Menu } from 'electron';
 import { EventEmitter } from 'events';
 import { mainWindow } from './mainWindow';
 import i18n from '../i18n';
@@ -71,12 +71,12 @@ const createTemplate = ({
 			{
 				label: i18n.__('menus.undo'),
 				accelerator: 'CommandOrControl+Z',
-				click: () => webContents.getFocusedWebContents().undo(),
+				click: () => events.emit('undo'),
 			},
 			{
 				label: i18n.__('menus.redo'),
 				accelerator: process.platform === 'win32' ? 'Control+Y' : 'CommandOrControl+Shift+Z',
-				click: () => webContents.getFocusedWebContents().redo(),
+				click: () => events.emit('redo'),
 			},
 			{
 				type: 'separator',
@@ -84,22 +84,22 @@ const createTemplate = ({
 			{
 				label: i18n.__('menus.cut'),
 				accelerator: 'CommandOrControl+X',
-				role: 'cut',
+				click: () => events.emit('cut'),
 			},
 			{
 				label: i18n.__('menus.copy'),
 				accelerator: 'CommandOrControl+C',
-				role: 'copy',
+				click: () => events.emit('copy'),
 			},
 			{
 				label: i18n.__('menus.paste'),
 				accelerator: 'CommandOrControl+V',
-				role: 'paste',
+				click: () => events.emit('paste'),
 			},
 			{
 				label: i18n.__('menus.selectAll'),
 				accelerator: 'CommandOrControl+A',
-				role: 'selectall',
+				click: () => events.emit('select-all'),
 			},
 		],
 	},
@@ -166,17 +166,17 @@ const createTemplate = ({
 			{
 				label: i18n.__('menus.resetZoom'),
 				accelerator: 'CommandOrControl+0',
-				role: 'resetzoom',
+				click: () => events.emit('reset-zoom'),
 			},
 			{
 				label: i18n.__('menus.zoomIn'),
 				accelerator: 'CommandOrControl+Plus',
-				role: 'zoomin',
+				click: () => events.emit('zoom-in'),
 			},
 			{
 				label: i18n.__('menus.zoomOut'),
 				accelerator: 'CommandOrControl+-',
-				role: 'zoomout',
+				click: () => events.emit('zoom-out'),
 			},
 		],
 	},

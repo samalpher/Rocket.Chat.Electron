@@ -107,7 +107,6 @@ const renderServer = ({ active, hasSidebar, ...server }) => {
 	}
 
 	if (active) {
-		webview.blur();
 		webview.focus();
 	}
 };
