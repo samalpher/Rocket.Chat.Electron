@@ -1,0 +1,37 @@
+.loading {
+	display: none;
+
+	position: fixed;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 68px;
+
+	background-color: @primary-background-color;
+	align-items: center;
+	-webkit-app-region: drag;
+	justify-content: center;
+
+	&__wrapper {
+		position: relative;
+		z-index: 10;
+
+		min-width: 600px;
+		padding: 45px 0 35px;
+
+		text-align: center;
+	}
+
+	&__logo {
+		max-width: 520px;
+	}
+
+	&__indicator {
+		.loading-component;
+		display: flex;
+	}
+
+	&--visible {
+		display: flex;
+	}
+}

@@ -1,0 +1,114 @@
+.landing {
+	transition: opacity linear 100ms;
+
+	opacity: 0;
+
+	position: fixed;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 68px;
+
+	display: flex;
+	overflow-y: auto;
+
+	text-align: center;
+
+	background-color: @primary-background-color;
+	align-items: center;
+	-webkit-app-region: drag;
+	justify-content: center;
+
+	& &__wrapper {
+		position: relative;
+		z-index: 10;
+
+		min-width: 600px;
+		padding: 45px 0 35px;
+
+		text-align: center;
+		-webkit-app-region: no-drag;
+	}
+
+	& &__logo {
+		max-width: 520px;
+		-webkit-user-drag: none;
+	}
+
+	& &__form {
+		position: relative;
+		z-index: 1;
+
+		width: 90%;
+		max-width: 520px;
+		margin: 25px auto;
+		padding: 22px 30px 30px;
+
+		border-radius: 2px;
+		background-color: #fafafa;
+		box-shadow: 0 0 6px 10px rgba(0, 0, 0, 0.1);
+	}
+
+	& &__form-prompt {
+		margin: 18px 0;
+
+		letter-spacing: -0.5px;
+		text-transform: uppercase;
+
+		font-size: 20px;
+		font-weight: 300;
+
+		color: @primary-font-color;
+		line-height: 24px;
+	}
+
+	& &__form-host-field {
+		padding: 4px 8px;
+		margin: 0 0 14px;
+
+		border-width: 0;
+		border-bottom: 1px solid #dfdfdf;
+		background-color: transparent;
+		box-shadow: 0 0 0;
+
+		font-size: 22px;
+		font-weight: 400;
+
+		&:-webkit-autofill {
+			color: #ffffff !important;
+			background-color: transparent !important;
+			box-shadow: 0 0 0 1000px #f4f4f4 inset;
+		}
+	}
+
+	& &__form-error {
+		display: none;
+		margin-bottom: 20px;
+		padding: 15px;
+
+		border: 1px solid rgba(0, 0, 0, 0);
+		border-radius: 4px;
+
+		color: #a94442;
+		border-color: #ebccd1;
+		background-color: #f2dede;
+
+		&--visible {
+			display: block;
+		}
+	}
+
+	&--visible {
+		z-index: 1;
+
+		opacity: 1;
+	}
+
+	&--offline {
+		.landing__form-prompt,
+		.landing__form-host-field,
+		.landing__form-submit-button {
+			display: none;
+		}
+	}
+}

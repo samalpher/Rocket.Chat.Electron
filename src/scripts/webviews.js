@@ -13,6 +13,8 @@ let focusedWebview;
 
 const get = (serverUrl) => root.querySelector(`.webview[data-url="${ serverUrl }"]`);
 
+const getAll = () => Array.from(root.querySelectorAll('.webview'));
+
 const getActive = () => activeWebview;
 
 const getFocused = () => focusedWebview;
@@ -42,6 +44,10 @@ const handleIpcMessage = (server, webview, { channel, args }) => {
 const handleDomReady = ({ url: serverUrl }, webview) => {
 	webview.classList.add('webview--ready');
 	events.emit('dom-ready', webview, serverUrl);
+
+	if (getAll().every((webview) => webview.classList.contains('webview--ready'))) {
+		events.emit('ready');
+	}
 };
 
 const handleDidFailLoad = (server, webview, { isMainFrame }) => {
@@ -142,14 +148,18 @@ const update = () => {
 	} = state;
 
 	const serverUrls = servers.map(({ url }) => url);
-	Array.from(root.querySelectorAll('.webview'))
+	getAll()
 		.filter((webview) => !serverUrls.includes(webview.dataset.url))
 		.forEach((webview) => webview.remove());
 
-	servers.forEach((server) => renderServer({
-		...server,
-		hasSidebar,
-	}));
+	if (servers.length > 0) {
+		servers.forEach((server) => renderServer({
+			...server,
+			hasSidebar,
+		}));
+	} else {
+		events.emit('ready');
+	}
 };
 
 const setState = (partialState) => {

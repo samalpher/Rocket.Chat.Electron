@@ -211,7 +211,7 @@ const createTemplate = ({
 				},
 			] : []),
 			...servers.map((server, i) => ({
-				label: server.title.replace(/&/g, '&&'),
+				label: (server.title && server.title.replace(/&/g, '&&')) || server.url,
 				type: server.active ? 'radio' : 'normal',
 				checked: server.active,
 				accelerator: `CommandOrControl+${ i + 1 }`,

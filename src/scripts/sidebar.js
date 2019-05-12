@@ -94,7 +94,7 @@ const handleDrop = (event) => {
 	events.emit('select-server', serverElement.dataset.url);
 };
 
-const renderServer = ({ url, title, order, active, badge }) => {
+const renderServer = ({ url, title = url, order, active, badge }) => {
 	const hasUnreadMessages = !!badge;
 	const mentionCount = (badge || badge === 0) ? parseInt(badge, 10) : null;
 	const initials = (

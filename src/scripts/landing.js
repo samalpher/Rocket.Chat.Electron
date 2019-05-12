@@ -7,28 +7,35 @@ let state = {
 	visible: true,
 	error: null,
 	validating: false,
+	offline: true,
 };
 const events = new EventEmitter();
 
 let root;
 let form;
-let errorPane;
 let serverUrlField;
+let errorPane;
 let connectButton;
 
 const defaultInstance = 'https://open.rocket.chat';
 
 const update = () => {
+	if (!root) {
+		return;
+	}
+
 	const {
 		visible,
 		error,
 		validating,
+		offline,
 	} = state;
 
-	root.classList.toggle('hide', !visible);
+	root.classList.toggle('landing--visible', visible);
+	root.classList.toggle('landing--offline', offline);
 
-	errorPane.style.display = error ? 'block' : 'none';
-	errorPane.innerHTML = error || '';
+	errorPane.classList.toggle('landing__form-error--visible', offline || !!error);
+	errorPane.innerHTML = offline ? i18n.__('error.offline') : (error || '');
 	serverUrlField.classList.toggle('wrong', !!error);
 
 	connectButton.value = validating ? i18n.__('landing.validating') : i18n.__('landing.connect');
@@ -89,22 +96,28 @@ const handleSubmit = async (event) => {
 	}
 };
 
-const mount = () => {
-	root = document.querySelector('.landing-page');
-	form = root.querySelector('#login-card');
-	errorPane = form.querySelector('#invalidUrl');
-	serverUrlField = form.querySelector('[name="host"]');
-	connectButton = form.querySelector('[type="submit"]');
+const handleConnectionStatus = () => {
+	setState({ offline: !navigator.onLine });
+};
 
-	root.querySelector('#login-card .connect__prompt').innerHTML = i18n.__('landing.inputUrl');
-	errorPane.innerHTML = i18n.__('error.noValidServerFound');
-	root.querySelector('#login-card .connect__error').innerHTML = i18n.__('error.offline');
+const mount = () => {
+	root = document.querySelector('.landing');
+	form = root.querySelector('.landing__form');
+	serverUrlField = form.querySelector('.landing__form-host-field');
+	errorPane = form.querySelector('.landing__form-error');
+	connectButton = form.querySelector('.landing__form-submit-button');
+
+	root.querySelector('.landing__form-prompt').innerHTML = i18n.__('landing.inputUrl');
 	connectButton.innerHTML = i18n.__('landing.connect');
 	serverUrlField.placeholder = defaultInstance;
 
 	serverUrlField.focus();
 
 	form.addEventListener('submit', handleSubmit);
+
+	window.addEventListener('online', handleConnectionStatus);
+	window.addEventListener('offline', handleConnectionStatus);
+	handleConnectionStatus();
 };
 
 export const landing = Object.assign(events, {

@@ -22,9 +22,7 @@ const {
 } = remote.require('./main');
 
 
-const setLoadingVisible = (visible) => {
-	document.querySelector('.app-page').classList.toggle('app-page--loading', visible);
-};
+let loading = true;
 
 const updatePreferences = () => {
 	const {
@@ -50,7 +48,7 @@ const updatePreferences = () => {
 	});
 
 	sidebar.setState({
-		visible: hasSidebar,
+		visible: !loading && hasSidebar,
 	});
 
 	webviews.setState({
@@ -79,9 +77,20 @@ const updateServers = () => {
 
 	tray.setState({ badge: globalBadge });
 	dock.setState({ badge: globalBadge });
+
+	landing.setState({ visible: !loading && !allServers.some(({ active }) => active) });
 };
 
 const updateWindowState = () => tray.setState({ isMainWindowVisible: getCurrentWindow().isVisible() });
+
+
+const stopLoading = () => {
+	loading = false;
+	document.querySelector('.loading').classList.remove('loading--visible');
+	updateServers();
+	updatePreferences();
+	updateWindowState();
+};
 
 
 const askWhenToInstallUpdate = () => new Promise((resolve) => {
@@ -170,10 +179,6 @@ const destroyAll = () => {
 	}
 };
 
-const handleConnectionStatus = () => {
-	document.body.classList.toggle('offline', !navigator.onLine);
-};
-
 const queryEditFlags = () => ({
 	canUndo: document.queryCommandEnabled('undo'),
 	canRedo: document.queryCommandEnabled('redo'),
@@ -197,10 +202,6 @@ const getFocusedWebContents = () => (
 
 export default async () => {
 	await i18n.initialize();
-
-	window.addEventListener('online', handleConnectionStatus);
-	window.addEventListener('offline', handleConnectionStatus);
-	handleConnectionStatus();
 
 	window.addEventListener('beforeunload', destroyAll);
 
@@ -271,8 +272,6 @@ export default async () => {
 	menus.on('add-new-server', () => {
 		getCurrentWindow().show();
 		servers.setActive(null);
-		setLoadingVisible(false);
-		landing.setState({ visible: true });
 	});
 
 	menus.on('select-server', ({ url }) => {
@@ -358,7 +357,6 @@ export default async () => {
 				preferences.set('hasSidebar', false);
 			}
 		}
-		setLoadingVisible(false);
 		updateServers();
 	});
 
@@ -367,8 +365,6 @@ export default async () => {
 	});
 
 	servers.on('removed', (/* entry */) => {
-		setLoadingVisible(false);
-		landing.setState({ visible: true });
 		updateServers();
 	});
 
@@ -381,12 +377,10 @@ export default async () => {
 	});
 
 	servers.on('active-setted', (/* entry */) => {
-		landing.setState({ visible: false });
 		updateServers();
 	});
 
 	servers.on('active-cleared', () => {
-		landing.setState({ visible: true });
 		updateServers();
 	});
 
@@ -414,8 +408,6 @@ export default async () => {
 
 	sidebar.on('add-server', () => {
 		servers.setActive(null);
-		setLoadingVisible(false);
-		landing.setState({ visible: true });
 	});
 
 	sidebar.on('servers-sorted', (urls) => {
@@ -551,6 +543,10 @@ export default async () => {
 
 	webviews.on('did-navigate', ({ serverUrl, url }) => {
 		servers.set(serverUrl, { lastPath: url });
+	});
+
+	webviews.on('ready', () => {
+		stopLoading();
 	});
 
 	sidebar.mount();

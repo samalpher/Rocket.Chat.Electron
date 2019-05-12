@@ -92,7 +92,7 @@ const remove = (serverUrl) => {
 	}
 
 	const entry = entries[index];
-	delete entries[index];
+	entries.splice(index, 1);
 	persist();
 
 	if (!entries.some(({ active }) => active)) {
@@ -225,15 +225,14 @@ const initialize = async () => {
 };
 
 const validate = async (serverUrl, timeout = 5000) => {
-	const headers = new Headers();
-
-	if (serverUrl.includes('@')) {
-		const url = new URL(serverUrl);
-		serverUrl = url.origin;
-		headers.set('Authorization', `Basic ${ btoa(`${ url.username }:${ url.password }`) }`);
-	}
-
 	try {
+		const headers = new Headers();
+
+		if (serverUrl.includes('@')) {
+			const url = new URL(serverUrl);
+			serverUrl = url.origin;
+			headers.set('Authorization', `Basic ${ btoa(`${ url.username }:${ url.password }`) }`);
+		}
 		const response = await Promise.race([
 			fetch(`${ serverUrl }/api/info`, { headers }),
 			new Promise((resolve, reject) => setTimeout(() => reject('timeout'), timeout)),
