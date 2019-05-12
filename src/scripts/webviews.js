@@ -87,7 +87,9 @@ const renderServer = ({ active, hasSidebar, ...server }) => {
 		webview.dataset.url = url;
 		webview.setAttribute('preload', '../preload.js');
 		webview.setAttribute('allowpopups', 'on');
-		webview.setAttribute('disablewebsecurity', 'on');
+		webview.setAttribute('webpreferences', Object.entries({
+			webSecurity: false,
+		}).map(([key, value]) => `${ key }=${ value ? 'on' : 'off' }`).join(' '));
 
 		webview.addEventListener('did-navigate-in-page', handleDidNavigateInPage.bind(null, server, webview));
 		webview.addEventListener('console-message', handleConsoleMessage.bind(null, server, webview));

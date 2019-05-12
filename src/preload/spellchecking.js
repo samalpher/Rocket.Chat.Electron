@@ -133,7 +133,7 @@ class SpellCheck {
 					.bind(null, this.enabledDictionaries)
 			);
 		} finally {
-			webFrame.setSpellCheckProvider('', false, { spellCheck: this.checker });
+			webFrame.setSpellCheckProvider('', { spellCheck: this.checker });
 		}
 	}
 
