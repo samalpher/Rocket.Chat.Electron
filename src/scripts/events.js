@@ -4,6 +4,7 @@ import { aboutModal } from './aboutModal';
 import { screenshareModal } from './screenshareModal';
 import { updateModal } from './updateModal';
 import { landing } from './landing';
+import { preferences } from './preferences';
 import { servers } from './servers';
 import { sidebar } from './sidebar';
 import { webviews } from './webviews';
@@ -26,11 +27,12 @@ const setLoadingVisible = (visible) => {
 };
 
 const updatePreferences = () => {
-	const showWindowOnUnreadChanged = localStorage.getItem('showWindowOnUnreadChanged') === 'true';
-	const hasTrayIcon = localStorage.getItem('hideTray') ?
-		localStorage.getItem('hideTray') !== 'true' : (process.platform !== 'linux');
-	const hasMenuBar = localStorage.getItem('autohideMenu') !== 'true';
-	const hasSidebar = localStorage.getItem('sidebar-closed') !== 'true';
+	const {
+		hasTrayIcon,
+		hasMenuBar,
+		hasSidebar,
+		showWindowOnUnreadChanged,
+	} = preferences.getAll();
 
 	menus.setState({
 		showTrayIcon: hasTrayIcon,
@@ -317,34 +319,30 @@ export default async () => {
 	menus.on('toggle', (property) => {
 		switch (property) {
 			case 'showTrayIcon': {
-				const previousValue = localStorage.getItem('hideTray') !== 'true';
-				const newValue = !previousValue;
-				localStorage.setItem('hideTray', JSON.stringify(!newValue));
-				break;
-			}
-
-			case 'showWindowOnUnreadChanged': {
-				const previousValue = localStorage.getItem('showWindowOnUnreadChanged') === 'true';
-				const newValue = !previousValue;
-				localStorage.setItem('showWindowOnUnreadChanged', JSON.stringify(newValue));
+				preferences.set('hasTrayIcon', !preferences.get('hasTrayIcon'));
 				break;
 			}
 
 			case 'showMenuBar': {
-				const previousValue = localStorage.getItem('autohideMenu') !== 'true';
-				const newValue = !previousValue;
-				localStorage.setItem('autohideMenu', JSON.stringify(!newValue));
+				preferences.set('hasMenuBar', !preferences.get('hasMenuBar'));
 				break;
 			}
 
 			case 'showServerList': {
-				const previousValue = localStorage.getItem('sidebar-closed') !== 'true';
-				const newValue = !previousValue;
-				localStorage.setItem('sidebar-closed', JSON.stringify(!newValue));
+				preferences.set('hasSidebar', !preferences.get('hasSidebar'));
+				break;
+			}
+
+			case 'showWindowOnUnreadChanged': {
+				preferences.set('showWindowOnUnreadChanged', !preferences.get('showWindowOnUnreadChanged'));
 				break;
 			}
 		}
 
+		updatePreferences();
+	});
+
+	preferences.on('set', () => {
 		updatePreferences();
 	});
 
@@ -356,8 +354,8 @@ export default async () => {
 
 	servers.on('loaded', (entries, fromDefaults) => {
 		if (fromDefaults) {
-			if (Object.keys(entries).length === 1) {
-				localStorage.setItem('sidebar-closed', JSON.stringify(true));
+			if (Object.keys(entries).length <= 1) {
+				preferences.set('hasSidebar', false);
 			}
 		}
 		setLoadingVisible(false);
@@ -515,7 +513,7 @@ export default async () => {
 	});
 
 	webviews.on('ipc-message-unread-changed', (webview, { url: serverUrl }, badge) => {
-		if (typeof badge === 'number' && localStorage.getItem('showWindowOnUnreadChanged') === 'true') {
+		if (typeof badge === 'number' && preferences.get('showWindowOnUnreadChanged')) {
 			const mainWindow = remote.getCurrentWindow();
 			mainWindow.showInactive();
 		}
@@ -551,12 +549,6 @@ export default async () => {
 		});
 	});
 
-	webviews.on('dom-ready', () => {
-		const hasSidebar = localStorage.getItem('sidebar-closed') !== 'true';
-		sidebar.setState({ visible: hasSidebar });
-		webviews.setState({ hasSidebar });
-	});
-
 	webviews.on('did-navigate', ({ serverUrl, url }) => {
 		servers.set(serverUrl, { lastPath: url });
 	});
@@ -570,6 +562,7 @@ export default async () => {
 	updateModal.mount();
 
 	await servers.initialize();
+	await preferences.initialize();
 
 	updatePreferences();
 	updateServers();
