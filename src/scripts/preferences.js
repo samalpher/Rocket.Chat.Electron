@@ -1,20 +1,22 @@
 import { EventEmitter } from 'events';
 
 
-let entries = {
+const initialState = {
 	showWindowOnUnreadChanged: false,
 	hasTrayIcon: process.platform !== 'linux',
 	hasMenuBar: true,
 	hasSidebar: true,
 };
 
+let entries = initialState;
+
 const events = new EventEmitter();
 
 const load = () => {
 	try {
-		return JSON.parse(localStorage.getItem('preferences')) || {};
+		return JSON.parse(localStorage.getItem('preferences')) || initialState;
 	} catch (error) {
-		return {};
+		return initialState;
 	}
 };
 
