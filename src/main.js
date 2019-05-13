@@ -7,6 +7,7 @@ import { basicAuth } from './main/basicAuth';
 import { certificates } from './main/certificates';
 import { dock } from './main/dock';
 import { menus } from './main/menus';
+import { spellchecking } from './main/spellchecking';
 import { touchBar } from './main/touchBar';
 import { tray } from './main/tray';
 import { updates } from './main/updates';
@@ -111,8 +112,9 @@ const attachAppEvents = () => {
 	await touchBar.mount();
 	await tray.mount();
 
-	certificates.initialize();
-	updates.initialize();
+	await certificates.initialize();
+	await spellchecking.initialize();
+	await updates.initialize();
 
 	mainWindow.showIfNeeded();
 
@@ -125,6 +127,7 @@ export { deepLinks } from './main/deepLinks';
 export { dock } from './main/dock';
 export { menus } from './main/menus';
 export { notifications } from './main/notifications';
+export { spellchecking } from './main/spellchecking';
 export { systemIdleTime } from './main/systemIdleTime';
 export { touchBar } from './main/touchBar';
 export { tray } from './main/tray';

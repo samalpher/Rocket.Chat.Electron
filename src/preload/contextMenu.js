@@ -1,8 +1,8 @@
 import { clipboard, ipcRenderer, remote, shell } from 'electron';
 import i18n from '../i18n';
-import { spellchecking } from './spellchecking';
 import { contextMenu } from './channels';
 const { dialog, getCurrentWebContents, getCurrentWindow, Menu } = remote;
+const { spellchecking } = remote.require('./main');
 
 
 const createSpellCheckingMenuTemplate = async ({
@@ -30,7 +30,7 @@ const createSpellCheckingMenuTemplate = async ({
 
 		dialog.showOpenDialog(getCurrentWindow(), {
 			title: i18n.__('dialog.loadDictionary.title'),
-			defaultPath: spellchecking.dictionariesPath,
+			defaultPath: spellchecking.getDictionaryInstallationDirectory(),
 			filters: [
 				{ name: i18n.__('dialog.loadDictionary.dictionaries'), extensions: ['aff', 'dic'] },
 				{ name: i18n.__('dialog.loadDictionary.allFiles'), extensions: ['*'] },
@@ -69,15 +69,13 @@ const createSpellCheckingMenuTemplate = async ({
 		] : []),
 		{
 			label: i18n.__('contextMenu.spellingLanguages'),
-			enabled: spellchecking.dictionaries.length > 0,
+			enabled: spellchecking.getAvailableDictionaries().length > 0,
 			submenu: [
-				...spellchecking.dictionaries.map((dictionaryName) => ({
+				...spellchecking.getAvailableDictionaries().map((dictionaryName) => ({
 					label: dictionaryName,
 					type: 'checkbox',
-					checked: spellchecking.enabledDictionaries.includes(dictionaryName),
-					click: ({ checked }) => (checked ?
-						spellchecking.enable(dictionaryName) :
-						spellchecking.disable(dictionaryName)),
+					checked: spellchecking.getEnabledDictionaries().includes(dictionaryName),
+					click: ({ checked }) => spellchecking.toggleDictionary(dictionaryName, checked),
 				})),
 				{
 					type: 'separator',

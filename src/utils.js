@@ -50,6 +50,11 @@ export const writeJson = async (filename, data) => {
 	}
 };
 
+export const getDirectory = (dirname, dir = 'user') => {
+	setupDirs();
+	return dirs[dir].cwd(dirname);
+};
+
 export const queryEditFlags = () => ({
 	canUndo: document.queryCommandEnabled('undo'),
 	canRedo: document.queryCommandEnabled('redo'),

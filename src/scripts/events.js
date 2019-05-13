@@ -18,6 +18,7 @@ const {
 	dock,
 	menus,
 	relaunch,
+	spellchecking,
 	touchBar,
 	tray,
 	updates,
@@ -190,6 +191,32 @@ const handleSelectionChangeEventListener = () => {
 };
 
 const getFocusedWebContents = () => webviews.getWebContents({ focused: true }) || getCurrentWindow().webContents;
+
+const initializeSpellcheckingDictionaries = () => {
+	const dictionaries = (() => {
+		try {
+			const enabledDictionaries = JSON.parse(localStorage.getItem('spellcheckerDictionaries'));
+			return Array.isArray(enabledDictionaries) ? enabledDictionaries.map(String) : [];
+		} catch (error) {
+			console.error(error);
+			return [];
+		}
+	})();
+
+	spellchecking.setEnabledDictionaries(...dictionaries);
+
+	if (spellchecking.getEnabledDictionaries().length > 0) {
+		return;
+	}
+
+	const navigatorLanguage = navigator.language;
+	spellchecking.setEnabledDictionaries(navigatorLanguage);
+	if (spellchecking.getEnabledDictionaries().length > 0) {
+		return;
+	}
+
+	spellchecking.setEnabledDictionaries('en_US');
+};
 
 export default async () => {
 	await i18n.initialize();
@@ -398,6 +425,10 @@ export default async () => {
 		servers.sort(urls);
 	});
 
+	spellchecking.on('dictionaries-set', (dictionaries) => {
+		localStorage.setItem('spellcheckerDictionaries', JSON.stringify(dictionaries));
+	});
+
 	getCurrentWindow().on('hide', updateWindowState);
 	getCurrentWindow().on('show', updateWindowState);
 
@@ -530,6 +561,8 @@ export default async () => {
 
 	await servers.initialize();
 	await preferences.initialize();
+
+	initializeSpellcheckingDictionaries();
 
 	updatePreferences();
 	updateServers();
