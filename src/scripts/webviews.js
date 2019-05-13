@@ -4,7 +4,8 @@ import * as channels from '../preload/channels';
 
 let state = {
 	servers: [],
-	hasSidebar: true,
+	activeServerUrl: null,
+	hasSpacingForTitleBarButtons: true,
 };
 
 const events = new EventEmitter();
@@ -139,7 +140,7 @@ const handleBlur = (webview) => {
 	}
 };
 
-const renderServer = ({ active, hasSidebar, ...server }) => {
+const renderServer = ({ active, hasSpacingForTitleBarButtons, ...server }) => {
 	const { url, lastPath } = server;
 	const webviewNode = root.querySelector(`.webview[data-url="${ url }"]`);
 	const shouldAppend = !webviewNode;
@@ -173,8 +174,7 @@ const renderServer = ({ active, hasSidebar, ...server }) => {
 	}
 
 	if (process.platform === 'darwin') {
-		const hasSpacing = !hasSidebar;
-		setSidebarSpacingForTitleBarButtons(webview, hasSpacing);
+		setSidebarSpacingForTitleBarButtons(webview, hasSpacingForTitleBarButtons);
 	}
 
 	if (active) {
@@ -190,7 +190,7 @@ const update = () => {
 
 	const {
 		servers,
-		hasSidebar,
+		activeServerUrl,
 	} = state;
 
 	const serverUrls = servers.map(({ url }) => url);
@@ -201,7 +201,7 @@ const update = () => {
 	if (servers.length > 0) {
 		servers.forEach((server) => renderServer({
 			...server,
-			hasSidebar,
+			active: server.url === activeServerUrl,
 		}));
 	} else if (!isAllReady) {
 		isAllReady = true;

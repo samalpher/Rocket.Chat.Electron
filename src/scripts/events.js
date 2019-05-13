@@ -1,16 +1,29 @@
 import { remote, clipboard } from 'electron';
 import i18n from '../i18n';
 import * as channels from '../preload/channels';
+import { store } from '../store';
+import {
+	stopLoading,
+	showWindow,
+	hideWindow,
+	showLanding,
+	showServer,
+	setPreferences,
+	toggleSpellcheckingDictionary,
+	addServerFromUrl,
+	removeServerFromUrl,
+	sortServers,
+	setServerProperties,
+} from '../store/actions';
 import { queryEditFlags } from '../utils';
+import { initializeData } from './data';
 import { aboutModal } from './aboutModal';
-import { screenshareModal } from './screenshareModal';
 import { updateModal } from './updateModal';
+import { screenshareModal } from './screenshareModal';
+import { contextMenu } from './contextMenu';
 import { landing } from './landing';
-import { preferences } from './preferences';
-import { servers } from './servers';
 import { sidebar } from './sidebar';
 import { webviews } from './webviews';
-import { contextMenu } from './contextMenu';
 const { app, dialog, getCurrentWindow, shell } = remote;
 const {
 	basicAuth,
@@ -24,82 +37,6 @@ const {
 	tray,
 	updates,
 } = remote.require('./main');
-
-
-let loading = true;
-
-const updatePreferences = () => {
-	const {
-		hasTrayIcon,
-		hasMenuBar,
-		hasSidebar,
-		showWindowOnUnreadChanged,
-		spellchecking: {
-			enabledDictionaries = [],
-		} = {},
-	} = preferences.getAll();
-
-	menus.setState({
-		showTrayIcon: hasTrayIcon,
-		showWindowOnUnreadChanged,
-		showMenuBar: hasMenuBar,
-		showServerList: hasSidebar,
-	});
-
-	tray.setState({
-		showIcon: hasTrayIcon,
-	});
-
-	dock.setState({
-		hasTrayIcon,
-	});
-
-	sidebar.setState({
-		visible: !loading && hasSidebar,
-	});
-
-	spellchecking.setEnabledDictionaries(...enabledDictionaries);
-
-	webviews.setState({
-		hasSidebar,
-	});
-
-	getCurrentWindow().hasTrayIcon = hasTrayIcon;
-};
-
-
-const updateServers = () => {
-	const allServers = servers.getAll();
-
-	menus.setState({ servers: allServers });
-	sidebar.setState({ servers: allServers });
-	touchBar.setState({ servers: allServers });
-	webviews.setState({ servers: allServers });
-
-	const badges = allServers.map(({ badge }) => badge);
-	const mentionCount = (
-		badges
-			.filter((badge) => Number.isInteger(badge))
-			.reduce((sum, count) => sum + count, 0)
-	);
-	const globalBadge = mentionCount || (badges.some((badge) => !!badge) && '•') || null;
-
-	tray.setState({ badge: globalBadge });
-	dock.setState({ badge: globalBadge });
-
-	landing.setState({ visible: !loading && !allServers.some(({ active }) => active) });
-};
-
-const updateWindowState = () => tray.setState({ isMainWindowVisible: getCurrentWindow().isVisible() });
-
-
-const stopLoading = () => {
-	loading = false;
-	document.querySelector('.loading').classList.remove('loading--visible');
-	updateServers();
-	updatePreferences();
-	updateWindowState();
-};
 
 
 const askWhenToInstallUpdate = () => new Promise((resolve) => {
@@ -176,12 +113,37 @@ const confirmAppDataReset = () => new Promise((resolve) => {
 });
 
 
+const warnItWillSkipVersion = () => new Promise((resolve) => {
+	dialog.showMessageBox(getCurrentWindow(), {
+		title: i18n.__('dialog.updateSkip.title'),
+		message: i18n.__('dialog.updateSkip.message'),
+		type: 'warning',
+		buttons: [i18n.__('dialog.updateSkip.ok')],
+		defaultId: 0,
+	}, () => resolve());
+});
+
+
+const informItWillInstallUpdate = () => new Promise((resolve) => {
+	dialog.showMessageBox(getCurrentWindow(), {
+		title: i18n.__('dialog.updateDownloading.title'),
+		message: i18n.__('dialog.updateDownloading.message'),
+		type: 'info',
+		buttons: [i18n.__('dialog.updateDownloading.ok')],
+		defaultId: 0,
+	}, () => resolve());
+});
+
+
 const destroyAll = () => {
 	try {
 		menus.unmount();
-		tray.unmount();
 		dock.unmount();
-		spellchecking.removeAllListeners();
+		touchBar.unmount();
+		tray.unmount();
+		deepLinks.removeAllListeners();
+		basicAuth.removeAllListeners();
+		certificates.removeAllListeners();
 		updates.removeAllListeners();
 		getCurrentWindow().removeAllListeners();
 	} catch (error) {
@@ -223,18 +185,162 @@ const browseForDictionary = () => {
 	}, callback);
 };
 
+const update = () => {
+	const {
+		windowVisible,
+		loading,
+		preferences: {
+			hasTray,
+			hasMenus,
+			hasSidebar,
+			showWindowOnUnreadChanged,
+			enabledDictionaries,
+		},
+		servers,
+		view,
+	} = store.getState();
+
+	const badges = servers.map(({ badge }) => badge);
+	const mentionCount = (
+		badges
+			.filter((badge) => Number.isInteger(badge))
+			.reduce((sum, count) => sum + count, 0)
+	);
+	const globalBadge = mentionCount || (badges.some((badge) => !!badge) && '•') || null;
+
+	getCurrentWindow().hideOnClose = hasTray;
+
+	document.querySelector('.loading').classList.toggle('loading--visible', loading);
+
+	dock.setState({
+		hasTray,
+		badge: globalBadge,
+	});
+
+	landing.setState({
+		visible: !loading && view === 'landing',
+	});
+
+	menus.setState({
+		servers,
+		activeServerUrl: view.url,
+		hasTray,
+		hasMenus,
+		hasSidebar,
+		showWindowOnUnreadChanged,
+	});
+
+	sidebar.setState({
+		servers,
+		activeServerUrl: view.url,
+		visible: !loading && hasSidebar,
+	});
+
+	spellchecking.setEnabledDictionaries(...enabledDictionaries);
+
+	touchBar.setState({
+		servers,
+		activeServerUrl: view.url,
+	});
+
+	tray.setState({
+		badge: globalBadge,
+		isMainWindowVisible: windowVisible,
+		visible: hasTray,
+	});
+
+	webviews.setState({
+		servers,
+		activeServerUrl: view.url,
+		hasSpacingForTitleBarButtons: !hasSidebar,
+	});
+};
+
+const getServerFromUrl = (subUrl) => {
+	const { servers } = store.getState();
+	return servers.find(({ url }) => subUrl.indexOf(url) === 0);
+};
+
+const validateServer = async (serverUrl, timeout = 5000) => {
+	try {
+		const headers = new Headers();
+
+		if (serverUrl.includes('@')) {
+			const url = new URL(serverUrl);
+			serverUrl = url.origin;
+			headers.set('Authorization', `Basic ${ btoa(`${ url.username }:${ url.password }`) }`);
+		}
+		const response = await Promise.race([
+			fetch(`${ serverUrl }/api/info`, { headers }),
+			new Promise((resolve, reject) => setTimeout(() => reject('timeout'), timeout)),
+		]);
+
+		if (response.status === 401) {
+			return 'basic-auth';
+		}
+
+		if (!response.ok) {
+			return 'invalid';
+		}
+
+		const { success } = await response.json();
+		if (!success) {
+			return 'invalid';
+		}
+
+		return 'valid';
+	} catch (error) {
+		return 'invalid';
+	}
+};
+
+const addServer = async (serverUrl, askForConfirmation = false) => {
+	const { servers } = store.getState();
+	const index = servers.findIndex(({ url }) => url === serverUrl);
+
+	if (index > -1) {
+		store.dispatch(showServer(serverUrl));
+		return;
+	}
+
+	if (askForConfirmation) {
+		const shouldAdd = await confirmServerAddition({ serverUrl });
+		if (!shouldAdd) {
+			return;
+		}
+	}
+
+	const result = await validateServer(serverUrl);
+	if (result === 'valid') {
+		store.dispatch(addServerFromUrl(serverUrl));
+		store.dispatch(showServer(serverUrl));
+	} else {
+		dialog.showErrorBox(
+			i18n.__('dialog.addServerError.title'),
+			i18n.__('dialog.addServerError.message', { host: serverUrl })
+		);
+	}
+
+	return result;
+};
+
 export default async () => {
 	await i18n.initialize();
+
+	store.subscribe(update);
+
+	getCurrentWindow().on('show', () => store.dispatch(showWindow()));
+	getCurrentWindow().on('hide', () => store.dispatch(hideWindow()));
 
 	window.addEventListener('beforeunload', destroyAll);
 
 	document.addEventListener('selectionchange', handleSelectionChangeEventListener);
 
 	aboutModal.on('check-for-updates', () => updates.checkForUpdates());
-	aboutModal.on('set-check-for-updates-on-start', (checked) => updates.setAutoUpdate(checked));
+	aboutModal.on('set-check-for-updates-on-start', (enabled) => updates.setAutoUpdate(enabled));
 
-	basicAuth.on('login-requested', ({ request: { url }, callback }) => {
-		const { username, password } = servers.fromUrl(url) || {};
+	basicAuth.on('login-requested', ({ webContentsUrl, callback }) => {
+		const { username, password } = getServerFromUrl(webContentsUrl) || {};
 		callback((username && password) ? [username, password] : null);
 	});
 
@@ -244,15 +350,12 @@ export default async () => {
 	});
 
 	contextMenu.on('replace-misspelling', (correction) => getFocusedWebContents().replaceMisspelling(correction));
-	contextMenu.on('toggle-dictionary', (dictionary, enabled) => spellchecking.toggleDictionary(dictionary, enabled));
+	contextMenu.on('toggle-dictionary', (dictionary, enabled) => store.dispatch(toggleSpellcheckingDictionary(dictionary, enabled)));
 	contextMenu.on('browse-for-dictionary', () => browseForDictionary());
-
 	contextMenu.on('save-image-as', (url) => getFocusedWebContents().downloadURL(url)),
-
 	contextMenu.on('open-link', (url) => shell.openExternal(url));
 	contextMenu.on('copy-link-text', ({ text }) => clipboard.write({ text, bookmark: text }));
 	contextMenu.on('copy-link-address', ({ text, url }) => clipboard.write({ text: url, bookmark: text }));
-
 	contextMenu.on('undo', () => getFocusedWebContents().undo());
 	contextMenu.on('redo', () => getFocusedWebContents().redo());
 	contextMenu.on('cut', () => getFocusedWebContents().cut());
@@ -262,36 +365,11 @@ export default async () => {
 
 	deepLinks.on('auth', async ({ serverUrl }) => {
 		getCurrentWindow().forceFocus();
-
-		if (servers.has(serverUrl)) {
-			servers.setActive(serverUrl);
-			return;
-		}
-
-		const shouldAdd = await confirmServerAddition({ serverUrl });
-		if (!shouldAdd) {
-			return;
-		}
-
-		try {
-			await servers.validate(serverUrl);
-			servers.add(serverUrl);
-			servers.setActive(serverUrl);
-		} catch (error) {
-			dialog.showErrorBox(
-				i18n.__('dialog.addServerError.title'),
-				i18n.__('dialog.addServerError.message', { host: serverUrl })
-			);
-		}
+		await addServer(serverUrl, true);
 	});
 
-	landing.on('add-server', (serverUrl) => {
-		servers.add(serverUrl);
-		servers.setActive(serverUrl);
-	});
-
-	landing.on('validate', async (serverUrl, callback) => {
-		callback(await servers.validate(serverUrl));
+	landing.on('add-server', async (serverUrl, callback) => {
+		callback(await addServer(serverUrl));
 	});
 
 	menus.on('quit', () => app.quit());
@@ -311,12 +389,12 @@ export default async () => {
 
 	menus.on('add-new-server', () => {
 		getCurrentWindow().show();
-		servers.setActive(null);
+		store.dispatch(showLanding());
 	});
 
 	menus.on('select-server', ({ url }) => {
 		getCurrentWindow().show();
-		servers.setActive(url);
+		store.dispatch(showServer(url));
 	});
 
 	menus.on('reload-server', ({ ignoringCache = false, clearCertificates = false } = {}) => {
@@ -351,34 +429,28 @@ export default async () => {
 		}
 	});
 
-	menus.on('toggle', (property) => {
+	menus.on('toggle', (property, value) => {
 		switch (property) {
-			case 'showTrayIcon': {
-				preferences.set('hasTrayIcon', !preferences.get('hasTrayIcon'));
+			case 'hasTray': {
+				store.dispatch(setPreferences({ hasTray: value }));
 				break;
 			}
 
-			case 'showMenuBar': {
-				preferences.set('hasMenuBar', !preferences.get('hasMenuBar'));
+			case 'hasMenus': {
+				store.dispatch(setPreferences({ hasMenus: value }));
 				break;
 			}
 
-			case 'showServerList': {
-				preferences.set('hasSidebar', !preferences.get('hasSidebar'));
+			case 'hasSidebar': {
+				store.dispatch(setPreferences({ hasSidebar: value }));
 				break;
 			}
 
 			case 'showWindowOnUnreadChanged': {
-				preferences.set('showWindowOnUnreadChanged', !preferences.get('showWindowOnUnreadChanged'));
+				store.dispatch(setPreferences({ showWindowOnUnreadChanged: value }));
 				break;
 			}
 		}
-
-		updatePreferences();
-	});
-
-	preferences.on('set', () => {
-		updatePreferences();
 	});
 
 	screenshareModal.on('select-source', ({ id, url }) => {
@@ -386,45 +458,8 @@ export default async () => {
 		webviews.selectScreenshareSource({ url }, id);
 	});
 
-	servers.on('loaded', (entries, fromDefaults) => {
-		if (fromDefaults) {
-			if (Object.keys(entries).length <= 1) {
-				preferences.set('hasSidebar', false);
-			}
-		}
-		updateServers();
-	});
-
-	servers.on('added', (/* entry */) => {
-		updateServers();
-	});
-
-	servers.on('removed', (/* entry */) => {
-		updateServers();
-	});
-
-	servers.on('updated', (/* entry */) => {
-		updateServers();
-	});
-
-	servers.on('sorted', () => {
-		updateServers();
-	});
-
-	servers.on('active-setted', (/* entry */) => {
-		updateServers();
-	});
-
-	servers.on('active-cleared', () => {
-		updateServers();
-	});
-
-	servers.on('title-setted', () => {
-		updateServers();
-	});
-
 	sidebar.on('select-server', (url) => {
-		servers.setActive(url);
+		store.dispatch(showServer(url));
 	});
 
 	sidebar.on('reload-server', (url) => {
@@ -432,7 +467,7 @@ export default async () => {
 	});
 
 	sidebar.on('remove-server', (url) => {
-		servers.remove(url);
+		store.dispatch(removeServerFromUrl(url));
 	});
 
 	sidebar.on('open-devtools-for-server', (url) => {
@@ -440,54 +475,37 @@ export default async () => {
 	});
 
 	sidebar.on('add-server', () => {
-		servers.setActive(null);
+		store.dispatch(showLanding());
 	});
 
 	sidebar.on('servers-sorted', (urls) => {
-		servers.sort(urls);
+		store.dispatch(sortServers(urls));
 	});
-
-	getCurrentWindow().on('hide', updateWindowState);
-	getCurrentWindow().on('show', updateWindowState);
 
 	touchBar.on('format', (buttonId) => {
 		webviews.format({ active: true }, buttonId);
 	});
 
 	touchBar.on('select-server', (url) => {
-		servers.setActive(url);
+		store.dispatch(showServer(url));
 	});
 
 	tray.on('set-main-window-visibility', (visible) =>
 		(visible ? getCurrentWindow().show() : getCurrentWindow().hide()));
 	tray.on('quit', () => app.quit());
 
-	updateModal.on('skip', (newVersion) => {
-		dialog.showMessageBox(getCurrentWindow(), {
-			type: 'warning',
-			title: i18n.__('dialog.updateSkip.title'),
-			message: i18n.__('dialog.updateSkip.message'),
-			buttons: [i18n.__('dialog.updateSkip.ok')],
-			defaultId: 0,
-		}, () => {
-			updates.skipVersion(newVersion);
-			updateModal.setState({ visible: false });
-		});
+	updateModal.on('skip', async (newVersion) => {
+		await warnItWillSkipVersion();
+		updates.skipVersion(newVersion);
+		updateModal.setState({ visible: false });
 	});
 	updateModal.on('remind-later', () => {
 		updateModal.setState({ visible: false });
 	});
-	updateModal.on('install', () => {
-		dialog.showMessageBox(getCurrentWindow(), {
-			type: 'info',
-			title: i18n.__('dialog.updateDownloading.title'),
-			message: i18n.__('dialog.updateDownloading.message'),
-			buttons: [i18n.__('dialog.updateDownloading.ok')],
-			defaultId: 0,
-		}, () => {
-			updates.downloadUpdate();
-			updateModal.setState({ visible: false });
-		});
+	updateModal.on('install', async () => {
+		await informItWillInstallUpdate();
+		updates.downloadUpdate();
+		updateModal.setState({ visible: false });
 	});
 
 	updates.on('configuration-set', ({ canUpdate, canAutoUpdate, canSetAutoUpdate }) => {
@@ -521,24 +539,25 @@ export default async () => {
 	});
 
 	webviews.on(channels.badgeChanged, (url, badge) => {
-		if (typeof badge === 'number' && preferences.get('showWindowOnUnreadChanged')) {
+		const { preferences: { showWindowOnUnreadChanged } } = store.getState();
+		if (typeof badge === 'number' && showWindowOnUnreadChanged) {
 			const mainWindow = remote.getCurrentWindow();
 			mainWindow.showInactive();
 		}
 
-		servers.set(url, { badge });
+		store.dispatch(setServerProperties({ url, badge }));
 	});
 
 	webviews.on(channels.titleChanged, (url, title) => {
-		servers.set(url, { title });
+		store.dispatch(setServerProperties({ url, title }));
 	});
 
 	webviews.on(channels.focus, (url) => {
-		servers.setActive(url);
+		store.dispatch(showServer(url));
 	});
 
 	webviews.on(channels.sidebarStyleChanged, (url, style) => {
-		servers.set(url, { style });
+		store.dispatch(setServerProperties({ url, style }));
 	});
 
 	webviews.on(channels.selectScreenshareSource, (url) => {
@@ -558,21 +577,25 @@ export default async () => {
 	});
 
 	webviews.on(channels.triggerContextMenu, (url, params) => {
+		const {
+			preferences: {
+				enabledDictionaries,
+			},
+		} = store.getState();
 		const { selectionText } = params;
-
 		const corrections = spellchecking.getCorrections(selectionText);
 		const availableDictionaries = spellchecking.getAvailableDictionaries();
-		const enabledDictionaries = spellchecking.getEnabledDictionaries();
 		const dictionaries = availableDictionaries.map((dictionary) => ({
 			dictionary,
 			enabled: enabledDictionaries.includes(dictionary),
 		}));
+		const multipleDictionaries = spellchecking.supportsMultipleDictionaries();
 
-		contextMenu.trigger({ ...params, corrections, dictionaries });
+		contextMenu.trigger({ ...params, corrections, dictionaries, multipleDictionaries });
 	});
 
 	webviews.on('did-navigate', (url, lastPath) => {
-		servers.set(url, { lastPath });
+		store.dispatch(setServerProperties({ url, lastPath }));
 		menus.setState({
 			canGoBack: webviews.getWebContents({ url }).canGoBack(),
 			canGoForward: webviews.getWebContents({ url }).canGoForward(),
@@ -580,7 +603,7 @@ export default async () => {
 	});
 
 	webviews.on('ready', () => {
-		stopLoading();
+		store.dispatch(stopLoading());
 	});
 
 	sidebar.mount();
@@ -591,10 +614,5 @@ export default async () => {
 	screenshareModal.mount();
 	updateModal.mount();
 
-	await servers.initialize();
-	await preferences.initialize();
-
-	updatePreferences();
-	updateServers();
-	updateWindowState();
+	await initializeData();
 };

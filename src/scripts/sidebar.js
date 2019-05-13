@@ -9,6 +9,7 @@ const faviconCacheBustingTime = 15 * 60 * 1000;
 
 let state = {
 	servers: [],
+	activeServerUrl: false,
 	showShortcuts: false,
 	visible: false,
 };
@@ -172,6 +173,7 @@ const update = () => {
 
 	const {
 		servers,
+		activeServerUrl,
 		showShortcuts,
 		visible,
 	} = state;
@@ -179,7 +181,7 @@ const update = () => {
 	root.classList.toggle('sidebar--hidden', !visible);
 	serverList.classList.toggle('sidebar__server-list--shortcuts', showShortcuts);
 
-	const style = servers.filter(({ active }) => active).map(({ style }) => style)[0] || {};
+	const style = servers.filter(({ url }) => activeServerUrl === url).map(({ style }) => style)[0] || {};
 	root.style.setProperty('--background', style.background || '');
 	root.style.setProperty('--color', style.color || '');
 
@@ -188,7 +190,7 @@ const update = () => {
 		.filter((serverElement) => !serverUrls.includes(serverElement.dataset.url))
 		.forEach((serverElement) => serverElement.remove());
 
-	servers.forEach((server, order) => renderServer({ ...server, order }));
+	servers.forEach((server, order) => renderServer({ ...server, active: server.url === activeServerUrl, order }));
 };
 
 const setState = (partialState) => {

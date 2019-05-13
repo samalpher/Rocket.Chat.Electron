@@ -71,12 +71,11 @@ const handleSubmit = async (event) => {
 	for (const serverUrl of tries) {
 		serverUrlField.value = serverUrl;
 
-		result = await new Promise((resolve) => events.emit('validate', serverUrl, resolve));
+		result = await new Promise((resolve) => events.emit('add-server', serverUrl, resolve));
 
 		if (result === 'valid') {
 			serverUrlField.value = '';
 			setState({ error: null, validating: false });
-			events.emit('add-server', serverUrl);
 			return;
 		}
 	}
