@@ -8,4 +8,4 @@ export const editFlagsChanged = 'edit-flags-changed';
 export const sidebarStyleChanged = 'sidebar-style-changed';
 export const badgeChanged = 'badge-changed';
 export const titleChanged = 'title-changed';
-export const contextMenu = 'context-menu';
+export const triggerContextMenu = 'trigger-context-menu';

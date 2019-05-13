@@ -1,4 +1,4 @@
-import { remote } from 'electron';
+import { remote, clipboard } from 'electron';
 import i18n from '../i18n';
 import * as channels from '../preload/channels';
 import { queryEditFlags } from '../utils';
@@ -10,6 +10,7 @@ import { preferences } from './preferences';
 import { servers } from './servers';
 import { sidebar } from './sidebar';
 import { webviews } from './webviews';
+import { contextMenu } from './contextMenu';
 const { app, dialog, getCurrentWindow, shell } = remote;
 const {
 	basicAuth,
@@ -175,6 +176,7 @@ const destroyAll = () => {
 		menus.unmount();
 		tray.unmount();
 		dock.unmount();
+		spellchecking.removeAllListeners();
 		updates.removeAllListeners();
 		getCurrentWindow().removeAllListeners();
 	} catch (error) {
@@ -218,6 +220,30 @@ const initializeSpellcheckingDictionaries = () => {
 	spellchecking.setEnabledDictionaries('en_US');
 };
 
+const browseForDictionary = () => {
+	const callback = async (filePaths = []) => {
+		try {
+			await spellchecking.installDictionaries(filePaths);
+		} catch (error) {
+			console.error(error);
+			dialog.showErrorBox(
+				i18n.__('dialog.loadDictionaryError.title'),
+				i18n.__('dialog.loadDictionaryError.message', { message: error.message })
+			);
+		}
+	};
+
+	dialog.showOpenDialog(getCurrentWindow(), {
+		title: i18n.__('dialog.loadDictionary.title'),
+		defaultPath: spellchecking.getDictionaryInstallationDirectory(),
+		filters: [
+			{ name: i18n.__('dialog.loadDictionary.dictionaries'), extensions: ['aff', 'dic'] },
+			{ name: i18n.__('dialog.loadDictionary.allFiles'), extensions: ['*'] },
+		],
+		properties: ['openFile', 'multiSelections'],
+	}, callback);
+};
+
 export default async () => {
 	await i18n.initialize();
 
@@ -237,6 +263,23 @@ export default async () => {
 		const isTrusted = await warnCertificateError({ requestUrl, error, certificate, replace });
 		callback(isTrusted);
 	});
+
+	contextMenu.on('replace-misspelling', (correction) => getFocusedWebContents().replaceMisspelling(correction));
+	contextMenu.on('toggle-dictionary', (dictionary, enabled) => spellchecking.toggleDictionary(dictionary, enabled));
+	contextMenu.on('browse-for-dictionary', () => browseForDictionary());
+
+	contextMenu.on('save-image-as', (url) => getFocusedWebContents().downloadURL(url)),
+
+	contextMenu.on('open-link', (url) => shell.openExternal(url));
+	contextMenu.on('copy-link-text', ({ text }) => clipboard.write({ text, bookmark: text }));
+	contextMenu.on('copy-link-address', ({ text, url }) => clipboard.write({ text: url, bookmark: text }));
+
+	contextMenu.on('undo', () => getFocusedWebContents().undo());
+	contextMenu.on('redo', () => getFocusedWebContents().redo());
+	contextMenu.on('cut', () => getFocusedWebContents().cut());
+	contextMenu.on('copy', () => getFocusedWebContents().copy());
+	contextMenu.on('paste', () => getFocusedWebContents().paste());
+	contextMenu.on('select-all', () => getFocusedWebContents().selectAll());
 
 	deepLinks.on('auth', async ({ serverUrl }) => {
 		getCurrentWindow().forceFocus();
@@ -537,6 +580,20 @@ export default async () => {
 			canGoBack: webviews.getWebContents({ url }).canGoBack(),
 			canGoForward: webviews.getWebContents({ url }).canGoForward(),
 		});
+	});
+
+	webviews.on(channels.triggerContextMenu, (url, params) => {
+		const { selectionText } = params;
+
+		const corrections = spellchecking.getCorrections(selectionText);
+		const availableDictionaries = spellchecking.getAvailableDictionaries();
+		const enabledDictionaries = spellchecking.getEnabledDictionaries();
+		const dictionaries = availableDictionaries.map((dictionary) => ({
+			dictionary,
+			enabled: enabledDictionaries.includes(dictionary),
+		}));
+
+		contextMenu.trigger({ ...params, corrections, dictionaries });
 	});
 
 	webviews.on('did-navigate', (url, lastPath) => {
