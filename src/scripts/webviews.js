@@ -1,31 +1,96 @@
 import { EventEmitter } from 'events';
+import * as channels from '../preload/channels';
 
 
 let state = {
 	servers: [],
 	hasSidebar: true,
 };
+
 const events = new EventEmitter();
 
 let root;
 let activeWebview;
 let focusedWebview;
 
-const get = (serverUrl) => root.querySelector(`.webview[data-url="${ serverUrl }"]`);
+const getWebview = ({ url, active, focused }) => (
+	(url && root.querySelector(`.webview[data-url="${ url }"]`)) ||
+	(active && activeWebview) ||
+	(focused && focusedWebview)
+);
+
+const onPreload = (channel) => (webview, ...args) => {
+	const isReady = webview.classList.contains('webview--ready');
+	const f = () => webview.send(channel, ...args);
+	isReady ? f() : webview.addEventListener('dom-ready', f);
+};
+
+const onWebview = (f) => (webviewSelector, ...args) => {
+	const webview = getWebview(webviewSelector);
+	if (!webview) {
+		return;
+	}
+
+	return f.call(null, webview, ...args);
+};
+
+const reload = onWebview((webview, { ignoringCache = false, fromUrl = false } = {}) => {
+	if (ignoringCache) {
+		webview.reloadIgnoringCache();
+		return;
+	}
+
+	if (fromUrl) {
+		webview.loadURL(webview.dataset.url);
+		return;
+	}
+
+	webview.reload();
+});
+
+const openDevTools = onWebview((webview) => {
+	webview.openDevTools();
+});
+
+const goBack = onWebview((webview) => {
+	webview.goBack();
+});
+
+const goForward = onWebview((webview) => {
+	webview.goForward();
+});
+
+const resetZoom = onWebview((webview) => {
+	webview.setZoomLevel(0);
+});
+
+const zoomIn = onWebview((webview) => {
+	webview.setZoomLevel(webview.getZoomLevel() + 1);
+});
+
+const zoomOut = onWebview((webview) => {
+	webview.setZoomLevel(webview.getZoomLevel() - 1);
+});
+
+const getWebContents = onWebview((webview) => webview.getWebContents());
+
+const setSidebarSpacingForTitleBarButtons = onPreload(channels.setSidebarSpacingForTitleBarButtons);
+
+const selectScreenshareSource = onWebview(onPreload(channels.selectScreenshareSource));
+
+const format = onWebview(onPreload(channels.format));
 
 const getAll = () => Array.from(root.querySelectorAll('.webview'));
 
-const getActive = () => activeWebview;
-
-const getFocused = () => focusedWebview;
-
-const handleDidNavigateInPage = ({ url: serverUrl }, webview, { url }) => {
-	if (url.indexOf(serverUrl) === 0) {
-		events.emit('did-navigate', { serverUrl, url });
+const handleDidNavigateInPage = (url, { url: lastPath }) => {
+	if (lastPath.indexOf(url) !== 0) {
+		return;
 	}
+
+	events.emit('did-navigate', url, lastPath);
 };
 
-const handleConsoleMessage = ({ url: serverUrl }, webview, { level, line, message, sourceId }) => {
+const handleConsoleMessage = (url, { level, line, message, sourceId }) => {
 	const levelFormatting = {
 		[-1]: 'color: #999',
 		0: 'color: #666',
@@ -33,31 +98,30 @@ const handleConsoleMessage = ({ url: serverUrl }, webview, { level, line, messag
 		2: 'color: #900',
 	}[level];
 	const danglingFormatting = (message.match(/%c/g) || []).map(() => '');
-	console.log(`%c${ serverUrl }\t%c${ message }\n${ sourceId } : ${ line }`,
+	console.log(`%c${ url }\t%c${ message }\n${ sourceId } : ${ line }`,
 		'font-weight: bold', levelFormatting, ...danglingFormatting);
 };
 
-const handleIpcMessage = (server, webview, { channel, args }) => {
-	events.emit(`ipc-message-${ channel }`, webview, server, ...args);
+const handleIpcMessage = (url, { channel, args }) => {
+	events.emit(channel, url, ...args);
 };
 
-const handleDomReady = ({ url: serverUrl }, webview) => {
+const handleDomReady = (url, webview) => {
 	webview.classList.add('webview--ready');
-	events.emit('dom-ready', webview, serverUrl);
+	events.emit('dom-ready', webview, url);
 
 	if (getAll().every((webview) => webview.classList.contains('webview--ready'))) {
 		events.emit('ready');
 	}
 };
 
-const handleDidFailLoad = (server, webview, { isMainFrame }) => {
-	if (!isMainFrame) {
-		return;
+const handleDidFailLoad = (webview, { isMainFrame }) => {
+	if (isMainFrame) {
+		webview.loadURL(`file://${ __dirname }/loading-error.html`);
 	}
-	webview.loadURL(`file://${ __dirname }/loading-error.html`);
 };
 
-const handleDidGetResponseDetails = (server, webview, { resourceType, httpResponseCode }) => {
+const handleDidGetResponseDetails = (webview, { resourceType, httpResponseCode }) => {
 	if (resourceType === 'mainFrame' && httpResponseCode >= 500) {
 		webview.loadURL(`file://${ __dirname }/loading-error.html`);
 	}
@@ -73,31 +137,10 @@ const handleBlur = (webview) => {
 	}
 };
 
-const setTitleBarButtonsPadding = (webview, hasSidebar) => {
-	if (process.platform !== 'darwin') {
-		return;
-	}
-
-	webview.executeJavaScript(`(() => {
-		const style = document.getElementById('electronStyle') || document.createElement('style');
-		style.setAttribute('id', 'electronStyle');
-		style.innerHTML = \`
-		.sidebar {
-			padding-top: ${ hasSidebar ? '0' : '10px' };
-			transition:
-				padding .5s ease-in-out,
-				margin .5s ease-in-out;
-		}
-		\`;
-		document.head.appendChild(style);
-	})()`);
-};
-
 const renderServer = ({ active, hasSidebar, ...server }) => {
 	const { url, lastPath } = server;
 	const webviewNode = root.querySelector(`.webview[data-url="${ url }"]`);
 	const shouldAppend = !webviewNode;
-	const isReady = webviewNode && webviewNode.classList.contains('webview--ready');
 
 	const webview = webviewNode ? webviewNode : document.createElement('webview');
 
@@ -112,12 +155,12 @@ const renderServer = ({ active, hasSidebar, ...server }) => {
 			webSecurity: false,
 		}).map(([key, value]) => `${ key }=${ value ? 'on' : 'off' }`).join(' '));
 
-		webview.addEventListener('did-navigate-in-page', handleDidNavigateInPage.bind(null, server, webview));
-		webview.addEventListener('console-message', handleConsoleMessage.bind(null, server, webview));
-		webview.addEventListener('ipc-message', handleIpcMessage.bind(null, server, webview));
-		webview.addEventListener('dom-ready', handleDomReady.bind(null, server, webview));
-		webview.addEventListener('did-fail-load', handleDidFailLoad.bind(null, server, webview));
-		webview.addEventListener('did-get-response-details', handleDidGetResponseDetails.bind(null, server, webview));
+		webview.addEventListener('did-navigate-in-page', handleDidNavigateInPage.bind(null, url));
+		webview.addEventListener('console-message', handleConsoleMessage.bind(null, url));
+		webview.addEventListener('ipc-message', handleIpcMessage.bind(null, url));
+		webview.addEventListener('dom-ready', handleDomReady.bind(null, url, webview));
+		webview.addEventListener('did-fail-load', handleDidFailLoad.bind(null, webview));
+		webview.addEventListener('did-get-response-details', handleDidGetResponseDetails.bind(null, webview));
 		webview.addEventListener('focus', handleFocus.bind(null, webview));
 		webview.addEventListener('blur', handleBlur.bind(null, webview));
 
@@ -125,10 +168,9 @@ const renderServer = ({ active, hasSidebar, ...server }) => {
 		webview.setAttribute('src', lastPath || url);
 	}
 
-	if (isReady) {
-		setTitleBarButtonsPadding(webview, hasSidebar);
-	} else {
-		webview.addEventListener('dom-ready', setTitleBarButtonsPadding.bind(null, webview, hasSidebar));
+	if (process.platform === 'darwin') {
+		const hasSpacing = !hasSidebar;
+		setSidebarSpacingForTitleBarButtons(webview, hasSpacing);
 	}
 
 	if (active) {
@@ -172,7 +214,7 @@ const setState = (partialState) => {
 };
 
 const handleWindowFocus = () => {
-	const active = getActive();
+	const active = getWebview({ active: true });
 	active && active.focus();
 };
 
@@ -184,7 +226,14 @@ const mount = () => {
 export const webviews = Object.assign(events, {
 	mount,
 	setState,
-	get,
-	getActive,
-	getFocused,
+	reload,
+	openDevTools,
+	goBack,
+	goForward,
+	resetZoom,
+	zoomIn,
+	zoomOut,
+	getWebContents,
+	selectScreenshareSource,
+	format,
 });

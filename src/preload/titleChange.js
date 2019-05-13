@@ -1,5 +1,6 @@
 import { ipcRenderer } from 'electron';
 import { getMeteor, getTracker, getSettings } from './rocketChat';
+import { titleChanged } from './channels';
 
 
 function handleTitleChange() {
@@ -15,7 +16,7 @@ function handleTitleChange() {
 		Tracker.autorun(() => {
 			const siteName = settings.get('Site_Name');
 			if (siteName) {
-				ipcRenderer.sendToHost('title-changed', siteName);
+				ipcRenderer.sendToHost(titleChanged, siteName);
 			}
 		});
 	});

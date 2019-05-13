@@ -1,6 +1,7 @@
-import { clipboard, remote, shell } from 'electron';
+import { clipboard, ipcRenderer, remote, shell } from 'electron';
 import i18n from '../i18n';
 import { spellchecking } from './spellchecking';
+import { contextMenu } from './channels';
 const { dialog, getCurrentWebContents, getCurrentWindow, Menu } = remote;
 
 
@@ -197,6 +198,7 @@ const createMenuTemplate = async (params) => [
 export default () => {
 	getCurrentWebContents().on('context-menu', (event, params) => {
 		event.preventDefault();
+		ipcRenderer.sendToHost(contextMenu, params);
 		(async () => {
 			const menu = Menu.buildFromTemplate(await createMenuTemplate(params));
 			menu.popup({ window: getCurrentWindow() });

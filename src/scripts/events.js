@@ -1,5 +1,7 @@
 import { remote } from 'electron';
 import i18n from '../i18n';
+import * as channels from '../preload/channels';
+import { queryEditFlags } from '../utils';
 import { aboutModal } from './aboutModal';
 import { screenshareModal } from './screenshareModal';
 import { updateModal } from './updateModal';
@@ -179,15 +181,6 @@ const destroyAll = () => {
 	}
 };
 
-const queryEditFlags = () => ({
-	canUndo: document.queryCommandEnabled('undo'),
-	canRedo: document.queryCommandEnabled('redo'),
-	canCut: document.queryCommandEnabled('cut'),
-	canCopy: document.queryCommandEnabled('copy'),
-	canPaste: document.queryCommandEnabled('paste'),
-	canSelectAll: document.queryCommandEnabled('selectAll'),
-});
-
 const handleSelectionChangeEventListener = () => {
 	menus.setState({
 		...queryEditFlags(),
@@ -196,9 +189,7 @@ const handleSelectionChangeEventListener = () => {
 	});
 };
 
-const getFocusedWebContents = () => (
-	(webviews.getFocused() && webviews.getFocused().getWebContents()) || getCurrentWindow().webContents
-);
+const getFocusedWebContents = () => webviews.getWebContents({ focused: true }) || getCurrentWindow().webContents;
 
 export default async () => {
 	await i18n.initialize();
@@ -265,9 +256,9 @@ export default async () => {
 	menus.on('paste', () => getFocusedWebContents().paste());
 	menus.on('select-all', () => getFocusedWebContents().selectAll());
 
-	menus.on('reset-zoom', () => webviews.getActive().setZoomLevel(0));
-	menus.on('zoom-in', () => webviews.getActive().setZoomLevel(webviews.getActive().getZoomLevel() + 1));
-	menus.on('zoom-out', () => webviews.getActive().setZoomLevel(webviews.getActive().getZoomLevel() - 1));
+	menus.on('reset-zoom', () => webviews.resetZoom({ active: true }));
+	menus.on('zoom-in', () => webviews.zoomIn({ active: true }));
+	menus.on('zoom-out', () => webviews.zoomOut({ active: true }));
 
 	menus.on('add-new-server', () => {
 		getCurrentWindow().show();
@@ -284,23 +275,19 @@ export default async () => {
 			certificates.clear();
 		}
 
-		const webview = webviews.getActive();
-		webview && (ignoringCache ? webview.reloadIgnoringCache() : webview.reload());
+		webviews.reload({ active: true }, { ignoringCache });
 	});
 
 	menus.on('open-devtools-for-server', () => {
-		const webview = webviews.getActive();
-		webview && webview.openDevTools();
+		webviews.openDevTools({ active: true });
 	});
 
 	menus.on('go-back', () => {
-		const webview = webviews.getActive();
-		webview && webview.goBack();
+		webviews.goBack({ active: true });
 	});
 
 	menus.on('go-forward', () => {
-		const webview = webviews.getActive();
-		webview.goForward();
+		webviews.goForward({ active: true });
 	});
 
 	menus.on('reload-app', () => getCurrentWindow().reload());
@@ -347,8 +334,7 @@ export default async () => {
 
 	screenshareModal.on('select-source', ({ id, url }) => {
 		screenshareModal.setState({ visible: false });
-		const webview = webviews.get(url);
-		webview.executeJavaScript(`window.parent.postMessage({ sourceId: '${ id }' }, '*');`);
+		webviews.selectScreenshareSource({ url }, id);
 	});
 
 	servers.on('loaded', (entries, fromDefaults) => {
@@ -388,22 +374,20 @@ export default async () => {
 		updateServers();
 	});
 
-	sidebar.on('select-server', (serverUrl) => {
-		servers.setActive(serverUrl);
+	sidebar.on('select-server', (url) => {
+		servers.setActive(url);
 	});
 
-	sidebar.on('reload-server', (serverUrl) => {
-		const webview = webviews.get(serverUrl);
-		webview && webview.reload();
+	sidebar.on('reload-server', (url) => {
+		webviews.reload({ url });
 	});
 
-	sidebar.on('remove-server', (serverUrl) => {
-		servers.remove(serverUrl);
+	sidebar.on('remove-server', (url) => {
+		servers.remove(url);
 	});
 
-	sidebar.on('open-devtools-for-server', (serverUrl) => {
-		const webview = webviews.get(serverUrl);
-		webview.openDevTools();
+	sidebar.on('open-devtools-for-server', (url) => {
+		webviews.openDevTools({ url });
 	});
 
 	sidebar.on('add-server', () => {
@@ -418,24 +402,7 @@ export default async () => {
 	getCurrentWindow().on('show', updateWindowState);
 
 	touchBar.on('format', (buttonId) => {
-		const legacyButtonIconClass = {
-			bold: 'bold',
-			italic: 'italic',
-			strike: 'strike',
-			inline_code: 'code',
-			multi_line: 'multi-line',
-		}[buttonId];
-
-		const webview = webviews.getActive();
-
-		webview && webview.executeJavaScript(`((buttonId, legacyButtonIconClass) => {
-			let button = document.querySelector(\`.js-format[data-id="${ buttonId }"]\`);
-			if (!button) {
-				const svg = document.querySelector(\`.js-md svg[class$="${ legacyButtonIconClass }"]\`);
-				button = svg && svg.parentNode;
-			}
-			button && button.click();
-		})('${ legacyButtonIconClass }', '${ buttonId }')`);
+		webviews.format({ active: true }, buttonId);
 	});
 
 	touchBar.on('select-server', (serverUrl) => {
@@ -504,45 +471,49 @@ export default async () => {
 		updates.quitAndInstall();
 	});
 
-	webviews.on('ipc-message-unread-changed', (webview, { url: serverUrl }, badge) => {
+	webviews.on(channels.badgeChanged, (url, badge) => {
 		if (typeof badge === 'number' && preferences.get('showWindowOnUnreadChanged')) {
 			const mainWindow = remote.getCurrentWindow();
 			mainWindow.showInactive();
 		}
 
-		servers.set(serverUrl, { badge });
+		servers.set(url, { badge });
 	});
 
-	webviews.on('ipc-message-title-changed', (webview, { url: serverUrl }, title) => {
-		servers.set(serverUrl, { title });
+	webviews.on(channels.titleChanged, (url, title) => {
+		servers.set(url, { title });
 	});
 
-	webviews.on('ipc-message-focus', (webview, { url: serverUrl }) => {
-		servers.setActive(serverUrl);
+	webviews.on(channels.focus, (url) => {
+		servers.setActive(url);
 	});
 
-	webviews.on('ipc-message-sidebar-style', (webview, { url: serverUrl }, style) => {
-		servers.set(serverUrl, { style });
+	webviews.on(channels.sidebarStyleChanged, (url, style) => {
+		servers.set(url, { style });
 	});
 
-	webviews.on('ipc-message-get-sourceId', (webview, { url: serverUrl }) => {
-		screenshareModal.setState({ visible: false, url: serverUrl });
+	webviews.on(channels.selectScreenshareSource, (url) => {
+		screenshareModal.setState({ visible: false, url });
 	});
 
-	webviews.on('ipc-message-reload-server', (webview, { url: serverUrl }) => {
-		webview.loadURL(serverUrl);
+	webviews.on(channels.reloadServer, (url) => {
+		webviews.reload({ url }, { fromUrl: true });
 	});
 
-	webviews.on('ipc-message-edit-flags-changed', (webview, server, editFlags) => {
+	webviews.on(channels.editFlagsChanged, (url, editFlags) => {
 		menus.setState({
 			...editFlags,
-			canGoBack: webview.canGoBack(),
-			canGoForward: webview.canGoForward(),
+			canGoBack: webviews.getWebContents({ url }).canGoBack(),
+			canGoForward: webviews.getWebContents({ url }).canGoForward(),
 		});
 	});
 
-	webviews.on('did-navigate', ({ serverUrl, url }) => {
-		servers.set(serverUrl, { lastPath: url });
+	webviews.on('did-navigate', (url, lastPath) => {
+		servers.set(url, { lastPath });
+		menus.setState({
+			canGoBack: webviews.getWebContents({ url }).canGoBack(),
+			canGoForward: webviews.getWebContents({ url }).canGoForward(),
+		});
 	});
 
 	webviews.on('ready', () => {

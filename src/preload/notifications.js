@@ -1,6 +1,7 @@
 import { ipcRenderer, remote } from 'electron';
 import { EventEmitter } from 'events';
 import mem from 'mem';
+import { focus } from './channels';
 const { notifications } = remote.require('./main');
 
 
@@ -70,7 +71,7 @@ class Notification extends EventEmitter {
 
 	handleClick(event) {
 		remote.getCurrentWindow().forceFocus();
-		ipcRenderer.sendToHost('focus');
+		ipcRenderer.sendToHost(focus);
 		event.currentTarget = this;
 		this.onclick && this.onclick.call(this, event);
 		this.emit('close', event);

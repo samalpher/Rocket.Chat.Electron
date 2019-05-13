@@ -49,3 +49,12 @@ export const writeJson = async (filename, data) => {
 		console.error(error && (error.stack || error));
 	}
 };
+
+export const queryEditFlags = () => ({
+	canUndo: document.queryCommandEnabled('undo'),
+	canRedo: document.queryCommandEnabled('redo'),
+	canCut: document.queryCommandEnabled('cut'),
+	canCopy: document.queryCommandEnabled('copy'),
+	canPaste: document.queryCommandEnabled('paste'),
+	canSelectAll: document.queryCommandEnabled('selectAll'),
+});
