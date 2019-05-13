@@ -6,6 +6,9 @@ const initialState = {
 	hasTrayIcon: process.platform !== 'linux',
 	hasMenuBar: true,
 	hasSidebar: true,
+	spellchecking: {
+		enabledDictionaries: [navigator.language],
+	},
 };
 
 let entries = initialState;
@@ -43,6 +46,17 @@ const initialize = async () => {
 	if (localStorage.getItem('showWindowOnUnreadChanged')) {
 		entries.showWindowOnUnreadChanged = localStorage.getItem('showWindowOnUnreadChanged') === 'true';
 		localStorage.removeItem('showWindowOnUnreadChanged');
+	}
+
+	entries.spellchecking = entries.spellchecking || {};
+
+	if (localStorage.getItem('spellcheckerDictionaries')) {
+		try {
+			const dictionaries = JSON.parse(localStorage.getItem('spellcheckerDictionaries'));
+			entries.spellchecking.enabledDictionaries = Array.isArray(dictionaries) ? dictionaries.map(String) : [];
+		} finally {
+			localStorage.removeItem('spellcheckerDictionaries');
+		}
 	}
 
 	await persist();
