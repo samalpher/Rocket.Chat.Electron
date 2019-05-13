@@ -1,4 +1,6 @@
+import { remote } from 'electron';
 import { EventEmitter } from 'events';
+const { config } = remote.require('./main');
 
 
 const initialState = {
@@ -15,18 +17,8 @@ let entries = initialState;
 
 const events = new EventEmitter();
 
-const load = () => {
-	try {
-		return JSON.parse(localStorage.getItem('preferences')) || initialState;
-	} catch (error) {
-		return initialState;
-	}
-};
-
-const persist = () => localStorage.setItem('preferences', JSON.stringify(entries));
-
-const initialize = async () => {
-	entries = await load();
+const initialize = () => {
+	entries = config.get('preferences', initialState);
 
 	if (localStorage.getItem('hideTray')) {
 		entries.hasTrayIcon = localStorage.getItem('hideTray') !== 'true';
@@ -59,16 +51,16 @@ const initialize = async () => {
 		}
 	}
 
-	await persist();
+	config.set('preferences', entries);
 };
 
 const get = (name) => entries[name];
 
 const getAll = () => entries;
 
-const set = async (name, value) => {
+const set = (name, value) => {
 	entries[name] = value;
-	await persist();
+	config.set('preferences', entries);
 	events.emit('set', name, value);
 };
 

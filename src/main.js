@@ -1,4 +1,5 @@
 import { app } from 'electron';
+import ElectronStore from 'electron-store';
 import jetpack from 'fs-jetpack';
 import i18n from './i18n';
 import { deepLinks } from './main/deepLinks';
@@ -12,6 +13,8 @@ import { touchBar } from './main/touchBar';
 import { tray } from './main/tray';
 import { updates } from './main/updates';
 
+
+export const config = new ElectronStore();
 
 const setupErrorHandling = () => {
 	process.on('uncaughtException', (error) => {

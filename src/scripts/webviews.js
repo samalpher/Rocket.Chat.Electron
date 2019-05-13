@@ -12,6 +12,7 @@ const events = new EventEmitter();
 let root;
 let activeWebview;
 let focusedWebview;
+let isAllReady = false;
 
 const getWebview = ({ url, active, focused }) => (
 	(url && root.querySelector(`.webview[data-url="${ url }"]`)) ||
@@ -110,7 +111,8 @@ const handleDomReady = (url, webview) => {
 	webview.classList.add('webview--ready');
 	events.emit('dom-ready', webview, url);
 
-	if (getAll().every((webview) => webview.classList.contains('webview--ready'))) {
+	if (!isAllReady && getAll().every((webview) => webview.classList.contains('webview--ready'))) {
+		isAllReady = true;
 		events.emit('ready');
 	}
 };
@@ -164,6 +166,8 @@ const renderServer = ({ active, hasSidebar, ...server }) => {
 		webview.addEventListener('focus', handleFocus.bind(null, webview));
 		webview.addEventListener('blur', handleBlur.bind(null, webview));
 
+		isAllReady = false;
+
 		root.appendChild(webview);
 		webview.setAttribute('src', lastPath || url);
 	}
@@ -199,7 +203,8 @@ const update = () => {
 			...server,
 			hasSidebar,
 		}));
-	} else {
+	} else if (!isAllReady) {
+		isAllReady = true;
 		events.emit('ready');
 	}
 };

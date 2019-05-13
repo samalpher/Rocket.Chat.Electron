@@ -454,8 +454,8 @@ export default async () => {
 		webviews.format({ active: true }, buttonId);
 	});
 
-	touchBar.on('select-server', (serverUrl) => {
-		servers.setActive(serverUrl);
+	touchBar.on('select-server', (url) => {
+		servers.setActive(url);
 	});
 
 	tray.on('set-main-window-visibility', (visible) =>

@@ -1,6 +1,8 @@
+import { remote } from 'electron';
 import { EventEmitter } from 'events';
 import url from 'url';
 import { normalizeServerUrl, loadJson } from '../utils';
+const { config } = remote.require('./main');
 
 
 let entries = [];
@@ -15,21 +17,11 @@ const fromUrl = (serverUrl) => entries.find(({ url }) => serverUrl.indexOf(url) 
 
 const getAll = () => entries;
 
-const load = () => {
-	try {
-		return JSON.parse(localStorage.getItem('servers')) || [];
-	} catch (error) {
-		return [];
-	}
-};
-
-const persist = () => localStorage.setItem('servers', JSON.stringify(entries));
-
 const setActive = (serverUrl) => {
 	for (const entry of entries) {
 		entry.active = entry.url === serverUrl;
 	}
-	persist();
+	config.set('servers', entries);
 
 	const activatedServer = entries.find(({ active }) => active);
 	activatedServer ? events.emit('active-setted', activatedServer) : events.emit('active-cleared');
@@ -47,7 +39,7 @@ const set = (serverUrl, { url, active, ...entry }) => {
 		...entries[index],
 		...entry,
 	};
-	persist();
+	config.set('servers', entries);
 
 	if (isTitleChanging) {
 		events.emit('title-setted', entries[index]);
@@ -80,7 +72,7 @@ const add = (serverUrl) => {
 	entry.title = entry.url;
 
 	entries.push(entry);
-	persist();
+	config.set('servers', entries);
 
 	events.emit('added', entry);
 };
@@ -93,7 +85,7 @@ const remove = (serverUrl) => {
 
 	const entry = entries[index];
 	entries.splice(index, 1);
-	persist();
+	config.set('servers', entries);
 
 	if (!entries.some(({ active }) => active)) {
 		const activatedServer = entries.find(({ active }) => active);
@@ -105,7 +97,7 @@ const remove = (serverUrl) => {
 
 const sort = (urls) => {
 	entries = entries.sort(({ url: a }, { url: b }) => urls.indexOf(a) - urls.indexOf(b));
-	persist();
+	config.set('servers', entries);
 
 	events.emit('sorted');
 };
@@ -202,25 +194,29 @@ const migrateFromDefaults = async () => {
 				}))
 		),
 	];
-	entries[0].active = true;
+
+	if (entries[0]) {
+		entries[0].active = true;
+	}
 };
 
 const initialize = async () => {
 	if (localStorage.getItem('rocket.chat.hosts')) {
 		await migrateFromLocalStorage();
-		await persist();
+		config.set('servers', entries);
 		events.emit('loaded', entries);
 		return;
 	}
 
-	if (!localStorage.getItem('servers')) {
+	entries = config.get('servers', []);
+
+	if (entries.length === 0) {
 		await migrateFromDefaults();
-		await persist();
+		config.set('servers', entries);
 		events.emit('loaded', entries, true);
 		return;
 	}
 
-	entries = await load();
 	events.emit('loaded', entries);
 };
 
