@@ -1,4 +1,5 @@
 import createDebugLogger from 'debug';
+import { remote } from 'electron';
 import {
 	forwardToRenderer,
 	forwardToMain,
@@ -28,6 +29,7 @@ const reducer = combineReducers({
 
 const debug = createDebugLogger('rc:store');
 const isRendererProcess = process.type === 'renderer';
+const isPreloadProcess = isRendererProcess && remote.getCurrentWebContents().getType() === 'webview';
 
 const middlewares = [
 	...(isRendererProcess ? [forwardToMain] : []),
@@ -35,8 +37,10 @@ const middlewares = [
 ];
 
 const debugReducer = (reducer) => (state, action) => {
-	const { type, payload } = action;
-	debug(...[type, payload].filter(Boolean));
+	if (!isPreloadProcess) {
+		const { type, payload } = action;
+		debug(...[type, payload].filter(Boolean));
+	}
 	return reducer(state, action);
 };
 

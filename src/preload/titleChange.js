@@ -1,6 +1,7 @@
-import { ipcRenderer } from 'electron';
+import { store } from '../store';
+import { setServerProperties } from '../store/actions';
 import { getMeteor, getTracker, getSettings } from './rocketChat';
-import { titleChanged } from './channels';
+import { getServerUrl } from './getServerUrl';
 
 
 function handleTitleChange() {
@@ -13,10 +14,10 @@ function handleTitleChange() {
 	}
 
 	Meteor.startup(() => {
-		Tracker.autorun(() => {
+		Tracker.autorun(async () => {
 			const siteName = settings.get('Site_Name');
 			if (siteName) {
-				ipcRenderer.sendToHost(titleChanged, siteName);
+				store.dispatch(setServerProperties({ url: await getServerUrl(), title: siteName }));
 			}
 		});
 	});

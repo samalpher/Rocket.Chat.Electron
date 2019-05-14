@@ -76,8 +76,6 @@ const zoomOut = onWebview((webview) => {
 
 const getWebContents = onWebview((webview) => webview.getWebContents());
 
-const setSidebarSpacingForTitleBarButtons = onPreload(channels.setSidebarSpacingForTitleBarButtons);
-
 const selectScreenshareSource = onWebview(onPreload(channels.selectScreenshareSource));
 
 const format = onWebview(onPreload(channels.format));
@@ -110,7 +108,7 @@ const handleIpcMessage = (url, { channel, args }) => {
 
 const handleDomReady = (url, webview) => {
 	webview.classList.add('webview--ready');
-	events.emit('dom-ready', webview, url);
+	webview.send('set-server-url', url);
 
 	if (!isAllReady && getAll().every((webview) => webview.classList.contains('webview--ready'))) {
 		isAllReady = true;
@@ -171,10 +169,6 @@ const renderServer = ({ active, hasSpacingForTitleBarButtons, ...server }) => {
 
 		root.appendChild(webview);
 		webview.setAttribute('src', lastPath || url);
-	}
-
-	if (process.platform === 'darwin') {
-		setSidebarSpacingForTitleBarButtons(webview, hasSpacingForTitleBarButtons);
 	}
 
 	if (active) {

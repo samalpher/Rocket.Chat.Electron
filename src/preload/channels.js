@@ -1,11 +1,7 @@
 export const reloadServer = 'reload-server';
-export const setSidebarSpacingForTitleBarButtons = 'set-sidebar-spacing-for-title-bar-buttons';
 export const requestScreenshareSource = 'request-screenshare-source';
 export const selectScreenshareSource = 'select-screenshare-source';
 export const format = 'format';
 export const focus = 'focus';
-export const editFlagsChanged = 'edit-flags-changed';
-export const sidebarStyleChanged = 'sidebar-style-changed';
 export const badgeChanged = 'badge-changed';
-export const titleChanged = 'title-changed';
 export const triggerContextMenu = 'trigger-context-menu';

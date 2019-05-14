@@ -1,13 +1,14 @@
-import { ipcRenderer } from 'electron';
-import { sidebarStyleChanged, setSidebarSpacingForTitleBarButtons } from './channels';
+import { store } from '../store';
+import { setServerProperties } from '../store/actions';
+import { getServerUrl } from './getServerUrl';
 
 
 let style = {};
 
-const handleStyle = (newStyle) => {
+const handleStyle = async (newStyle) => {
 	if (newStyle.color !== style.color || newStyle.background !== style.background) {
 		style = newStyle;
-		ipcRenderer.sendToHost(sidebarStyleChanged, style);
+		store.dispatch(setServerProperties({ url: await getServerUrl(), style }));
 	}
 };
 
@@ -54,19 +55,32 @@ const requestSidebarStyle = () => {
 	requestAnimationFrame(requestSidebarStyle);
 };
 
-export default () => {
-	ipcRenderer.on(setSidebarSpacingForTitleBarButtons, (event, hasSpacing) => {
-		const style = document.getElementById('electronStyle') || document.createElement('style');
-		style.setAttribute('id', 'electronStyle');
-		style.innerHTML = `
-		.sidebar {
-			padding-top: ${ hasSpacing ? '10px' : '0' };
-			transition:
-				padding .3s ease-in-out,
-				margin .3s ease-in-out;
-		}`;
-		document.head.appendChild(style);
-	});
+const ensureSidebarSpacingToTitleBarButtons = () => {
+	if (process.platform !== 'darwin') {
+		return;
+	}
 
+	let hasSidebar;
+	store.subscribe(() => {
+		const { preferences: { hasSidebar: hasSidebarNow } } = store.getState();
+		if (hasSidebar !== hasSidebarNow) {
+			hasSidebar = hasSidebarNow;
+
+			const style = document.getElementById('electronStyle') || document.createElement('style');
+			style.setAttribute('id', 'electronStyle');
+			style.innerHTML = `
+			.sidebar {
+				padding-top: ${ !hasSidebar ? '10px' : '0' };
+				transition:
+					padding .3s ease-in-out,
+					margin .3s ease-in-out;
+			}`;
+			document.head.appendChild(style);
+		}
+	});
+};
+
+export default () => {
+	window.addEventListener('load', ensureSidebarSpacingToTitleBarButtons);
 	window.addEventListener('load', requestSidebarStyle);
 };

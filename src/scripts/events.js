@@ -564,20 +564,10 @@ export default async () => {
 			const mainWindow = remote.getCurrentWindow();
 			mainWindow.showInactive();
 		}
-
-		store.dispatch(setServerProperties({ url, badge }));
-	});
-
-	webviews.on(channels.titleChanged, (url, title) => {
-		store.dispatch(setServerProperties({ url, title }));
 	});
 
 	webviews.on(channels.focus, (url) => {
 		store.dispatch(showServer(url));
-	});
-
-	webviews.on(channels.sidebarStyleChanged, (url, style) => {
-		store.dispatch(setServerProperties({ url, style }));
 	});
 
 	webviews.on(channels.selectScreenshareSource, (url) => {
@@ -586,14 +576,6 @@ export default async () => {
 
 	webviews.on(channels.reloadServer, (url) => {
 		webviews.reload({ url }, { fromUrl: true });
-	});
-
-	webviews.on(channels.editFlagsChanged, (url, editFlags) => {
-		store.dispatch(setEditFlags(editFlags));
-		store.dispatch(setHistoryFlags({
-			canGoBack: webviews.getWebContents({ url }).canGoBack(),
-			canGoForward: webviews.getWebContents({ url }).canGoForward(),
-		}));
 	});
 
 	webviews.on(channels.triggerContextMenu, (url, params) => {
