@@ -25,6 +25,17 @@ export const SET_EDIT_FLAGS = 'SET_EDIT_FLAGS';
 
 export const SET_HISTORY_FLAGS = 'SET_HISTORY_FLAGS';
 
+export const SHOW_ABOUT_MODAL = 'SHOW_ABOUT_MODAL';
+export const SHOW_SCREENSHARE_MODAL = 'SHOW_SCREENSHARE_MODAL';
+export const SHOW_UPDATE_MODAL = 'SHOW_UPDATE_MODAL';
+export const HIDE_MODAL = 'HIDE_MODAL';
+
+export const SET_UPDATE_CONFIGURATION = 'SET_UPDATE_CONFIGURATION';
+export const STOP_CHECKING_FOR_UPDATE = 'STOP_CHECKING_FOR_UPDATE';
+export const SET_UPDATE_VERSION = 'SET_UPDATE_VERSION';
+export const SET_CHECKING_FOR_UPDATE_MESSAGE = 'SET_CHECKING_FOR_UPDATE_MESSAGE';
+export const START_CHECKING_FOR_UPDATE = 'START_CHECKING_FOR_UPDATE';
+
 export const startLoading = () => ({ type: START_LOADING });
 
 export const stopLoading = () => ({ type: STOP_LOADING });
@@ -91,3 +102,41 @@ export const showPreferences = () => ({ type: SHOW_PREFERENCES });
 export const setEditFlags = (flags) => ({ type: SET_EDIT_FLAGS, payload: flags });
 
 export const setHistoryFlags = (flags) => ({ type: SET_HISTORY_FLAGS, payload: flags });
+
+export const showAboutModal = () => ({
+	type: SHOW_ABOUT_MODAL,
+});
+
+export const showScreenshareModal = (url) => ({
+	type: SHOW_SCREENSHARE_MODAL,
+	payload: url,
+});
+
+export const showUpdateModal = () => ({
+	type: SHOW_UPDATE_MODAL,
+});
+
+export const hideModal = () => ({ type: HIDE_MODAL });
+
+export const setUpdateConfiguration = (configuration) => ({
+	type: SET_UPDATE_CONFIGURATION,
+	payload: configuration,
+});
+
+export const stopCheckingForUpdate = () => ({
+	type: STOP_CHECKING_FOR_UPDATE,
+});
+
+export const setUpdateVersion = (version) => ({
+	type: SET_UPDATE_VERSION,
+	payload: version,
+});
+
+export const setCheckingForUpdateMessage = (message) => ({
+	type: SET_CHECKING_FOR_UPDATE_MESSAGE,
+	payload: message,
+});
+
+export const startCheckingForUpdate = () => ({
+	type: START_CHECKING_FOR_UPDATE,
+});

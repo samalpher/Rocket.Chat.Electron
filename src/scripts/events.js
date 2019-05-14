@@ -16,6 +16,15 @@ import {
 	setServerProperties,
 	setHistoryFlags,
 	setEditFlags,
+	showAboutModal,
+	hideModal,
+	setUpdateConfiguration,
+	stopCheckingForUpdate,
+	setUpdateVersion,
+	setCheckingForUpdateMessage,
+	showUpdateModal,
+	startCheckingForUpdate,
+	showScreenshareModal,
 } from '../store/actions';
 import { queryEditFlags } from '../utils';
 import { initializeData } from './data';
@@ -204,6 +213,14 @@ const update = () => {
 			canGoBack,
 			canGoForward,
 		},
+		modal,
+		update: {
+			canUpdate,
+			canAutoUpdate,
+			canSetAutoUpdate,
+			checking,
+			version,
+		},
 	} = store.getState();
 
 	const badges = servers.map(({ badge }) => badge);
@@ -217,6 +234,23 @@ const update = () => {
 	getCurrentWindow().hideOnClose = hasTray;
 
 	document.querySelector('.loading').classList.toggle('loading--visible', loading);
+
+	aboutModal.setState({
+		canUpdate,
+		canAutoUpdate,
+		canSetAutoUpdate,
+		checkingUpdate: checking,
+		visible: modal === 'about',
+	});
+
+	screenshareModal.setState({
+		visible: modal === 'screenshare',
+	});
+
+	updateModal.setState({
+		visible: modal === 'update',
+		newVersion: version,
+	});
 
 	dock.setState({
 		hasTray,
@@ -356,6 +390,7 @@ export default async () => {
 		}));
 	});
 
+	aboutModal.on('close', () => store.dispatch(hideModal()));
 	aboutModal.on('check-for-updates', () => updates.checkForUpdates());
 	aboutModal.on('set-check-for-updates-on-start', (enabled) => updates.setAutoUpdate(enabled));
 
@@ -393,7 +428,7 @@ export default async () => {
 	});
 
 	menus.on('quit', () => app.quit());
-	menus.on('about', () => aboutModal.setState({ visible: true }));
+	menus.on('about', () => store.dispatch(showAboutModal()));
 	menus.on('open-url', (url) => shell.openExternal(url));
 
 	menus.on('undo', () => getFocusedWebContents().undo());
@@ -474,7 +509,7 @@ export default async () => {
 	});
 
 	screenshareModal.on('select-source', ({ id, url }) => {
-		screenshareModal.setState({ visible: false });
+		store.dispatch(hideModal());
 		webviews.selectScreenshareSource({ url }, id);
 	});
 
@@ -517,34 +552,36 @@ export default async () => {
 	updateModal.on('skip', async (newVersion) => {
 		await warnItWillSkipVersion();
 		updates.skipVersion(newVersion);
-		updateModal.setState({ visible: false });
+		store.dispatch(hideModal());
 	});
 	updateModal.on('remind-later', () => {
-		updateModal.setState({ visible: false });
+		store.dispatch(hideModal());
 	});
 	updateModal.on('install', async () => {
 		await informItWillInstallUpdate();
 		updates.downloadUpdate();
-		updateModal.setState({ visible: false });
+		store.dispatch(hideModal());
 	});
 
 	updates.on('configuration-set', ({ canUpdate, canAutoUpdate, canSetAutoUpdate }) => {
-		aboutModal.setState({ canUpdate, canAutoUpdate, canSetAutoUpdate });
+		store.dispatch(setUpdateConfiguration({ canUpdate, canAutoUpdate, canSetAutoUpdate }));
 	});
-	updates.on('error', () => aboutModal.showUpdateError());
-	updates.on('checking-for-update', () => aboutModal.setState({ checking: true }));
+	updates.on('error', () => {
+		store.dispatch(setCheckingForUpdateMessage(i18n.__('dialog.about.errorWhileLookingForUpdates')));
+		setTimeout(() => store.dispatch(stopCheckingForUpdate()), 5000);
+	});
+	updates.on('checking-for-update', () => {
+		store.dispatch(startCheckingForUpdate());
+	});
 	updates.on('update-available', ({ version }) => {
-		aboutModal.setState({
-			visible: false,
-			checking: false,
-			checkingMessage: null,
-		});
-		updateModal.setState({
-			visible: true,
-			newVersion: version,
-		});
+		store.dispatch(stopCheckingForUpdate());
+		store.dispatch(setUpdateVersion(version));
+		store.dispatch(showUpdateModal());
 	});
-	updates.on('update-not-available', () => aboutModal.showNoUpdateAvailable());
+	updates.on('update-not-available', () => {
+		store.dispatch(setCheckingForUpdateMessage(i18n.__('dialog.about.noUpdatesAvailable')));
+		setTimeout(() => store.dispatch(stopCheckingForUpdate()), 5000);
+	});
 	// updates.on('download-progress', ({ bytesPerSecond, percent, total, transferred }) => console.log(percent));
 	updates.on('update-downloaded', async () => {
 		const whenInstall = await askWhenToInstallUpdate();
@@ -570,8 +607,8 @@ export default async () => {
 		store.dispatch(showServer(url));
 	});
 
-	webviews.on(channels.selectScreenshareSource, (url) => {
-		screenshareModal.setState({ visible: false, url });
+	webviews.on(channels.requestScreenshareSource, (url) => {
+		store.dispatch(showScreenshareModal(url));
 	});
 
 	webviews.on(channels.reloadServer, (url) => {

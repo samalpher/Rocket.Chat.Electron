@@ -8,6 +8,7 @@ let state = {
 	visible: false,
 	newVersion: null,
 };
+
 const events = new EventEmitter();
 
 let root;

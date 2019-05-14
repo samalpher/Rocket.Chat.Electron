@@ -10,9 +10,10 @@ let state = {
 	canUpdate: false,
 	canAutoUpdate: false,
 	canSetAutoUpdate: false,
-	checking: false,
+	checkingUpdate: false,
 	checkingMessage: null,
 };
+
 const events = new EventEmitter();
 
 let root;
@@ -23,7 +24,7 @@ const update = () => {
 		canUpdate,
 		canAutoUpdate,
 		canSetAutoUpdate,
-		checking,
+		checkingUpdate,
 		checkingMessage,
 	} = state;
 
@@ -45,7 +46,7 @@ const update = () => {
 		root.querySelector('.check-for-updates-on-start').setAttribute('disabled', 'disabled');
 	}
 
-	if (checking) {
+	if (checkingUpdate) {
 		root.querySelector('.check-for-updates').setAttribute('disabled', 'disabled');
 		root.querySelector('.check-for-updates').classList.add('hidden');
 		root.querySelector('.checking-for-updates').classList.remove('hidden');
@@ -79,16 +80,6 @@ const setState = (partialState) => {
 	update(previousState);
 };
 
-const showNoUpdateAvailable = () => {
-	setState({ checkingMessage: i18n.__('dialog.about.noUpdatesAvailable') });
-	setTimeout(() => setState({ checking: false, checkingMessage: null }), 5000);
-};
-
-const showUpdateError = () => {
-	setState({ checkingMessage: i18n.__('dialog.about.errorWhileLookingForUpdates') });
-	setTimeout(() => setState({ checking: false, checkingMessage: null }), 5000);
-};
-
 const handleCheckForUpdatesClick = () => {
 	events.emit('check-for-updates');
 };
@@ -98,7 +89,7 @@ const handleCheckForUpdatesOnStartChange = ({ target: { checked } }) => {
 };
 
 const handleOkClick = () => {
-	setState({ visible: false });
+	events.emit('close');
 };
 
 const mount = () => {
@@ -120,6 +111,4 @@ const mount = () => {
 export const aboutModal = Object.assign(events, {
 	mount,
 	setState,
-	showNoUpdateAvailable,
-	showUpdateError,
 });
