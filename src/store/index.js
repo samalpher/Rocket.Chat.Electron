@@ -12,6 +12,8 @@ import { reducer as loading } from './loading';
 import { reducer as preferences } from './preferences';
 import { reducer as servers } from './servers';
 import { reducer as view } from './view';
+import { reducer as editFlags } from './editFlags';
+import { reducer as historyFlags } from './historyFlags';
 
 
 const reducer = combineReducers({
@@ -20,6 +22,8 @@ const reducer = combineReducers({
 	preferences,
 	servers,
 	view,
+	editFlags,
+	historyFlags,
 });
 
 const debug = createDebugLogger('rc:store');

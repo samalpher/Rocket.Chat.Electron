@@ -14,6 +14,8 @@ import {
 	removeServerFromUrl,
 	sortServers,
 	setServerProperties,
+	setHistoryFlags,
+	setEditFlags,
 } from '../store/actions';
 import { queryEditFlags } from '../utils';
 import { initializeData } from './data';
@@ -151,14 +153,6 @@ const destroyAll = () => {
 	}
 };
 
-const handleSelectionChangeEventListener = () => {
-	menus.setState({
-		...queryEditFlags(),
-		canGoBack: false,
-		canGoForward: false,
-	});
-};
-
 const getFocusedWebContents = () => webviews.getWebContents({ focused: true }) || getCurrentWindow().webContents;
 
 const browseForDictionary = () => {
@@ -198,6 +192,18 @@ const update = () => {
 		},
 		servers,
 		view,
+		editFlags: {
+			canUndo,
+			canRedo,
+			canCut,
+			canCopy,
+			canPaste,
+			canSelectAll,
+		},
+		historyFlags: {
+			canGoBack,
+			canGoForward,
+		},
 	} = store.getState();
 
 	const badges = servers.map(({ badge }) => badge);
@@ -228,6 +234,14 @@ const update = () => {
 		hasMenus,
 		hasSidebar,
 		showWindowOnUnreadChanged,
+		canUndo,
+		canRedo,
+		canCut,
+		canCopy,
+		canPaste,
+		canSelectAll,
+		canGoBack,
+		canGoForward,
 	});
 
 	sidebar.setState({
@@ -334,7 +348,13 @@ export default async () => {
 
 	window.addEventListener('beforeunload', destroyAll);
 
-	document.addEventListener('selectionchange', handleSelectionChangeEventListener);
+	document.addEventListener('selectionchange', () => {
+		store.dispatch(setEditFlags(queryEditFlags()));
+		store.dispatch(setHistoryFlags({
+			canGoBack: false,
+			canGoForward: false,
+		}));
+	});
 
 	aboutModal.on('check-for-updates', () => updates.checkForUpdates());
 	aboutModal.on('set-check-for-updates-on-start', (enabled) => updates.setAutoUpdate(enabled));
@@ -569,11 +589,11 @@ export default async () => {
 	});
 
 	webviews.on(channels.editFlagsChanged, (url, editFlags) => {
-		menus.setState({
-			...editFlags,
+		store.dispatch(setEditFlags(editFlags));
+		store.dispatch(setHistoryFlags({
 			canGoBack: webviews.getWebContents({ url }).canGoBack(),
 			canGoForward: webviews.getWebContents({ url }).canGoForward(),
-		});
+		}));
 	});
 
 	webviews.on(channels.triggerContextMenu, (url, params) => {
@@ -596,10 +616,10 @@ export default async () => {
 
 	webviews.on('did-navigate', (url, lastPath) => {
 		store.dispatch(setServerProperties({ url, lastPath }));
-		menus.setState({
+		store.dispatch(setHistoryFlags({
 			canGoBack: webviews.getWebContents({ url }).canGoBack(),
 			canGoForward: webviews.getWebContents({ url }).canGoForward(),
-		});
+		}));
 	});
 
 	webviews.on('ready', () => {
