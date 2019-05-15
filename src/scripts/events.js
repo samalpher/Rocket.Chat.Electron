@@ -250,11 +250,6 @@ const update = () => {
 
 	spellchecking.setEnabledDictionaries(...enabledDictionaries);
 
-	touchBar.setState({
-		servers,
-		activeServerUrl: view.url,
-	});
-
 	tray.setState({
 		badge: globalBadge,
 		isMainWindowVisible: windowVisible,
