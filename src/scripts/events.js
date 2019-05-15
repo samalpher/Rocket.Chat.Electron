@@ -198,17 +198,11 @@ const update = () => {
 		update: {
 			version,
 		},
-		screensharing,
 	} = store.getState();
 
 	getCurrentWindow().hideOnClose = hasTray;
 
 	document.querySelector('.loading').classList.toggle('loading--visible', loading);
-
-	screenshareModal.setState({
-		visible: modal === 'screenshare',
-		url: screensharing,
-	});
 
 	updateModal.setState({
 		visible: modal === 'update',
