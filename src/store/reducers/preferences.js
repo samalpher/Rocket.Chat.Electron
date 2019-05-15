@@ -1,8 +1,10 @@
 import { app as mainApp, remote } from 'electron';
-import { spellchecking as mainSpellchecking } from '../../main/spellchecking';
-import { LOAD_PREFERENCES, SET_PREFERENCES, TOGGLE_SPELLCHECKING_DICTIONARY } from '../actions';
+import {
+	LOAD_PREFERENCES,
+	SET_PREFERENCES,
+	TOGGLE_SPELLCHECKING_DICTIONARY,
+} from '../actions';
 const app = remote ? remote.app : mainApp;
-const spellchecking = remote ? remote.require('./main').spellchecking : mainSpellchecking;
 
 
 const filterState = ({
@@ -32,7 +34,7 @@ export const reducer = (state = filterState({}), { type, payload }) => {
 			const { dictionary, enabled } = payload;
 			return filterState({
 				...state,
-				enabledDictionaries: spellchecking.filterDictionaries(
+				enabledDictionaries: (
 					enabled ?
 						[dictionary, ...enabledDictionaries] :
 						enabledDictionaries.filter((_dictionary) => _dictionary !== dictionary)

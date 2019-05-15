@@ -194,7 +194,6 @@ const update = () => {
 		preferences: {
 			hasTray,
 			hasSidebar,
-			enabledDictionaries,
 		},
 		servers,
 		view,
@@ -238,8 +237,6 @@ const update = () => {
 		activeServerUrl: view.url,
 		visible: !loading && hasSidebar,
 	});
-
-	spellchecking.setEnabledDictionaries(...enabledDictionaries);
 
 	webviews.setState({
 		servers,

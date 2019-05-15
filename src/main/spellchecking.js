@@ -3,6 +3,7 @@ import mem from 'mem';
 import path from 'path';
 import spellchecker from 'spellchecker';
 import { getDirectory } from '../utils';
+import { store } from '../store';
 
 
 let supportsMultipleDictionaries = false;
@@ -88,7 +89,13 @@ const installDictionaries = async (filePaths) => {
 };
 
 
-const setEnabledDictionaries = (...dictionaries) => {
+const connectToStore = () => {
+	const {
+		preferences: {
+			enabledDictionaries: dictionaries,
+		},
+	} = store.getState();
+
 	enabledDictionaries = filterDictionaries(dictionaries);
 	updateChecker();
 };
@@ -104,6 +111,8 @@ const initialize = async () => {
 		.map((fileName) => path.basename(fileName, path.extname(fileName)));
 
 	availableDictionaries = Array.from(new Set([...embeddedDictionaries, ...installedDictionaries])).sort();
+
+	store.subscribe(connectToStore);
 };
 
 export const spellchecking = {
@@ -111,7 +120,6 @@ export const spellchecking = {
 	check,
 	filterDictionaries,
 	getCorrections,
-	setEnabledDictionaries,
 	installDictionaries,
 	getDictionaryInstallationDirectory: () => dictionaryInstallationDirectory,
 	getAvailableDictionaries: () => availableDictionaries,
