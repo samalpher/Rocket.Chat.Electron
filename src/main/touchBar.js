@@ -72,7 +72,7 @@ const update = () => {
 	}
 
 	const { servers, activeServerUrl } = state;
-	const serverTitlesLength = servers.reduce((length, { title }) => length + title.length, 0);
+	const serverTitlesLength = servers.reduce((length, { url, title }) => length + (title || url).length, 0);
 	const maxLengthForSegmentsControl = 76 - i18n.__('touchBar.selectServer').length;
 	const shouldUseSegmentedControl = serverTitlesLength <= maxLengthForSegmentsControl;
 
