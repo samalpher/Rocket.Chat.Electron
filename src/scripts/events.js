@@ -194,20 +194,11 @@ const update = () => {
 		preferences: {
 			hasTray,
 		},
-		modal,
-		update: {
-			version,
-		},
 	} = store.getState();
 
 	getCurrentWindow().hideOnClose = hasTray;
 
 	document.querySelector('.loading').classList.toggle('loading--visible', loading);
-
-	updateModal.setState({
-		visible: modal === 'update',
-		newVersion: version,
-	});
 };
 
 const getServerFromUrl = (subUrl) => {

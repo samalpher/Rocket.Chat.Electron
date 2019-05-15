@@ -1,6 +1,7 @@
 import { remote } from 'electron';
 import { EventEmitter } from 'events';
 import i18n from '../i18n';
+import { store } from '../store';
 const { app } = remote;
 
 
@@ -51,6 +52,20 @@ const handleInstallClick = () => {
 	events.emit('install');
 };
 
+const connectToStore = () => {
+	const {
+		modal,
+		update: {
+			version,
+		},
+	} = store.getState();
+
+	setState({
+		visible: modal === 'update',
+		newVersion: version,
+	});
+};
+
 const mount = () => {
 	root = document.querySelector('.update-modal');
 
@@ -68,10 +83,9 @@ const mount = () => {
 	root.querySelector('.update-install-action').addEventListener('click', handleInstallClick, false);
 
 	update();
+	store.subscribe(connectToStore);
 };
-
 
 export const updateModal = Object.assign(events, {
 	mount,
-	setState,
 });
