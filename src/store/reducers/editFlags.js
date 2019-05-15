@@ -1,4 +1,4 @@
-import { SET_EDIT_FLAGS } from './actions';
+import { SET_EDIT_FLAGS } from '../actions';
 
 
 const filterFlags = ({

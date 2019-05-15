@@ -6,7 +6,7 @@ import {
 	REMOVE_SERVER_FROM_URL,
 	SORT_SERVERS,
 	SET_SERVER_PROPERTIES,
-} from './actions';
+} from '../actions';
 
 
 export const reducer = (state = [], { type, payload }) => {

@@ -1,4 +1,4 @@
-import { SET_HISTORY_FLAGS } from './actions';
+import { SET_HISTORY_FLAGS } from '../actions';
 
 
 const filterFlags = ({

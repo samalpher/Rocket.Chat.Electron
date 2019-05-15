@@ -4,7 +4,7 @@ import {
 	STOP_CHECKING_FOR_UPDATE,
 	SET_CHECKING_FOR_UPDATE_MESSAGE,
 	SET_UPDATE_VERSION,
-} from './actions';
+} from '../actions';
 
 
 const filterUpdateConfiguration = ({

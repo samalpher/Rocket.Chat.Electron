@@ -3,7 +3,7 @@ import {
 	SHOW_SCREENSHARE_MODAL,
 	SHOW_UPDATE_MODAL,
 	HIDE_MODAL,
-} from './actions';
+} from '../actions';
 
 
 export const reducer = (state = null, { type }) => {

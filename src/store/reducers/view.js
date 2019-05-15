@@ -4,7 +4,7 @@ import {
 	SHOW_DOWNLOADS,
 	SHOW_PREFERENCES,
 	REMOVE_SERVER_FROM_URL,
-} from './actions';
+} from '../actions';
 
 
 export const reducer = (state = 'landing', { type, payload }) => {

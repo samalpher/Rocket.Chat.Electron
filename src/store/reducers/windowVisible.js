@@ -1,4 +1,4 @@
-import { SHOW_WINDOW, HIDE_WINDOW } from './actions';
+import { SHOW_WINDOW, HIDE_WINDOW } from '../actions';
 
 
 export const reducer = (state = true, { type }) => {

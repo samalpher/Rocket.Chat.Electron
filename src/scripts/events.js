@@ -604,6 +604,7 @@ export default async () => {
 	});
 
 	webviews.on(channels.focus, (url) => {
+		getCurrentWindow().forceFocus();
 		store.dispatch(showServer(url));
 	});
 

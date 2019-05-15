@@ -1,6 +1,6 @@
 import { app as mainApp, remote } from 'electron';
-import { spellchecking as mainSpellchecking } from '../main/spellchecking';
-import { LOAD_PREFERENCES, SET_PREFERENCES, TOGGLE_SPELLCHECKING_DICTIONARY } from './actions';
+import { spellchecking as mainSpellchecking } from '../../main/spellchecking';
+import { LOAD_PREFERENCES, SET_PREFERENCES, TOGGLE_SPELLCHECKING_DICTIONARY } from '../actions';
 const app = remote ? remote.app : mainApp;
 const spellchecking = remote ? remote.require('./main').spellchecking : mainSpellchecking;
 
