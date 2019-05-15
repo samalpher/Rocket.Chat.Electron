@@ -4,8 +4,6 @@ import * as channels from '../preload/channels';
 import { store } from '../store';
 import {
 	stopLoading,
-	showWindow,
-	hideWindow,
 	showLanding,
 	showServer,
 	setPreferences,
@@ -188,15 +186,10 @@ const browseForDictionary = () => {
 	}, callback);
 };
 
-const update = () => {
+const connectToStore = () => {
 	const {
 		loading,
-		preferences: {
-			hasTray,
-		},
 	} = store.getState();
-
-	getCurrentWindow().hideOnClose = hasTray;
 
 	document.querySelector('.loading').classList.toggle('loading--visible', loading);
 };
@@ -270,14 +263,11 @@ const addServer = async (serverUrl, askForConfirmation = false) => {
 };
 
 export default async () => {
+	window.addEventListener('beforeunload', destroyAll);
+
 	await i18n.initialize();
 
-	store.subscribe(update);
-
-	getCurrentWindow().on('show', () => store.dispatch(showWindow()));
-	getCurrentWindow().on('hide', () => store.dispatch(hideWindow()));
-
-	window.addEventListener('beforeunload', destroyAll);
+	store.subscribe(connectToStore);
 
 	document.addEventListener('selectionchange', () => {
 		store.dispatch(setEditFlags(queryEditFlags()));

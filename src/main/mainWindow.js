@@ -1,10 +1,14 @@
 import { app, BrowserWindow, screen } from 'electron';
+import { store } from '../store';
+import { showWindow, hideWindow } from '../store/actions';
 import { loadJson, writeJson } from '../utils';
 
 
 export let mainWindow = null;
 
 let state = {};
+
+let hideOnClose = false;
 
 const loadState = async () => {
 	const { x, y, width, height, isMinimized, isMaximized, isHidden } =
@@ -63,8 +67,6 @@ const handleClose = async (event) => {
 	});
 	mainWindow.blur();
 
-	const { hideOnClose } = mainWindow;
-
 	if (!hideOnClose) {
 		fetchState();
 	}
@@ -110,7 +112,6 @@ const forceFocus = () => {
 };
 
 const showIfNeeded = () => {
-	const { hideOnClose } = mainWindow;
 	const { isMaximized, isMinimized, isHidden } = state;
 
 	if (isMaximized) {
@@ -145,6 +146,16 @@ const showIfNeeded = () => {
 	}
 };
 
+const connectToStore = () => {
+	const {
+		preferences: {
+			hasTray,
+		},
+	} = store.getState();
+
+	hideOnClose = hasTray;
+};
+
 export const createMainWindow = async () => {
 	mainWindow = new BrowserWindow({
 		width: 1000,
@@ -172,7 +183,9 @@ export const createMainWindow = async () => {
 	mainWindow.on('focus', handleFocus);
 	mainWindow.on('close', handleClose);
 
-	mainWindow.hideOnClose = false;
+	mainWindow.on('show', () => store.dispatch(showWindow()));
+	mainWindow.on('hide', () => store.dispatch(hideWindow()));
+
 	mainWindow.forceFocus = forceFocus;
 	mainWindow.showIfNeeded = showIfNeeded;
 
@@ -181,6 +194,8 @@ export const createMainWindow = async () => {
 	if (process.env.NODE_ENV === 'development') {
 		mainWindow.webContents.openDevTools();
 	}
+
+	store.subscribe(connectToStore);
 
 	await new Promise((resolve) => mainWindow.once('ready-to-show', resolve));
 };
