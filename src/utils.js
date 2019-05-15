@@ -63,3 +63,17 @@ export const queryEditFlags = () => ({
 	canPaste: document.queryCommandEnabled('paste'),
 	canSelectAll: document.queryCommandEnabled('selectAll'),
 });
+
+export const debounce = (f, delay) => {
+	let timeout;
+
+	const F = (...args) => {
+		if (timeout) {
+			clearTimeout(timeout);
+		}
+
+		timeout = setTimeout(() => f(...args), delay);
+	};
+
+	return F;
+};

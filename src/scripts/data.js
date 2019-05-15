@@ -7,7 +7,11 @@ import {
 	loadView,
 	setPreferences,
 } from '../store/actions';
-import { normalizeServerUrl, loadJson } from '../utils';
+import {
+	debounce,
+	loadJson,
+	normalizeServerUrl,
+} from '../utils';
 const { config } = remote.require('./main');
 const debug = createDebugLogger('rc:data');
 
@@ -154,7 +158,7 @@ const loadFromFileSystem = async (preferences, servers, view) => {
 	return [preferences, servers, view];
 };
 
-const persist = () => {
+const persist = debounce(() => {
 	const {
 		preferences,
 		servers,
@@ -164,7 +168,7 @@ const persist = () => {
 	config.set('preferences', preferences);
 	config.set('servers', servers);
 	config.set('view', view);
-};
+}, 1000);
 
 export const initializeData = async () => {
 	let preferences = config.get('preferences', {});
