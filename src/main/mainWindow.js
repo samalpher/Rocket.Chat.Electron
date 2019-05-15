@@ -1,6 +1,7 @@
 import { app, BrowserWindow, screen } from 'electron';
-import { store } from '../store';
-import { windowStateUpdated } from '../store/actions';
+import { takeEvery } from 'redux-saga/effects';
+import { store, sagaMiddleware } from '../store';
+import { windowStateUpdated, FOCUS_WINDOW, SHOW_WINDOW_IF_NEEDED, SHOW_WINDOW } from '../store/actions';
 import { debounce } from '../utils';
 
 
@@ -8,7 +9,7 @@ export let mainWindow = null;
 
 let hideOnClose = false;
 
-const applyWindowBoundsFromState = async () => {
+const applyWindowBoundsFromState = () => {
 	let {
 		windowState: {
 			x,
@@ -156,6 +157,12 @@ const showIfNeeded = () => {
 	}
 };
 
+sagaMiddleware.run(function *mainWindowSaga() {
+	yield takeEvery(FOCUS_WINDOW, forceFocus);
+	yield takeEvery(SHOW_WINDOW_IF_NEEDED, showIfNeeded);
+	yield takeEvery(SHOW_WINDOW, () => mainWindow.show());
+});
+
 const connectToStore = () => {
 	const {
 		preferences: {
@@ -192,9 +199,6 @@ export const createMainWindow = async () => {
 	mainWindow.on('hide', fetchWindowState);
 	mainWindow.on('focus', handleFocus);
 	mainWindow.on('close', handleClose);
-
-	mainWindow.forceFocus = forceFocus;
-	mainWindow.showIfNeeded = showIfNeeded;
 
 	mainWindow.loadFile(`${ app.getAppPath() }/app/public/app.html`);
 

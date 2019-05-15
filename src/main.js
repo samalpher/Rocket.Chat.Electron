@@ -13,6 +13,8 @@ import { spellchecking } from './main/spellchecking';
 import { touchBar } from './main/touchBar';
 import { tray } from './main/tray';
 import { updates } from './main/updates';
+import { store } from './store';
+import { focusWindow, showWindowIfNeeded } from './store/actions';
 
 
 const setupErrorHandling = () => {
@@ -73,7 +75,7 @@ const attachAppEvents = () => {
 	});
 
 	app.on('second-instance', (event, argv) => {
-		mainWindow.forceFocus();
+		store.dispatch(focusWindow());
 		argv.slice(2).forEach(deepLinks.handle);
 	});
 
@@ -120,7 +122,7 @@ const attachAppEvents = () => {
 	await spellchecking.initialize();
 	await updates.initialize();
 
-	mainWindow.showIfNeeded();
+	store.dispatch(showWindowIfNeeded());
 
 	args.forEach(deepLinks.handle);
 })();

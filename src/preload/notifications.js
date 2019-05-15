@@ -1,7 +1,9 @@
-import { ipcRenderer, remote } from 'electron';
+import { remote } from 'electron';
 import { EventEmitter } from 'events';
 import mem from 'mem';
-import { focus } from './channels';
+import { store } from '../store';
+import { focusWindow, showServer } from '../store/actions';
+import { getServerUrl } from './getServerUrl';
 const { notifications } = remote.require('./main');
 
 
@@ -69,8 +71,9 @@ class Notification extends EventEmitter {
 		this.emit('close', event);
 	}
 
-	handleClick(event) {
-		ipcRenderer.sendToHost(focus);
+	async handleClick(event) {
+		store.dispatch(focusWindow());
+		store.dispatch(showServer(await getServerUrl()));
 		event.currentTarget = this;
 		this.onclick && this.onclick.call(this, event);
 		this.emit('close', event);

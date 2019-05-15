@@ -16,6 +16,7 @@ import {
 	editFlagsUpdated,
 	showAboutModal,
 	hideModal,
+	focusWindow,
 } from '../store/actions';
 import { queryEditFlags } from '../utils';
 import { migrateDataFromLocalStorage } from './data';
@@ -310,7 +311,7 @@ export default async () => {
 	contextMenu.on('select-all', () => getFocusedWebContents().selectAll());
 
 	deepLinks.on('auth', async ({ serverUrl }) => {
-		getCurrentWindow().forceFocus();
+		store.dispatch(focusWindow());
 		await addServer(serverUrl, true);
 	});
 
@@ -466,11 +467,6 @@ export default async () => {
 		if (typeof badge === 'number' && showWindowOnUnreadChanged) {
 			getCurrentWindow().showInactive();
 		}
-	});
-
-	webviews.on(channels.focus, (url) => {
-		getCurrentWindow().forceFocus();
-		store.dispatch(showServer(url));
 	});
 
 	webviews.on(channels.reloadServer, (url) => {

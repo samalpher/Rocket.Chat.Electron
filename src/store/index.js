@@ -8,6 +8,7 @@ import {
 	replayActionRenderer,
 } from 'electron-redux';
 import { applyMiddleware, createStore } from 'redux';
+import createSagaMiddleware from 'redux-saga';
 import { reducer } from './reducers';
 
 
@@ -15,8 +16,11 @@ const debug = createDebugLogger('rc:store');
 const isRendererProcess = process.type === 'renderer';
 const isPreloadProcess = isRendererProcess && remote.getCurrentWebContents().getType() === 'webview';
 
+export const sagaMiddleware = createSagaMiddleware();
+
 const middlewares = [
 	...(isRendererProcess ? [forwardToMain] : []),
+	sagaMiddleware,
 	...(!isRendererProcess ? [forwardToRenderer] : []),
 ];
 
