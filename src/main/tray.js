@@ -1,13 +1,13 @@
 import { app, Menu, systemPreferences, Tray } from 'electron';
 import { EventEmitter } from 'events';
 import i18n from '../i18n';
-import { store } from '../store';
+import { connect } from '../store';
 import { getTrayIconImage } from './icon';
 
 
 let state = {
 	badge: null,
-	isMainWindowVisible: true,
+	windowVisible: true,
 	visible: false,
 };
 
@@ -32,10 +32,10 @@ const getIconTooltip = ({ badge }) => {
 	return i18n.__('tray.tooltip.noUnreadMessage', { appName });
 };
 
-const createContextMenuTemplate = ({ isMainWindowVisible }) => ([
+const createContextMenuTemplate = ({ windowVisible }) => ([
 	{
-		label: !isMainWindowVisible ? i18n.__('tray.menu.show') : i18n.__('tray.menu.hide'),
-		click: () => events.emit('set-main-window-visibility', !isMainWindowVisible),
+		label: !windowVisible ? i18n.__('tray.menu.show') : i18n.__('tray.menu.hide'),
+		click: () => events.emit('activate', !windowVisible),
 	},
 	{
 		label: i18n.__('tray.menu.quit'),
@@ -59,7 +59,7 @@ const createIcon = () => {
 		});
 	}
 
-	trayIcon.on('click', () => events.emit('set-main-window-visibility', !state.isMainWindowVisible));
+	trayIcon.on('click', () => events.emit('activate', !state.windowVisible));
 	trayIcon.on('right-click', (event, bounds) => trayIcon.popUpContextMenu(undefined, bounds));
 };
 
@@ -106,40 +106,36 @@ const setState = (partialState) => {
 	update(previousState);
 };
 
-let unsubscribeFromStore;
+let disconnect;
 
-const connectToStore = () => {
-	const {
+const mount = () => {
+	update();
+	disconnect = connect(({
 		windowVisible,
 		preferences: {
 			hasTray,
 		},
 		servers,
-	} = store.getState();
+	}) => {
+		const badges = servers.map(({ badge }) => badge);
+		const mentionCount = (
+			badges
+				.filter((badge) => Number.isInteger(badge))
+				.reduce((sum, count) => sum + count, 0)
+		);
+		const badge = mentionCount || (badges.some((badge) => !!badge) && '•') || null;
 
-	const badges = servers.map(({ badge }) => badge);
-	const mentionCount = (
-		badges
-			.filter((badge) => Number.isInteger(badge))
-			.reduce((sum, count) => sum + count, 0)
-	);
-	const globalBadge = mentionCount || (badges.some((badge) => !!badge) && '•') || null;
-
-	setState({
-		badge: globalBadge,
-		isMainWindowVisible: windowVisible,
-		visible: hasTray,
-	});
-};
-
-const mount = () => {
-	update();
-	unsubscribeFromStore = store.subscribe(connectToStore);
+		return ({
+			badge,
+			windowVisible,
+			visible: hasTray,
+		});
+	})(setState);
 };
 
 const unmount = () => {
+	disconnect();
 	events.removeAllListeners();
-	unsubscribeFromStore();
 	destroyIcon();
 };
 

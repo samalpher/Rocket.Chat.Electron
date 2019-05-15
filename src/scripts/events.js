@@ -26,6 +26,7 @@ import {
 } from '../store/actions';
 import { queryEditFlags } from '../utils';
 import { migrateDataFromLocalStorage } from './data';
+import { loading } from './loading';
 import { aboutModal } from './aboutModal';
 import { updateModal } from './updateModal';
 import { screenshareModal } from './screenshareModal';
@@ -48,6 +49,37 @@ const {
 } = remote.require('./main');
 
 
+const mountAll = () => {
+	loading.mount();
+	sidebar.mount();
+	landing.mount();
+	webviews.mount();
+	aboutModal.mount();
+	screenshareModal.mount();
+	updateModal.mount();
+
+	menus.mount();
+	dock.mount();
+	tray.mount();
+	touchBar.mount();
+};
+
+const unmountAll = () => {
+	loading.unmount();
+	sidebar.unmount();
+	landing.unmount();
+	webviews.unmount();
+	aboutModal.unmount();
+	screenshareModal.unmount();
+	updateModal.unmount();
+
+	menus.unmount();
+	dock.unmount();
+	tray.unmount();
+	touchBar.unmount();
+};
+
+
 const askWhenToInstallUpdate = () => new Promise((resolve) => {
 	dialog.showMessageBox(getCurrentWindow(), {
 		type: 'question',
@@ -62,7 +94,6 @@ const askWhenToInstallUpdate = () => new Promise((resolve) => {
 	}, (response) => resolve(response === 0 ? 'later' : 'now'));
 });
 
-
 const warnDelayedUpdateInstall = () => new Promise ((resolve) => {
 	dialog.showMessageBox(getCurrentWindow(), {
 		type: 'info',
@@ -72,7 +103,6 @@ const warnDelayedUpdateInstall = () => new Promise ((resolve) => {
 		defaultId: 0,
 	}, () => resolve());
 });
-
 
 const warnCertificateError = ({ requestUrl, error, certificate: { issuerName }, replace }) => new Promise((resolve) => {
 	const detail = `URL: ${ requestUrl }\nError: ${ error }`;
@@ -91,7 +121,6 @@ const warnCertificateError = ({ requestUrl, error, certificate: { issuerName }, 
 	}, (response) => resolve(response === 0));
 });
 
-
 const confirmServerAddition = ({ serverUrl }) => new Promise((resolve) => {
 	dialog.showMessageBox(getCurrentWindow(), {
 		title: i18n.__('dialog.addServer.title'),
@@ -105,7 +134,6 @@ const confirmServerAddition = ({ serverUrl }) => new Promise((resolve) => {
 		cancelId: 1,
 	}, (response) => resolve(response === 0));
 });
-
 
 const confirmAppDataReset = () => new Promise((resolve) => {
 	dialog.showMessageBox({
@@ -121,7 +149,6 @@ const confirmAppDataReset = () => new Promise((resolve) => {
 	}, (response) => resolve(response === 0));
 });
 
-
 const warnItWillSkipVersion = () => new Promise((resolve) => {
 	dialog.showMessageBox(getCurrentWindow(), {
 		title: i18n.__('dialog.updateSkip.title'),
@@ -131,7 +158,6 @@ const warnItWillSkipVersion = () => new Promise((resolve) => {
 		defaultId: 0,
 	}, () => resolve());
 });
-
 
 const informItWillInstallUpdate = () => new Promise((resolve) => {
 	dialog.showMessageBox(getCurrentWindow(), {
@@ -143,13 +169,9 @@ const informItWillInstallUpdate = () => new Promise((resolve) => {
 	}, () => resolve());
 });
 
-
 const destroyAll = () => {
 	try {
-		menus.unmount();
-		dock.unmount();
-		touchBar.unmount();
-		tray.unmount();
+		unmountAll();
 		deepLinks.removeAllListeners();
 		basicAuth.removeAllListeners();
 		certificates.removeAllListeners();
@@ -184,14 +206,6 @@ const browseForDictionary = () => {
 		],
 		properties: ['openFile', 'multiSelections'],
 	}, callback);
-};
-
-const connectToStore = () => {
-	const {
-		loading,
-	} = store.getState();
-
-	document.querySelector('.loading').classList.toggle('loading--visible', loading);
 };
 
 const getServerFromUrl = (subUrl) => {
@@ -266,8 +280,6 @@ export default async () => {
 	window.addEventListener('beforeunload', destroyAll);
 
 	await i18n.initialize();
-
-	store.subscribe(connectToStore);
 
 	document.addEventListener('selectionchange', () => {
 		store.dispatch(setEditFlags(queryEditFlags()));
@@ -432,7 +444,7 @@ export default async () => {
 		store.dispatch(showServer(url));
 	});
 
-	tray.on('set-main-window-visibility', (visible) =>
+	tray.on('activate', (visible) =>
 		(visible ? getCurrentWindow().show() : getCurrentWindow().hide()));
 	tray.on('quit', () => app.quit());
 
@@ -533,13 +545,7 @@ export default async () => {
 		store.dispatch(stopLoading());
 	});
 
-	sidebar.mount();
-	landing.mount();
-	webviews.mount();
-	touchBar.mount();
-	aboutModal.mount();
-	screenshareModal.mount();
-	updateModal.mount();
+	mountAll();
 
 	await migrateDataFromLocalStorage();
 };

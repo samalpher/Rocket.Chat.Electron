@@ -1,7 +1,7 @@
 import { nativeImage, TouchBar } from 'electron';
 import { EventEmitter } from 'events';
 import i18n from '../i18n';
-import { store } from '../store';
+import { connect } from '../store';
 import { mainWindow } from './mainWindow';
 const {
 	TouchBarButton,
@@ -99,19 +99,7 @@ const setState = (partialState) => {
 	update(previousState);
 };
 
-let unsubscribeFromStore;
-
-const connectToStore = () => {
-	const {
-		servers,
-		view,
-	} = store.getState();
-
-	setState({
-		servers,
-		activeServerUrl: view.url,
-	});
-};
+let disconnect;
 
 const mount = () => {
 	if (process.platform !== 'darwin') {
@@ -119,7 +107,13 @@ const mount = () => {
 	}
 
 	update();
-	unsubscribeFromStore = store.subscribe(connectToStore);
+	disconnect = connect(({
+		servers,
+		view,
+	}) => ({
+		servers,
+		activeServerUrl: view.url,
+	}))(setState);
 };
 
 const unmount = () => {
@@ -128,7 +122,7 @@ const unmount = () => {
 	}
 
 	events.removeAllListeners();
-	unsubscribeFromStore();
+	disconnect();
 	mainWindow.setTouchBar(null);
 };
 

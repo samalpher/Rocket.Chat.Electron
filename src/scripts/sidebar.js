@@ -1,7 +1,7 @@
 import { remote } from 'electron';
 import { EventEmitter } from 'events';
 import i18n from '../i18n';
-import { store } from '../store';
+import { connect } from '../store';
 import { parse as parseUrl } from 'url';
 const { getCurrentWindow, Menu } = remote;
 
@@ -214,22 +214,7 @@ const handleAddServerClick = () => {
 	events.emit('add-server');
 };
 
-const connectToStore = () => {
-	const {
-		loading,
-		preferences: {
-			hasSidebar,
-		},
-		servers,
-		view,
-	} = store.getState();
-
-	setState({
-		servers,
-		activeServerUrl: view.url,
-		visible: !loading && hasSidebar,
-	});
-};
+let disconnect;
 
 const mount = () => {
 	root = document.querySelector('.sidebar');
@@ -246,10 +231,26 @@ const mount = () => {
 	serverList = root.querySelector('.sidebar__server-list');
 
 	update();
+	disconnect = connect(({
+		loading,
+		preferences: {
+			hasSidebar,
+		},
+		servers,
+		view,
+	}) => ({
+		servers,
+		activeServerUrl: view.url,
+		visible: !loading && hasSidebar,
+	}))(setState);
+};
 
-	store.subscribe(connectToStore);
+const unmount = () => {
+	disconnect();
+	events.removeAllListeners();
 };
 
 export const sidebar = Object.assign(events, {
 	mount,
+	unmount,
 });

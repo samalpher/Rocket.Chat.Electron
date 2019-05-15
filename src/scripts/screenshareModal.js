@@ -1,7 +1,7 @@
 import { desktopCapturer } from 'electron';
 import { EventEmitter } from 'events';
 import i18n from '../i18n';
-import { store } from '../store';
+import { connect } from '../store';
 
 
 let state = {
@@ -60,17 +60,7 @@ const setState = (partialState) => {
 	update(previousState);
 };
 
-const connectToStore = () => {
-	const {
-		modal,
-		screensharing,
-	} = store.getState();
-
-	setState({
-		visible: modal === 'screenshare',
-		url: screensharing,
-	});
-};
+let disconnect;
 
 const mount = () => {
 	root = document.querySelector('.screenshare-modal');
@@ -78,9 +68,21 @@ const mount = () => {
 	root.querySelector('.screenshare-title').innerText = i18n.__('dialog.screenshare.announcement');
 
 	update();
-	store.subscribe(connectToStore);
+	disconnect = connect(({
+		modal,
+		screensharing,
+	}) => ({
+		visible: modal === 'screenshare',
+		url: screensharing,
+	}))(setState);
+};
+
+const unmount = () => {
+	disconnect();
+	events.removeAllListeners();
 };
 
 export const screenshareModal = Object.assign(events, {
 	mount,
+	unmount,
 });

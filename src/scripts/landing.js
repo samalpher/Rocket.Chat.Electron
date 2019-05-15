@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import i18n from '../i18n';
-import { store } from '../store';
+import { connect } from '../store';
 import { normalizeServerUrl } from '../utils';
 
 
@@ -10,6 +10,7 @@ let state = {
 	validating: false,
 	offline: true,
 };
+
 const events = new EventEmitter();
 
 let root;
@@ -100,16 +101,7 @@ const handleConnectionStatus = () => {
 	setState({ offline: !navigator.onLine });
 };
 
-const connectToStore = () => {
-	const {
-		loading,
-		view,
-	} = store.getState();
-
-	setState({
-		visible: !loading && view === 'landing',
-	});
-};
+let disconnect;
 
 const mount = () => {
 	root = document.querySelector('.landing');
@@ -130,9 +122,20 @@ const mount = () => {
 	window.addEventListener('offline', handleConnectionStatus);
 	handleConnectionStatus();
 
-	store.subscribe(connectToStore);
+	disconnect = connect(({
+		loading,
+		view,
+	}) => ({
+		visible: !loading && view === 'landing',
+	}))(setState);
+};
+
+const unmount = () => {
+	disconnect();
+	events.removeAllListeners();
 };
 
 export const landing = Object.assign(events, {
 	mount,
+	unmount,
 });

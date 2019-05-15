@@ -39,3 +39,33 @@ isRendererProcess ? replayActionRenderer(store) : replayActionMain(store);
 if (process.env.NODE_ENV === 'development' && isRendererProcess) {
 	window.store = store;
 }
+
+const isEquals = (a, b) => {
+	for (const key in a) {
+		if (a[key] !== b[key]) {
+			return false;
+		}
+	}
+
+	for (const key in b) {
+		if (!(key in a)) {
+			return false;
+		}
+	}
+
+	return true;
+};
+
+export const connect = (mapStateToProps) => (update) => {
+	let prevProps = {};
+
+	return store.subscribe(() => {
+		const props = mapStateToProps(store.getState());
+		if (isEquals(prevProps, props)) {
+			return;
+		}
+
+		update(props, prevProps);
+		prevProps = props;
+	});
+};

@@ -1,7 +1,7 @@
 import { app, Menu } from 'electron';
 import { EventEmitter } from 'events';
 import i18n from '../i18n';
-import { store } from '../store';
+import { connect } from '../store';
 import { mainWindow } from './mainWindow';
 
 
@@ -320,10 +320,12 @@ const setState = (partialState) => {
 	update(previousState);
 };
 
-let unsubscribeFromStore;
+let disconnect;
 
-const connectToStore = () => {
-	const {
+const mount = () => {
+	update();
+
+	disconnect = connect(({
 		servers,
 		view,
 		preferences: {
@@ -344,8 +346,7 @@ const connectToStore = () => {
 			canGoBack,
 			canGoForward,
 		},
-	} = store.getState();
-	setState({
+	}) => ({
 		servers,
 		activeServerUrl: view.url,
 		hasTray,
@@ -360,16 +361,11 @@ const connectToStore = () => {
 		canSelectAll,
 		canGoBack,
 		canGoForward,
-	});
-};
-
-const mount = () => {
-	update();
-	unsubscribeFromStore = store.subscribe(connectToStore);
+	}))(setState);
 };
 
 const unmount = () => {
-	unsubscribeFromStore();
+	disconnect();
 	events.removeAllListeners();
 
 	if (process.platform !== 'darwin') {

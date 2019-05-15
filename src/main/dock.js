@@ -1,6 +1,6 @@
 import { app } from 'electron';
 import { EventEmitter } from 'events';
-import { store } from '../store';
+import { connect } from '../store';
 import { mainWindow } from './mainWindow';
 import { getTrayIconImage, getAppIconImage } from './icon';
 
@@ -55,38 +55,34 @@ const setState = (partialState) => {
 	update(previousState);
 };
 
-let unsubscribeFromStore;
+let disconnect;
 
-const connectToStore = () => {
-	const {
+const mount = () => {
+	update();
+	disconnect = connect(({
 		preferences: {
 			hasTray,
 		},
 		servers,
-	} = store.getState();
+	}) => {
+		const badges = servers.map(({ badge }) => badge);
+		const mentionCount = (
+			badges
+				.filter((badge) => Number.isInteger(badge))
+				.reduce((sum, count) => sum + count, 0)
+		);
+		const badge = mentionCount || (badges.some((badge) => !!badge) && '•') || null;
 
-	const badges = servers.map(({ badge }) => badge);
-	const mentionCount = (
-		badges
-			.filter((badge) => Number.isInteger(badge))
-			.reduce((sum, count) => sum + count, 0)
-	);
-	const globalBadge = mentionCount || (badges.some((badge) => !!badge) && '•') || null;
-
-	setState({
-		hasTray,
-		badge: globalBadge,
-	});
-};
-
-const mount = () => {
-	update();
-	unsubscribeFromStore = store.subscribe(connectToStore);
+		return ({
+			hasTray,
+			badge,
+		});
+	})(setState);
 };
 
 const unmount = async () => {
 	events.removeAllListeners();
-	unsubscribeFromStore();
+	disconnect();
 
 	mainWindow.setIcon(getAppIconImage());
 	mainWindow.flashFrame(false);

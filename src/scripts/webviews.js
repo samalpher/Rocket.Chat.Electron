@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import * as channels from '../preload/channels';
-import { store } from '../store';
+import { connect } from '../store';
 
 
 let state = {
@@ -218,30 +218,32 @@ const handleWindowFocus = () => {
 	active && active.focus();
 };
 
-const connectToStore = () => {
-	const {
+let disconnect;
+
+const mount = () => {
+	root = document.body;
+	window.addEventListener('focus', handleWindowFocus);
+	disconnect = connect(({
 		preferences: {
 			hasSidebar,
 		},
 		servers,
 		view,
-	} = store.getState();
-
-	setState({
+	}) => ({
 		servers,
 		activeServerUrl: view.url,
 		hasSpacingForTitleBarButtons: !hasSidebar,
-	});
+	}))(setState);
 };
 
-const mount = () => {
-	root = document.body;
-	window.addEventListener('focus', handleWindowFocus);
-	store.subscribe(connectToStore);
+const unmount = () => {
+	disconnect();
+	events.removeAllListeners();
 };
 
 export const webviews = Object.assign(events, {
 	mount,
+	unmount,
 	reload,
 	openDevTools,
 	goBack,

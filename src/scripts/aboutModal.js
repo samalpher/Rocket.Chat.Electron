@@ -2,7 +2,7 @@ import { remote } from 'electron';
 import { EventEmitter } from 'events';
 import { copyright } from '../../package.json';
 import i18n from '../i18n';
-import { store } from '../store/index.js';
+import { connect } from '../store';
 const { app } = remote;
 
 
@@ -93,25 +93,7 @@ const handleOkClick = () => {
 	events.emit('close');
 };
 
-const connectToStore = () => {
-	const {
-		modal,
-		update: {
-			canUpdate,
-			canAutoUpdate,
-			canSetAutoUpdate,
-			checking,
-		},
-	} = store.getState();
-
-	setState({
-		canUpdate,
-		canAutoUpdate,
-		canSetAutoUpdate,
-		checkingUpdate: checking,
-		visible: modal === 'about',
-	});
-};
+let disconnect;
 
 const mount = () => {
 	root = document.querySelector('.about-modal');
@@ -127,9 +109,29 @@ const mount = () => {
 	root.querySelector('.ok').addEventListener('click', handleOkClick, false);
 
 	update();
-	store.subscribe(connectToStore);
+	disconnect = connect(({
+		modal,
+		update: {
+			canUpdate,
+			canAutoUpdate,
+			canSetAutoUpdate,
+			checking,
+		},
+	}) => ({
+		canUpdate,
+		canAutoUpdate,
+		canSetAutoUpdate,
+		checkingUpdate: checking,
+		visible: modal === 'about',
+	}))(setState);
+};
+
+const unmount = () => {
+	disconnect();
+	events.removeAllListeners();
 };
 
 export const aboutModal = Object.assign(events, {
 	mount,
+	unmount,
 });
