@@ -1,4 +1,5 @@
 import {
+	LOAD_VIEW,
 	SHOW_LANDING,
 	SHOW_SERVER,
 	SHOW_DOWNLOADS,
@@ -9,6 +10,9 @@ import {
 
 export const reducer = (state = 'landing', { type, payload }) => {
 	switch (type) {
+		case LOAD_VIEW:
+			return payload;
+
 		case SHOW_LANDING:
 			return 'landing';
 
