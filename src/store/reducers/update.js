@@ -4,6 +4,8 @@ import {
 	CHECKING_FOR_UPDATE_STOPPED,
 	SET_CHECKING_FOR_UPDATE_MESSAGE,
 	UPDATE_VERSION_SET,
+	UPDATE_DOWNLOAD_PROGRESSED,
+	UPDATE_DOWNLOAD_COMPLETED,
 } from '../actions';
 
 
@@ -22,12 +24,16 @@ const initialState = {
 	checking: false,
 	checkingMessage: null,
 	version: null,
+	download: null,
 };
 
 export const reducer = (state = initialState, { type, payload }) => {
 	switch (type) {
 		case UPDATE_CONFIGURATION_SET:
-			return { ...state, ...filterUpdateConfiguration(payload) };
+			return {
+				...state,
+				...filterUpdateConfiguration(payload),
+			};
 
 		case CHECKING_FOR_UPDATE_STARTED:
 			return {
@@ -53,6 +59,25 @@ export const reducer = (state = initialState, { type, payload }) => {
 			return {
 				...state,
 				version: payload,
+			};
+
+		case UPDATE_DOWNLOAD_PROGRESSED: {
+			const { bytesPerSecond, percent, total, transferred } = payload;
+			return {
+				...state,
+				download: {
+					bytesPerSecond,
+					percent,
+					total,
+					transferred,
+				},
+			};
+		}
+
+		case UPDATE_DOWNLOAD_COMPLETED:
+			return {
+				...state,
+				download: null,
 			};
 	}
 

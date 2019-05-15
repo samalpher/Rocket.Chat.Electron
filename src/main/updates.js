@@ -1,6 +1,9 @@
 import { app } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import { EventEmitter } from 'events';
+import i18n from '../i18n';
+import { store } from '../store';
+import { checkingForUpdateStarted, checkingForUpdateStopped, updateVersionSet, showUpdateModal, updateConfigurationSet, setCheckingForUpdateMessage, updateDownloadProgressed } from '../store/actions';
 import { loadJson, writeJson } from '../utils';
 
 
@@ -33,7 +36,7 @@ const loadSettings = async () => {
 		canSetAutoUpdate: !appSettings.forced || appSettings.autoUpdate !== false,
 		skippedVersion: mergedSettings.skip,
 	};
-	events.emit('configuration-set', settings);
+	store.dispatch(updateConfigurationSet(settings));
 };
 
 const updateSettings = async (newSettings) => {
@@ -45,7 +48,7 @@ const updateSettings = async (newSettings) => {
 		...settings,
 		...newSettings,
 	};
-	events.emit('configuration-set', settings);
+	store.dispatch(updateConfigurationSet(settings));
 
 	const data = {
 		canUpdate: settings.canUpdate,
@@ -110,13 +113,14 @@ const quitAndInstall = () => {
 	autoUpdater.quitAndInstall();
 };
 
-const handleError = (error) => {
+const handleError = () => {
 	isCheckingForUpdate = false;
-	events.emit('error', error);
+	store.dispatch(setCheckingForUpdateMessage(i18n.__('dialog.about.errorWhileLookingForUpdates')));
+	setTimeout(() => store.dispatch(checkingForUpdateStopped()), 5000);
 };
 
 const handleCheckingForUpdate = () => {
-	events.emit('checking-for-update');
+	store.dispatch(checkingForUpdateStarted());
 };
 
 const handleUpdateAvailable = (info) => {
@@ -127,20 +131,24 @@ const handleUpdateAvailable = (info) => {
 	const shouldSkip = skippedVersion === version;
 
 	if (!isForcedChecking && shouldSkip) {
-		events.emit('update-not-available');
+		store.dispatch(setCheckingForUpdateMessage(i18n.__('dialog.about.noUpdatesAvailable')));
+		setTimeout(() => store.dispatch(checkingForUpdateStopped()), 5000);
 	} else {
-		events.emit('update-available', info);
+		store.dispatch(checkingForUpdateStopped());
+		store.dispatch(updateVersionSet(version));
+		store.dispatch(showUpdateModal());
 	}
 };
 
 const handleUpdateNotAvailable = () => {
 	isCheckingForUpdate = false;
 
-	events.emit('update-not-available');
+	store.dispatch(setCheckingForUpdateMessage(i18n.__('dialog.about.noUpdatesAvailable')));
+	setTimeout(() => store.dispatch(checkingForUpdateStopped()), 5000);
 };
 
 const handleDownloadProgress = (progress) => {
-	events.emit('download-progress', progress);
+	store.dispatch(updateDownloadProgressed(progress));
 };
 
 const handleUpdateDownloaded = (info) => {

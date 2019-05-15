@@ -2,7 +2,8 @@ import { remote } from 'electron';
 import { EventEmitter } from 'events';
 import { copyright } from '../../package.json';
 import i18n from '../i18n';
-import { connect } from '../store';
+import { connect, store } from '../store';
+import { hideModal } from '../store/actions/modal.js';
 const { app } = remote;
 
 
@@ -90,7 +91,7 @@ const handleCheckForUpdatesOnStartChange = ({ target: { checked } }) => {
 };
 
 const handleOkClick = () => {
-	events.emit('close');
+	store.dispatch(hideModal());
 };
 
 let disconnect;

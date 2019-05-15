@@ -16,13 +16,6 @@ import {
 	editFlagsUpdated,
 	showAboutModal,
 	hideModal,
-	updateConfigurationSet,
-	checkingForUpdateStopped,
-	updateVersionSet,
-	setCheckingForUpdateMessage,
-	showUpdateModal,
-	checkingForUpdateStarted,
-	showScreenshareModal,
 } from '../store/actions';
 import { queryEditFlags } from '../utils';
 import { migrateDataFromLocalStorage } from './data';
@@ -289,7 +282,6 @@ export default async () => {
 		}));
 	});
 
-	aboutModal.on('close', () => store.dispatch(hideModal()));
 	aboutModal.on('check-for-updates', () => updates.checkForUpdates());
 	aboutModal.on('set-check-for-updates-on-start', (enabled) => updates.setAutoUpdate(enabled));
 
@@ -407,11 +399,6 @@ export default async () => {
 		}
 	});
 
-	screenshareModal.on('select-source', ({ id, url }) => {
-		store.dispatch(hideModal());
-		webviews.selectScreenshareSource({ url }, id);
-	});
-
 	sidebar.on('select-server', (url) => {
 		store.dispatch(showServer(url));
 	});
@@ -462,26 +449,6 @@ export default async () => {
 		store.dispatch(hideModal());
 	});
 
-	updates.on('configuration-set', ({ canUpdate, canAutoUpdate, canSetAutoUpdate }) => {
-		store.dispatch(updateConfigurationSet({ canUpdate, canAutoUpdate, canSetAutoUpdate }));
-	});
-	updates.on('error', () => {
-		store.dispatch(setCheckingForUpdateMessage(i18n.__('dialog.about.errorWhileLookingForUpdates')));
-		setTimeout(() => store.dispatch(checkingForUpdateStopped()), 5000);
-	});
-	updates.on('checking-for-update', () => {
-		store.dispatch(checkingForUpdateStarted());
-	});
-	updates.on('update-available', ({ version }) => {
-		store.dispatch(checkingForUpdateStopped());
-		store.dispatch(updateVersionSet(version));
-		store.dispatch(showUpdateModal());
-	});
-	updates.on('update-not-available', () => {
-		store.dispatch(setCheckingForUpdateMessage(i18n.__('dialog.about.noUpdatesAvailable')));
-		setTimeout(() => store.dispatch(checkingForUpdateStopped()), 5000);
-	});
-	// updates.on('download-progress', ({ bytesPerSecond, percent, total, transferred }) => console.log(percent));
 	updates.on('update-downloaded', async () => {
 		const whenInstall = await askWhenToInstallUpdate();
 
@@ -497,18 +464,13 @@ export default async () => {
 	webviews.on(channels.badgeChanged, (url, badge) => {
 		const { preferences: { showWindowOnUnreadChanged } } = store.getState();
 		if (typeof badge === 'number' && showWindowOnUnreadChanged) {
-			const mainWindow = remote.getCurrentWindow();
-			mainWindow.showInactive();
+			getCurrentWindow().showInactive();
 		}
 	});
 
 	webviews.on(channels.focus, (url) => {
 		getCurrentWindow().forceFocus();
 		store.dispatch(showServer(url));
-	});
-
-	webviews.on(channels.requestScreenshareSource, (url) => {
-		store.dispatch(showScreenshareModal(url));
 	});
 
 	webviews.on(channels.reloadServer, (url) => {

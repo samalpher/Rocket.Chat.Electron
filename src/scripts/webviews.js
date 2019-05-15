@@ -77,8 +77,6 @@ const zoomOut = onWebview((webview) => {
 
 const getWebContents = onWebview((webview) => webview.getWebContents());
 
-const selectScreenshareSource = onWebview(onPreload(channels.selectScreenshareSource));
-
 const format = onWebview(onPreload(channels.format));
 
 const getAll = () => Array.from(root.querySelectorAll('.webview'));
@@ -252,6 +250,5 @@ export const webviews = Object.assign(events, {
 	zoomIn,
 	zoomOut,
 	getWebContents,
-	selectScreenshareSource,
 	format,
 });
