@@ -228,10 +228,6 @@ const update = () => {
 		newVersion: version,
 	});
 
-	landing.setState({
-		visible: !loading && view === 'landing',
-	});
-
 	sidebar.setState({
 		servers,
 		activeServerUrl: view.url,
