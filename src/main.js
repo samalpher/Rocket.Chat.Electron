@@ -1,8 +1,8 @@
 import { app } from 'electron';
-import ElectronStore from 'electron-store';
 import jetpack from 'fs-jetpack';
 import i18n from './i18n';
 import './store';
+import { initializeConfiguration } from './main/config';
 import { deepLinks } from './main/deepLinks';
 import { mainWindow, createMainWindow } from './main/mainWindow';
 import { basicAuth } from './main/basicAuth';
@@ -14,8 +14,6 @@ import { touchBar } from './main/touchBar';
 import { tray } from './main/tray';
 import { updates } from './main/updates';
 
-
-export const config = new ElectronStore();
 
 const setupErrorHandling = () => {
 	process.on('uncaughtException', (error) => {
@@ -103,6 +101,8 @@ const attachAppEvents = () => {
 		return;
 	}
 
+	await initializeConfiguration();
+
 	attachAppEvents();
 
 	await app.whenReady();
@@ -127,6 +127,7 @@ const attachAppEvents = () => {
 
 export { basicAuth } from './main/basicAuth';
 export { certificates } from './main/certificates';
+export { config } from './main/config';
 export { deepLinks } from './main/deepLinks';
 export { dock } from './main/dock';
 export { menus } from './main/menus';

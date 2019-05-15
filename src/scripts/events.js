@@ -25,7 +25,7 @@ import {
 	showScreenshareModal,
 } from '../store/actions';
 import { queryEditFlags } from '../utils';
-import { initializeData } from './data';
+import { migrateDataFromLocalStorage } from './data';
 import { aboutModal } from './aboutModal';
 import { updateModal } from './updateModal';
 import { screenshareModal } from './screenshareModal';
@@ -541,5 +541,5 @@ export default async () => {
 	screenshareModal.mount();
 	updateModal.mount();
 
-	await initializeData();
+	await migrateDataFromLocalStorage();
 };
