@@ -12,7 +12,21 @@ import {
 export const reducer = (state = [], { type, payload }) => {
 	switch (type) {
 		case LOAD_SERVERS:
-			return [...payload];
+			return payload.map(({
+				url,
+				title,
+				authUrl,
+				username,
+				password,
+				lastPath,
+			}) => ({
+				url,
+				title,
+				authUrl,
+				username,
+				password,
+				lastPath,
+			}));
 
 		case ADD_SERVER:
 			return [...state, payload];
