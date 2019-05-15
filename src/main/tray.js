@@ -44,7 +44,9 @@ const createContextMenuTemplate = ({ windowVisible }) => ([
 ]);
 
 const createIcon = () => {
-	const image = getTrayIconImage({ badge: state.badge });
+	const { badge, windowVisible } = state;
+
+	const image = getTrayIconImage({ badge });
 
 	if (trayIcon) {
 		trayIcon.setImage(image);
@@ -55,11 +57,11 @@ const createIcon = () => {
 
 	if (process.platform === 'darwin') {
 		darwinThemeSubscriberId = systemPreferences.subscribeNotification('AppleInterfaceThemeChangedNotification', () => {
-			trayIcon.setImage(getTrayIconImage({ badge: state.badge }));
+			trayIcon.setImage(getTrayIconImage({ badge }));
 		});
 	}
 
-	trayIcon.on('click', () => events.emit('activate', !state.windowVisible));
+	trayIcon.on('click', () => events.emit('activate', !windowVisible));
 	trayIcon.on('right-click', (event, bounds) => trayIcon.popUpContextMenu(undefined, bounds));
 };
 
@@ -111,11 +113,13 @@ let disconnect;
 const mount = () => {
 	update();
 	disconnect = connect(({
-		windowVisible,
 		preferences: {
 			hasTray,
 		},
 		servers,
+		windowState: {
+			visible,
+		},
 	}) => {
 		const badges = servers.map(({ badge }) => badge);
 		const mentionCount = (
@@ -127,7 +131,7 @@ const mount = () => {
 
 		return ({
 			badge,
-			windowVisible,
+			windowVisible: visible,
 			visible: hasTray,
 		});
 	})(setState);

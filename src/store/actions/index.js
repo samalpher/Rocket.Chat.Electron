@@ -1,4 +1,3 @@
-export * from './windowVisible';
 export * from './loading';
 export * from './preferences';
 export * from './servers';
@@ -8,3 +7,4 @@ export * from './historyFlags';
 export * from './modal';
 export * from './update';
 export * from './screensharing';
+export * from './windowState';

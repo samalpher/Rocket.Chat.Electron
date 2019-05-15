@@ -1,54 +1,58 @@
 import { app, BrowserWindow, screen } from 'electron';
 import { store } from '../store';
-import { showWindow, hideWindow } from '../store/actions';
-import { loadJson, writeJson } from '../utils';
+import { updateWindowState } from '../store/actions';
+import { debounce } from '../utils';
 
 
 export let mainWindow = null;
 
-let state = {};
-
 let hideOnClose = false;
 
-const loadState = async () => {
-	const { x, y, width, height, isMinimized, isMaximized, isHidden } =
-		await loadJson('window-state-main.json', 'user');
+const applyWindowBoundsFromState = async () => {
+	let {
+		windowState: {
+			x,
+			y,
+			width,
+			height,
+		},
+	} = store.getState();
 
-	state = { x, y, width, height, isMinimized, isMaximized, isHidden };
-
-	if (!state.x || !state.y || !state.width || !state.height) {
-		({ x: state.x, y: state.y, width: state.width, height: state.height } = mainWindow.getNormalBounds());
+	if (!x || !y || !width || !height) {
+		({ x, y, width, height } = mainWindow.getNormalBounds());
 	}
 
-	const isInsideSomeDisplay = screen.getAllDisplays().some(({ workArea: { x, y, width, height } }) => (
-		state.x >= x &&
-		state.y >= y &&
-		state.x + state.width <= x + width &&
-		state.y + state.height <= y + height
+	const isInsideSomeDisplay = screen.getAllDisplays().some(({ workArea }) => (
+		x >= workArea.x &&
+		y >= workArea.y &&
+		x + width <= workArea.x + workArea.width &&
+		y + height <= workArea.y + workArea.height
 	));
 
 	if (!isInsideSomeDisplay) {
-		const { bounds: { width, height } } = screen.getPrimaryDisplay();
-		state.x = (width - state.width) / 2;
-		state.y = (height - state.height) / 2;
+		const { bounds } = screen.getPrimaryDisplay();
+		x = (bounds.width - width) / 2;
+		y = (bounds.height - height) / 2;
 	}
 
-	mainWindow.setBounds({ x: state.x, y: state.y, width: state.width, height: state.height });
+	mainWindow.setBounds({ x, y, width, height });
 };
 
-const fetchState = () => {
-	({ x: state.x, y: state.y, width: state.width, height: state.height } = mainWindow.getNormalBounds());
-	state.isMinimized = mainWindow.isMinimized();
-	state.isMaximized = mainWindow.isMaximized();
-	state.isHidden = !mainWindow.isVisible();
+const dispatchWindowState = debounce((windowState) => store.dispatch(updateWindowState(windowState)), 100);
 
-	if (fetchState.timeout) {
-		clearTimeout(fetchState.timeout);
-	}
+const fetchWindowState = () => {
+	const windowState = {};
+	({
+		x: windowState.x,
+		y: windowState.y,
+		width: windowState.width,
+		height: windowState.height,
+	} = mainWindow.getNormalBounds());
+	windowState.isMinimized = mainWindow.isMinimized();
+	windowState.isMaximized = mainWindow.isMaximized();
+	windowState.isHidden = !mainWindow.isVisible();
 
-	fetchState.timeout = setTimeout(async () => {
-		await writeJson('window-state-main.json', state);
-	}, 1000);
+	dispatchWindowState(windowState);
 };
 
 const handleFocus = () => {
@@ -68,7 +72,7 @@ const handleClose = async (event) => {
 	mainWindow.blur();
 
 	if (!hideOnClose) {
-		fetchState();
+		fetchWindowState();
 	}
 
 	switch (process.platform) {
@@ -97,7 +101,7 @@ const handleClose = async (event) => {
 	}
 
 	if (hideOnClose) {
-		fetchState();
+		fetchWindowState();
 	}
 };
 
@@ -112,7 +116,13 @@ const forceFocus = () => {
 };
 
 const showIfNeeded = () => {
-	const { isMaximized, isMinimized, isHidden } = state;
+	const {
+		windowState: {
+			isMaximized,
+			isMinimized,
+			isHidden,
+		},
+	} = store.getState();
 
 	if (isMaximized) {
 		mainWindow.maximize();
@@ -170,21 +180,18 @@ export const createMainWindow = async () => {
 		},
 	});
 
-	await loadState();
+	applyWindowBoundsFromState();
 
-	mainWindow.on('move', fetchState);
-	mainWindow.on('resize', fetchState);
-	mainWindow.on('minimize', fetchState);
-	mainWindow.on('restore', fetchState);
-	mainWindow.on('maximize', fetchState);
-	mainWindow.on('unmaximize', fetchState);
-	mainWindow.on('show', fetchState);
-	mainWindow.on('hide', fetchState);
+	mainWindow.on('move', fetchWindowState);
+	mainWindow.on('resize', fetchWindowState);
+	mainWindow.on('minimize', fetchWindowState);
+	mainWindow.on('restore', fetchWindowState);
+	mainWindow.on('maximize', fetchWindowState);
+	mainWindow.on('unmaximize', fetchWindowState);
+	mainWindow.on('show', fetchWindowState);
+	mainWindow.on('hide', fetchWindowState);
 	mainWindow.on('focus', handleFocus);
 	mainWindow.on('close', handleClose);
-
-	mainWindow.on('show', () => store.dispatch(showWindow()));
-	mainWindow.on('hide', () => store.dispatch(hideWindow()));
 
 	mainWindow.forceFocus = forceFocus;
 	mainWindow.showIfNeeded = showIfNeeded;

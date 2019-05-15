@@ -1,15 +1,15 @@
 import createDebugLogger from 'debug';
 import ElectronStore from 'electron-store';
-import { store } from '../store';
+import { store, connect } from '../store';
 import { debounce, loadJson, normalizeServerUrl } from '../utils';
-import { loadPreferences, loadServers, loadView, setPreferences } from '../store/actions';
+import { loadPreferences, loadServers, loadView, setPreferences, loadWindowState } from '../store/actions';
 
 
 const debug = createDebugLogger('rc:data');
 
 export let config;
 
-const loadFromFileSystem = async (preferences, servers, view) => {
+const loadFromFileSystem = async (preferences, servers, view, windowState) => {
 	if (servers.length === 0) {
 		debug('servers.json');
 		const appEntries = await loadJson('servers.json', 'app');
@@ -31,15 +31,20 @@ const loadFromFileSystem = async (preferences, servers, view) => {
 		}
 	}
 
-	return [preferences, servers, view];
+	if (Object.keys(windowState).length === 0) {
+		const prevWindowState = await loadJson('window-state-main.json', 'user');
+		const { x, y, width, height, isMinimized, isMaximized, isHidden } = prevWindowState;
+		windowState = { x, y, width, height, isMinimized, isMaximized, isHidden };
+	}
+
+	return [preferences, servers, view, windowState];
 };
 
-const connectToStore = debounce(() => {
-	const { preferences, servers, view } = store.getState();
-
+const persist = debounce(({ preferences, servers, view, windowState }) => {
 	config.set('preferences', preferences);
 	config.set('servers', servers);
 	config.set('view', view);
+	config.set('windowState', windowState);
 }, 100);
 
 export const initializeConfiguration = async () => {
@@ -48,13 +53,25 @@ export const initializeConfiguration = async () => {
 	let preferences = config.get('preferences', {});
 	let servers = config.get('servers', []);
 	let view = config.get('view', 'landing');
+	let windowState = config.get('windowState', {});
 
-	[preferences, servers, view] = await loadFromFileSystem(preferences, servers, view);
+	[preferences, servers, view, windowState] = await loadFromFileSystem(preferences, servers, view, windowState);
 
 	store.dispatch(loadPreferences(preferences));
 	store.dispatch(loadServers(servers));
 	store.dispatch(loadView(view));
+	store.dispatch(loadWindowState(windowState));
 
-	store.subscribe(connectToStore);
+	connect(({
+		preferences,
+		servers,
+		view,
+		windowState,
+	}) => ({
+		preferences,
+		servers,
+		view,
+		windowState,
+	}))(persist);
 };
 
