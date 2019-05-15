@@ -194,25 +194,11 @@ const update = () => {
 		loading,
 		preferences: {
 			hasTray,
-			hasMenus,
 			hasSidebar,
-			showWindowOnUnreadChanged,
 			enabledDictionaries,
 		},
 		servers,
 		view,
-		editFlags: {
-			canUndo,
-			canRedo,
-			canCut,
-			canCopy,
-			canPaste,
-			canSelectAll,
-		},
-		historyFlags: {
-			canGoBack,
-			canGoForward,
-		},
 		modal,
 		update: {
 			canUpdate,
@@ -259,23 +245,6 @@ const update = () => {
 
 	landing.setState({
 		visible: !loading && view === 'landing',
-	});
-
-	menus.setState({
-		servers,
-		activeServerUrl: view.url,
-		hasTray,
-		hasMenus,
-		hasSidebar,
-		showWindowOnUnreadChanged,
-		canUndo,
-		canRedo,
-		canCut,
-		canCopy,
-		canPaste,
-		canSelectAll,
-		canGoBack,
-		canGoForward,
 	});
 
 	sidebar.setState({
