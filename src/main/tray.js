@@ -1,6 +1,7 @@
 import { app, Menu, systemPreferences, Tray } from 'electron';
 import { EventEmitter } from 'events';
 import i18n from '../i18n';
+import { store } from '../store';
 import { getTrayIconImage } from './icon';
 
 
@@ -105,17 +106,44 @@ const setState = (partialState) => {
 	update(previousState);
 };
 
+let unsubscribeFromStore;
+
+const connectToStore = () => {
+	const {
+		windowVisible,
+		preferences: {
+			hasTray,
+		},
+		servers,
+	} = store.getState();
+
+	const badges = servers.map(({ badge }) => badge);
+	const mentionCount = (
+		badges
+			.filter((badge) => Number.isInteger(badge))
+			.reduce((sum, count) => sum + count, 0)
+	);
+	const globalBadge = mentionCount || (badges.some((badge) => !!badge) && '•') || null;
+
+	setState({
+		badge: globalBadge,
+		isMainWindowVisible: windowVisible,
+		visible: hasTray,
+	});
+};
+
 const mount = () => {
 	update();
+	unsubscribeFromStore = store.subscribe(connectToStore);
 };
 
 const unmount = () => {
 	events.removeAllListeners();
+	unsubscribeFromStore();
 	destroyIcon();
 };
 
 export const tray = Object.assign(events, {
-	setState,
 	mount,
 	unmount,
 });

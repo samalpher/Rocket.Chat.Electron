@@ -190,7 +190,6 @@ const browseForDictionary = () => {
 
 const update = () => {
 	const {
-		windowVisible,
 		loading,
 		preferences: {
 			hasTray,
@@ -208,14 +207,6 @@ const update = () => {
 			version,
 		},
 	} = store.getState();
-
-	const badges = servers.map(({ badge }) => badge);
-	const mentionCount = (
-		badges
-			.filter((badge) => Number.isInteger(badge))
-			.reduce((sum, count) => sum + count, 0)
-	);
-	const globalBadge = mentionCount || (badges.some((badge) => !!badge) && '•') || null;
 
 	getCurrentWindow().hideOnClose = hasTray;
 
@@ -249,12 +240,6 @@ const update = () => {
 	});
 
 	spellchecking.setEnabledDictionaries(...enabledDictionaries);
-
-	tray.setState({
-		badge: globalBadge,
-		isMainWindowVisible: windowVisible,
-		visible: hasTray,
-	});
 
 	webviews.setState({
 		servers,
