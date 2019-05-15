@@ -8,3 +8,4 @@ export * from './modal';
 export * from './update';
 export * from './screensharing';
 export * from './windowState';
+export * from './spellchecking';

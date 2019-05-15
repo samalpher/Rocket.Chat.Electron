@@ -3,7 +3,8 @@ import mem from 'mem';
 import path from 'path';
 import spellchecker from 'spellchecker';
 import { getDirectory } from '../utils';
-import { store } from '../store';
+import { store, connect } from '../store';
+import { loadSpellcheckingConfiguration } from '../store/actions';
 
 
 let supportsMultipleDictionaries = false;
@@ -11,17 +12,6 @@ let dictionaryInstallationDirectory;
 let availableDictionaries = [];
 let enabledDictionaries = [];
 let checker = () => true;
-
-const filterDictionaries = (dictionaries) => Array.from(new Set(
-	dictionaries
-		.flatMap((dictionary) => {
-			const matches = /^(\w+?)[-_](\w+)$/.exec(dictionary);
-			return matches ?
-				[`${ matches[1] }_${ matches[2] }`, `${ matches[1] }-${ matches[2] }`, matches[1]] :
-				[dictionary];
-		})
-		.filter((dictionary) => availableDictionaries.includes(dictionary))
-)).slice(...supportsMultipleDictionaries ? [] : [0, 1]);
 
 const updateChecker = () => {
 	if (enabledDictionaries.length === 0) {
@@ -88,37 +78,55 @@ const installDictionaries = async (filePaths) => {
 	}
 };
 
+const setState = (partialState) => {
+	({
+		supportsMultipleDictionaries = supportsMultipleDictionaries,
+		dictionaryInstallationDirectory = dictionaryInstallationDirectory,
+		availableDictionaries = availableDictionaries,
+		enabledDictionaries = enabledDictionaries,
+	} = partialState);
 
-const connectToStore = () => {
-	const {
-		preferences: {
-			enabledDictionaries: dictionaries,
-		},
-	} = store.getState();
-
-	enabledDictionaries = filterDictionaries(dictionaries);
 	updateChecker();
 };
 
 const initialize = async () => {
 	const embeddedDictionaries = spellchecker.getAvailableDictionaries();
-	supportsMultipleDictionaries = embeddedDictionaries.length > 0 && process.platform !== 'win32';
+	const supportsMultipleDictionaries = embeddedDictionaries.length > 0 && process.platform !== 'win32';
 
 	const directory = getDirectory('dictionaries', 'app');
-	dictionaryInstallationDirectory = directory.path();
+	const dictionaryInstallationDirectory = directory.path();
 
 	const installedDictionaries = (await directory.findAsync({ matching: '*.{aff,dic}' }))
 		.map((fileName) => path.basename(fileName, path.extname(fileName)));
 
-	availableDictionaries = Array.from(new Set([...embeddedDictionaries, ...installedDictionaries])).sort();
+	const availableDictionaries = Array.from(new Set([...embeddedDictionaries, ...installedDictionaries])).sort();
 
-	store.subscribe(connectToStore);
+	store.dispatch(loadSpellcheckingConfiguration({
+		supportsMultipleDictionaries,
+		dictionaryInstallationDirectory,
+		availableDictionaries,
+	}));
+
+	connect(({
+		preferences: {
+			enabledDictionaries,
+		},
+		spellchecking: {
+			supportsMultipleDictionaries,
+			dictionaryInstallationDirectory,
+			availableDictionaries,
+		},
+	}) => ({
+		supportsMultipleDictionaries,
+		dictionaryInstallationDirectory,
+		availableDictionaries,
+		enabledDictionaries,
+	}))(setState);
 };
 
 export const spellchecking = {
 	initialize,
 	check,
-	filterDictionaries,
 	getCorrections,
 	installDictionaries,
 	getDictionaryInstallationDirectory: () => dictionaryInstallationDirectory,

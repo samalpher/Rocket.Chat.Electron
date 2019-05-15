@@ -9,6 +9,7 @@ import { reducer as modal } from './modal';
 import { reducer as update } from './update';
 import { reducer as screensharing } from './screensharing';
 import { reducer as windowState } from './windowState';
+import { reducer as spellchecking } from './spellchecking';
 
 
 export const reducer = combineReducers({
@@ -22,4 +23,5 @@ export const reducer = combineReducers({
 	modal,
 	update,
 	screensharing,
+	spellchecking,
 });
