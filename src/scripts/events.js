@@ -193,10 +193,7 @@ const update = () => {
 		loading,
 		preferences: {
 			hasTray,
-			hasSidebar,
 		},
-		servers,
-		view,
 		modal,
 		update: {
 			canUpdate,
@@ -226,12 +223,6 @@ const update = () => {
 	updateModal.setState({
 		visible: modal === 'update',
 		newVersion: version,
-	});
-
-	webviews.setState({
-		servers,
-		activeServerUrl: view.url,
-		hasSpacingForTitleBarButtons: !hasSidebar,
 	});
 };
 
