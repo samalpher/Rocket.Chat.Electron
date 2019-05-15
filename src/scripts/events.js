@@ -228,12 +228,6 @@ const update = () => {
 		newVersion: version,
 	});
 
-	sidebar.setState({
-		servers,
-		activeServerUrl: view.url,
-		visible: !loading && hasSidebar,
-	});
-
 	webviews.setState({
 		servers,
 		activeServerUrl: view.url,

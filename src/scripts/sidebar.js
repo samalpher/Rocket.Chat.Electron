@@ -1,6 +1,7 @@
 import { remote } from 'electron';
 import { EventEmitter } from 'events';
 import i18n from '../i18n';
+import { store } from '../store';
 import { parse as parseUrl } from 'url';
 const { getCurrentWindow, Menu } = remote;
 
@@ -213,6 +214,23 @@ const handleAddServerClick = () => {
 	events.emit('add-server');
 };
 
+const connectToStore = () => {
+	const {
+		loading,
+		preferences: {
+			hasSidebar,
+		},
+		servers,
+		view,
+	} = store.getState();
+
+	setState({
+		servers,
+		activeServerUrl: view.url,
+		visible: !loading && hasSidebar,
+	});
+};
+
 const mount = () => {
 	root = document.querySelector('.sidebar');
 	root.classList.toggle('sidebar--macos', process.platform === 'darwin');
@@ -228,9 +246,10 @@ const mount = () => {
 	serverList = root.querySelector('.sidebar__server-list');
 
 	update();
+
+	store.subscribe(connectToStore);
 };
 
 export const sidebar = Object.assign(events, {
 	mount,
-	setState,
 });
