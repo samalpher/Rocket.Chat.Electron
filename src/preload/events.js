@@ -1,6 +1,6 @@
 import { ipcRenderer, remote } from 'electron';
 import { store } from '../store';
-import { setEditFlags, setHistoryFlags, setServerProperties } from '../store/actions';
+import { editFlagsUpdated, historyFlagsUpdated, setServerProperties } from '../store/actions';
 import { queryEditFlags } from '../utils';
 import { badgeChanged } from './channels';
 import { getServerUrl } from './getServerUrl';
@@ -17,8 +17,8 @@ export default () => {
 	});
 
 	document.addEventListener('selectionchange', () => {
-		store.dispatch(setEditFlags(queryEditFlags()));
-		store.dispatch(setHistoryFlags({
+		store.dispatch(editFlagsUpdated(queryEditFlags()));
+		store.dispatch(historyFlagsUpdated({
 			canGoBack: getCurrentWebContents().canGoBack(),
 			canGoForward: getCurrentWebContents().canGoForward(),
 		}));

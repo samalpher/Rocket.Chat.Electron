@@ -4,7 +4,7 @@ import path from 'path';
 import spellchecker from 'spellchecker';
 import { getDirectory } from '../utils';
 import { store, connect } from '../store';
-import { loadSpellcheckingConfiguration } from '../store/actions';
+import { spellcheckingConfigurationLoaded } from '../store/actions';
 
 
 let supportsMultipleDictionaries = false;
@@ -101,7 +101,7 @@ const initialize = async () => {
 
 	const availableDictionaries = Array.from(new Set([...embeddedDictionaries, ...installedDictionaries])).sort();
 
-	store.dispatch(loadSpellcheckingConfiguration({
+	store.dispatch(spellcheckingConfigurationLoaded({
 		supportsMultipleDictionaries,
 		dictionaryInstallationDirectory,
 		availableDictionaries,

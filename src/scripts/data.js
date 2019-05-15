@@ -1,9 +1,9 @@
 import createDebugLogger from 'debug';
 import { store } from '../store';
 import {
-	loadPreferences,
-	loadServers,
-	loadView,
+	preferencesLoaded,
+	serversLoaded,
+	viewLoaded,
 } from '../store/actions';
 import { normalizeServerUrl } from '../utils';
 const debug = createDebugLogger('rc:data');
@@ -125,7 +125,7 @@ export const migrateDataFromLocalStorage = async () => {
 		}
 	}
 
-	store.dispatch(loadPreferences(preferences));
-	store.dispatch(loadServers(servers));
-	store.dispatch(loadView(view));
+	store.dispatch(preferencesLoaded(preferences));
+	store.dispatch(serversLoaded(servers));
+	store.dispatch(viewLoaded(view));
 };

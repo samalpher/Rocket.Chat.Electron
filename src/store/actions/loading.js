@@ -1,10 +1,5 @@
-export const START_LOADING = 'START_LOADING';
-export const STOP_LOADING = 'STOP_LOADING';
+export const LOADING_DONE = 'LOADING_DONE';
 
-export const startLoading = () => ({
-	type: START_LOADING,
-});
-
-export const stopLoading = () => ({
-	type: STOP_LOADING,
+export const loadingDone = () => ({
+	type: LOADING_DONE,
 });

@@ -1,5 +1,5 @@
 import {
-	LOAD_SPELLCHECKING_CONFIGURATION,
+	SPELLCHECKING_CONFIGURATION_LOADED,
 } from '../actions';
 
 
@@ -15,7 +15,7 @@ const filterState = ({
 
 export const reducer = (state = filterState({}), { type, payload }) => {
 	switch (type) {
-		case LOAD_SPELLCHECKING_CONFIGURATION:
+		case SPELLCHECKING_CONFIGURATION_LOADED:
 			return filterState(payload);
 	}
 

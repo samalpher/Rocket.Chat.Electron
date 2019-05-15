@@ -1,6 +1,6 @@
-export const LOAD_SPELLCHECKING_CONFIGURATION = 'LOAD_SPELLCHECKING_CONFIGURATION';
+export const SPELLCHECKING_CONFIGURATION_LOADED = 'SPELLCHECKING_CONFIGURATION_LOADED';
 
-export const loadSpellcheckingConfiguration = (config) => ({
-	type: LOAD_SPELLCHECKING_CONFIGURATION,
+export const spellcheckingConfigurationLoaded = (config) => ({
+	type: SPELLCHECKING_CONFIGURATION_LOADED,
 	payload: config,
 });

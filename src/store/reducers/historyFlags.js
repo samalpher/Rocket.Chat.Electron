@@ -1,4 +1,4 @@
-import { SET_HISTORY_FLAGS } from '../actions';
+import { HISTORY_FLAGS_UPDATED } from '../actions';
 
 
 const filterFlags = ({
@@ -11,7 +11,7 @@ const filterFlags = ({
 
 export const reducer = (state = filterFlags({}), { type, payload }) => {
 	switch (type) {
-		case SET_HISTORY_FLAGS: {
+		case HISTORY_FLAGS_UPDATED: {
 			return filterFlags({ ...state, ...payload });
 		}
 	}

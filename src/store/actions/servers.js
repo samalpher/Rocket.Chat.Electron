@@ -1,12 +1,12 @@
-export const LOAD_SERVERS = 'LOAD_SERVERS';
+export const SERVERS_LOADED = 'SERVERS_LOADED';
 export const ADD_SERVER = 'ADD_SERVER';
 export const ADD_SERVER_FROM_URL = 'ADD_SERVER_FROM_URL';
 export const REMOVE_SERVER_FROM_URL = 'REMOVE_SERVER_FROM_URL';
 export const SORT_SERVERS = 'SORT_SERVERS';
 export const SET_SERVER_PROPERTIES = 'SET_SERVER_PROPERTIES';
 
-export const loadServers = (servers) => ({
-	type: LOAD_SERVERS,
+export const serversLoaded = (servers) => ({
+	type: SERVERS_LOADED,
 	payload: servers,
 });
 

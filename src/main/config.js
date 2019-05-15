@@ -2,7 +2,13 @@ import createDebugLogger from 'debug';
 import ElectronStore from 'electron-store';
 import { store, connect } from '../store';
 import { debounce, loadJson, normalizeServerUrl } from '../utils';
-import { loadPreferences, loadServers, loadView, setPreferences, loadWindowState } from '../store/actions';
+import {
+	preferencesLoaded,
+	serversLoaded,
+	viewLoaded,
+	windowStateLoaded,
+	setPreferences,
+} from '../store/actions';
 
 
 const debug = createDebugLogger('rc:data');
@@ -57,10 +63,10 @@ export const initializeConfiguration = async () => {
 
 	[preferences, servers, view, windowState] = await loadFromFileSystem(preferences, servers, view, windowState);
 
-	store.dispatch(loadPreferences(preferences));
-	store.dispatch(loadServers(servers));
-	store.dispatch(loadView(view));
-	store.dispatch(loadWindowState(windowState));
+	store.dispatch(preferencesLoaded(preferences));
+	store.dispatch(serversLoaded(servers));
+	store.dispatch(viewLoaded(view));
+	store.dispatch(windowStateLoaded(windowState));
 
 	connect(({
 		preferences,

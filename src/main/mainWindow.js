@@ -1,6 +1,6 @@
 import { app, BrowserWindow, screen } from 'electron';
 import { store } from '../store';
-import { updateWindowState } from '../store/actions';
+import { windowStateUpdated } from '../store/actions';
 import { debounce } from '../utils';
 
 
@@ -38,7 +38,7 @@ const applyWindowBoundsFromState = async () => {
 	mainWindow.setBounds({ x, y, width, height });
 };
 
-const dispatchWindowState = debounce((windowState) => store.dispatch(updateWindowState(windowState)), 100);
+const dispatchWindowState = debounce((windowState) => store.dispatch(windowStateUpdated(windowState)), 100);
 
 const fetchWindowState = () => {
 	const windowState = {};

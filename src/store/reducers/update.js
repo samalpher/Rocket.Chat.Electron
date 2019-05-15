@@ -1,9 +1,9 @@
 import {
-	SET_UPDATE_CONFIGURATION,
-	START_CHECKING_FOR_UPDATE,
-	STOP_CHECKING_FOR_UPDATE,
+	UPDATE_CONFIGURATION_SET,
+	CHECKING_FOR_UPDATE_STARTED,
+	CHECKING_FOR_UPDATE_STOPPED,
 	SET_CHECKING_FOR_UPDATE_MESSAGE,
-	SET_UPDATE_VERSION,
+	UPDATE_VERSION_SET,
 } from '../actions';
 
 
@@ -26,16 +26,16 @@ const initialState = {
 
 export const reducer = (state = initialState, { type, payload }) => {
 	switch (type) {
-		case SET_UPDATE_CONFIGURATION:
+		case UPDATE_CONFIGURATION_SET:
 			return { ...state, ...filterUpdateConfiguration(payload) };
 
-		case START_CHECKING_FOR_UPDATE:
+		case CHECKING_FOR_UPDATE_STARTED:
 			return {
 				...state,
 				checking: true,
 			};
 
-		case STOP_CHECKING_FOR_UPDATE:
+		case CHECKING_FOR_UPDATE_STOPPED:
 			return {
 				...state,
 				checking: false,
@@ -49,7 +49,7 @@ export const reducer = (state = initialState, { type, payload }) => {
 				checkingMessage: payload,
 			};
 
-		case SET_UPDATE_VERSION:
+		case UPDATE_VERSION_SET:
 			return {
 				...state,
 				version: payload,

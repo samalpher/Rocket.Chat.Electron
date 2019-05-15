@@ -1,4 +1,4 @@
-import { SET_EDIT_FLAGS } from '../actions';
+import { EDIT_FLAGS_UPDATED } from '../actions';
 
 
 const filterFlags = ({
@@ -19,7 +19,7 @@ const filterFlags = ({
 
 export const reducer = (state = filterFlags({}), { type, payload }) => {
 	switch (type) {
-		case SET_EDIT_FLAGS: {
+		case EDIT_FLAGS_UPDATED: {
 			return filterFlags({ ...state, ...payload });
 		}
 	}

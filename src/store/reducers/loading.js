@@ -1,13 +1,8 @@
-import { START_LOADING, STOP_LOADING } from '../actions';
+import { LOADING_DONE } from '../actions';
 
-const initialState = true;
-
-export const reducer = (state = initialState, { type }) => {
+export const reducer = (state = true, { type }) => {
 	switch (type) {
-		case START_LOADING:
-			return true;
-
-		case STOP_LOADING:
+		case LOADING_DONE:
 			return false;
 	}
 

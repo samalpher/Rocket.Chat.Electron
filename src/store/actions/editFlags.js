@@ -1,6 +1,6 @@
-export const SET_EDIT_FLAGS = 'SET_EDIT_FLAGS';
+export const EDIT_FLAGS_UPDATED = 'EDIT_FLAGS_UPDATED';
 
-export const setEditFlags = (flags) => ({
-	type: SET_EDIT_FLAGS,
+export const editFlagsUpdated = (flags) => ({
+	type: EDIT_FLAGS_UPDATED,
 	payload: flags,
 });

@@ -1,28 +1,28 @@
-export const SET_UPDATE_CONFIGURATION = 'SET_UPDATE_CONFIGURATION';
-export const STOP_CHECKING_FOR_UPDATE = 'STOP_CHECKING_FOR_UPDATE';
-export const SET_UPDATE_VERSION = 'SET_UPDATE_VERSION';
+export const UPDATE_CONFIGURATION_SET = 'UPDATE_CONFIGURATION_SET';
+export const CHECKING_FOR_UPDATE_STARTED = 'CHECKING_FOR_UPDATE_STARTED';
+export const CHECKING_FOR_UPDATE_STOPPED = 'CHECKING_FOR_UPDATE_STOPPED';
+export const UPDATE_VERSION_SET = 'UPDATE_VERSION_SET';
 export const SET_CHECKING_FOR_UPDATE_MESSAGE = 'SET_CHECKING_FOR_UPDATE_MESSAGE';
-export const START_CHECKING_FOR_UPDATE = 'START_CHECKING_FOR_UPDATE';
 
-export const setUpdateConfiguration = (configuration) => ({
-	type: SET_UPDATE_CONFIGURATION,
+export const updateConfigurationSet = (configuration) => ({
+	type: UPDATE_CONFIGURATION_SET,
 	payload: configuration,
 });
 
-export const stopCheckingForUpdate = () => ({
-	type: STOP_CHECKING_FOR_UPDATE,
+export const checkingForUpdateStarted = () => ({
+	type: CHECKING_FOR_UPDATE_STARTED,
 });
 
-export const setUpdateVersion = (version) => ({
-	type: SET_UPDATE_VERSION,
+export const checkingForUpdateStopped = () => ({
+	type: CHECKING_FOR_UPDATE_STOPPED,
+});
+
+export const updateVersionSet = (version) => ({
+	type: UPDATE_VERSION_SET,
 	payload: version,
 });
 
 export const setCheckingForUpdateMessage = (message) => ({
 	type: SET_CHECKING_FOR_UPDATE_MESSAGE,
 	payload: message,
-});
-
-export const startCheckingForUpdate = () => ({
-	type: START_CHECKING_FOR_UPDATE,
 });

@@ -1,9 +1,9 @@
-export const LOAD_PREFERENCES = 'LOAD_PREFERENCES';
+export const PREFERENCES_LOADED = 'PREFERENCES_LOADED';
 export const SET_PREFERENCES = 'SET_PREFERENCES';
 export const TOGGLE_SPELLCHECKING_DICTIONARY = 'TOGGLE_SPELLCHECKING_DICTIONARY';
 
-export const loadPreferences = (preferences) => ({
-	type: LOAD_PREFERENCES,
+export const preferencesLoaded = (preferences) => ({
+	type: PREFERENCES_LOADED,
 	payload: preferences,
 });
 

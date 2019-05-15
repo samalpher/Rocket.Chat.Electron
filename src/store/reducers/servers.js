@@ -1,6 +1,6 @@
 import { format as formatUrl, parse as parseUrl } from 'url';
 import {
-	LOAD_SERVERS,
+	SERVERS_LOADED,
 	ADD_SERVER,
 	ADD_SERVER_FROM_URL,
 	REMOVE_SERVER_FROM_URL,
@@ -11,7 +11,7 @@ import {
 
 export const reducer = (state = [], { type, payload }) => {
 	switch (type) {
-		case LOAD_SERVERS:
+		case SERVERS_LOADED:
 			return payload.map(({
 				url,
 				title,

@@ -1,6 +1,6 @@
-export const SET_HISTORY_FLAGS = 'SET_HISTORY_FLAGS';
+export const HISTORY_FLAGS_UPDATED = 'HISTORY_FLAGS_UPDATED';
 
-export const setHistoryFlags = (flags) => ({
-	type: SET_HISTORY_FLAGS,
+export const historyFlagsUpdated = (flags) => ({
+	type: HISTORY_FLAGS_UPDATED,
 	payload: flags,
 });

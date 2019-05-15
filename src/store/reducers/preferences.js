@@ -1,9 +1,9 @@
 import { app as mainApp, remote } from 'electron';
 import {
-	LOAD_PREFERENCES,
+	PREFERENCES_LOADED,
 	SET_PREFERENCES,
 	TOGGLE_SPELLCHECKING_DICTIONARY,
-	LOAD_SPELLCHECKING_CONFIGURATION,
+	SPELLCHECKING_CONFIGURATION_LOADED,
 } from '../actions';
 const app = remote ? remote.app : mainApp;
 
@@ -43,7 +43,7 @@ const filterState = ({
 
 export const reducer = (state = filterState({}), { type, payload }) => {
 	switch (type) {
-		case LOAD_PREFERENCES:
+		case PREFERENCES_LOADED:
 			return filterState({ ...payload });
 
 		case SET_PREFERENCES:
@@ -62,7 +62,7 @@ export const reducer = (state = filterState({}), { type, payload }) => {
 			});
 		}
 
-		case LOAD_SPELLCHECKING_CONFIGURATION: {
+		case SPELLCHECKING_CONFIGURATION_LOADED: {
 			({
 				supportsMultipleDictionaries,
 				availableDictionaries,

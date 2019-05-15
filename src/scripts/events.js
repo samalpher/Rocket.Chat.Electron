@@ -3,7 +3,7 @@ import i18n from '../i18n';
 import * as channels from '../preload/channels';
 import { store } from '../store';
 import {
-	stopLoading,
+	loadingDone,
 	showLanding,
 	showServer,
 	setPreferences,
@@ -12,16 +12,16 @@ import {
 	removeServerFromUrl,
 	sortServers,
 	setServerProperties,
-	setHistoryFlags,
-	setEditFlags,
+	historyFlagsUpdated,
+	editFlagsUpdated,
 	showAboutModal,
 	hideModal,
-	setUpdateConfiguration,
-	stopCheckingForUpdate,
-	setUpdateVersion,
+	updateConfigurationSet,
+	checkingForUpdateStopped,
+	updateVersionSet,
 	setCheckingForUpdateMessage,
 	showUpdateModal,
-	startCheckingForUpdate,
+	checkingForUpdateStarted,
 	showScreenshareModal,
 } from '../store/actions';
 import { queryEditFlags } from '../utils';
@@ -282,8 +282,8 @@ export default async () => {
 	await i18n.initialize();
 
 	document.addEventListener('selectionchange', () => {
-		store.dispatch(setEditFlags(queryEditFlags()));
-		store.dispatch(setHistoryFlags({
+		store.dispatch(editFlagsUpdated(queryEditFlags()));
+		store.dispatch(historyFlagsUpdated({
 			canGoBack: false,
 			canGoForward: false,
 		}));
@@ -463,23 +463,23 @@ export default async () => {
 	});
 
 	updates.on('configuration-set', ({ canUpdate, canAutoUpdate, canSetAutoUpdate }) => {
-		store.dispatch(setUpdateConfiguration({ canUpdate, canAutoUpdate, canSetAutoUpdate }));
+		store.dispatch(updateConfigurationSet({ canUpdate, canAutoUpdate, canSetAutoUpdate }));
 	});
 	updates.on('error', () => {
 		store.dispatch(setCheckingForUpdateMessage(i18n.__('dialog.about.errorWhileLookingForUpdates')));
-		setTimeout(() => store.dispatch(stopCheckingForUpdate()), 5000);
+		setTimeout(() => store.dispatch(checkingForUpdateStopped()), 5000);
 	});
 	updates.on('checking-for-update', () => {
-		store.dispatch(startCheckingForUpdate());
+		store.dispatch(checkingForUpdateStarted());
 	});
 	updates.on('update-available', ({ version }) => {
-		store.dispatch(stopCheckingForUpdate());
-		store.dispatch(setUpdateVersion(version));
+		store.dispatch(checkingForUpdateStopped());
+		store.dispatch(updateVersionSet(version));
 		store.dispatch(showUpdateModal());
 	});
 	updates.on('update-not-available', () => {
 		store.dispatch(setCheckingForUpdateMessage(i18n.__('dialog.about.noUpdatesAvailable')));
-		setTimeout(() => store.dispatch(stopCheckingForUpdate()), 5000);
+		setTimeout(() => store.dispatch(checkingForUpdateStopped()), 5000);
 	});
 	// updates.on('download-progress', ({ bytesPerSecond, percent, total, transferred }) => console.log(percent));
 	updates.on('update-downloaded', async () => {
@@ -535,14 +535,14 @@ export default async () => {
 
 	webviews.on('did-navigate', (url, lastPath) => {
 		store.dispatch(setServerProperties({ url, lastPath }));
-		store.dispatch(setHistoryFlags({
+		store.dispatch(historyFlagsUpdated({
 			canGoBack: webviews.getWebContents({ url }).canGoBack(),
 			canGoForward: webviews.getWebContents({ url }).canGoForward(),
 		}));
 	});
 
 	webviews.on('ready', () => {
-		store.dispatch(stopLoading());
+		store.dispatch(loadingDone());
 	});
 
 	mountAll();

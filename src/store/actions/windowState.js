@@ -1,12 +1,12 @@
-export const LOAD_WINDOW_STATE = 'LOAD_WINDOW_STATE';
-export const UPDATE_WINDOW_STATE = 'UPDATE_WINDOW_STATE';
+export const WINDOW_STATE_LOADED = 'WINDOW_STATE_LOADED';
+export const WINDOW_STATE_UPDATED = 'WINDOW_STATE_UPDATED';
 
-export const loadWindowState = (state) => ({
-	type: LOAD_WINDOW_STATE,
+export const windowStateLoaded = (state) => ({
+	type: WINDOW_STATE_LOADED,
 	payload: state,
 });
 
-export const updateWindowState = (state) => ({
-	type: UPDATE_WINDOW_STATE,
+export const windowStateUpdated = (state) => ({
+	type: WINDOW_STATE_UPDATED,
 	payload: state,
 });

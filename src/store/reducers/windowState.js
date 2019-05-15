@@ -1,6 +1,6 @@
 import {
-	LOAD_WINDOW_STATE,
-	UPDATE_WINDOW_STATE,
+	WINDOW_STATE_LOADED,
+	WINDOW_STATE_UPDATED,
 } from '../actions';
 
 
@@ -24,8 +24,8 @@ const filterState = ({
 
 export const reducer = (state = filterState({}), { type, payload }) => {
 	switch (type) {
-		case LOAD_WINDOW_STATE:
-		case UPDATE_WINDOW_STATE:
+		case WINDOW_STATE_LOADED:
+		case WINDOW_STATE_UPDATED:
 			return filterState(payload);
 	}
 
