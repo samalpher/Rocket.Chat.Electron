@@ -1,83 +1,104 @@
-import createDebugLogger from 'debug';
+import debug from 'debug';
 import ElectronStore from 'electron-store';
-import { store, connect } from '../store';
+import { put, select, takeEvery } from 'redux-saga/effects';
+import { sagaMiddleware } from '../store';
 import { debounce, loadJson, normalizeServerUrl } from '../utils';
 import {
+	LOAD_CONFIG,
+	CONFIG_LOADING,
+	configLoading,
 	preferencesLoaded,
-	serversLoaded,
 	viewLoaded,
-	windowStateLoaded,
+	serversLoaded,
 	setPreferences,
+	showLanding,
+	showServer,
 } from '../store/actions';
 
 
-const debug = createDebugLogger('rc:data');
-
-export let config;
-
-const loadFromFileSystem = async (preferences, servers, view, windowState) => {
-	if (servers.length === 0) {
-		debug('servers.json');
-		const appEntries = await loadJson('servers.json', 'app');
-		const userEntries = await loadJson('servers.json', 'user');
-		servers = [
-			...(
-				Object.entries(appEntries)
-					.map(([title, url]) => ({ url: normalizeServerUrl(url), title }))
-			),
-			...(
-				Object.entries(userEntries)
-					.map(([title, url]) => ({ url: normalizeServerUrl(url), title }))
-			),
-		];
-		view = servers[0] ? { url: servers[0].url } : 'landing';
-
-		if (servers.length <= 1) {
-			store.dispatch(setPreferences({ hasSidebar: false }));
-		}
-	}
-
-	if (Object.keys(windowState).length === 0) {
-		const prevWindowState = await loadJson('window-state-main.json', 'user');
-		const { x, y, width, height, isMinimized, isMaximized, isHidden } = prevWindowState;
-		windowState = { x, y, width, height, isMinimized, isMaximized, isHidden };
-	}
-
-	return [preferences, servers, view, windowState];
+const loadPreferences = function *({ payload: { preferences } }) {
+	yield put(preferencesLoaded(preferences));
 };
 
-const persist = debounce(({ preferences, servers, view, windowState }) => {
-	config.set('preferences', preferences);
-	config.set('servers', servers);
-	config.set('view', view);
-	config.set('windowState', windowState);
-}, 100);
+const loadView = function *({ payload: { view } }) {
+	yield put(viewLoaded(view));
+};
 
-export const initializeConfiguration = async () => {
+const loadServers = function *({ payload: { servers } }) {
+	if (servers.length !== 0) {
+		yield put(serversLoaded(servers));
+		return;
+	}
+
+	debug('rc:data')('servers.json');
+	const appEntries = yield loadJson('servers.json', 'app');
+	const userEntries = yield loadJson('servers.json', 'user');
+	servers = [
+		...(
+			Object.entries(appEntries)
+				.map(([title, url]) => ({ url: normalizeServerUrl(url), title }))
+		),
+		...(
+			Object.entries(userEntries)
+				.map(([title, url]) => ({ url: normalizeServerUrl(url), title }))
+		),
+	];
+
+	yield put(serversLoaded(servers));
+
+	yield put(servers[0] ? showServer(servers[0].url) : showLanding());
+
+	if (servers.length <= 1) {
+		yield put(setPreferences({ hasSidebar: false }));
+	}
+};
+
+let config;
+
+const loadConfig = function *() {
 	config = new ElectronStore();
-
-	let preferences = config.get('preferences', {});
-	let servers = config.get('servers', []);
-	let view = config.get('view', 'landing');
-	let windowState = config.get('windowState', {});
-
-	[preferences, servers, view, windowState] = await loadFromFileSystem(preferences, servers, view, windowState);
-
-	store.dispatch(preferencesLoaded(preferences));
-	store.dispatch(serversLoaded(servers));
-	store.dispatch(viewLoaded(view));
-	store.dispatch(windowStateLoaded(windowState));
-
-	connect(({
-		preferences,
-		servers,
-		view,
-		windowState,
-	}) => ({
-		preferences,
-		servers,
-		view,
-		windowState,
-	}))(persist);
+	yield put(configLoading({
+		preferences: config.get('preferences', {}),
+		servers: config.get('servers', []),
+		view: config.get('view', 'landing'),
+		windowState: config.get('windowState', {}),
+		certificates: config.get('certificates', {}),
+		update: config.get('update', {}),
+	}));
 };
 
+const persist = debounce((data) => {
+	debug('rc:data')('persist');
+	config.set(data);
+}, 500);
+
+const saveConfig = function *() {
+	const {
+		preferences,
+		servers,
+		view,
+		windowState,
+		certificates,
+		update: {
+			configuration,
+		},
+	} = yield select();
+
+	persist({
+		preferences,
+		servers,
+		view,
+		windowState,
+		certificates,
+		update: configuration,
+	});
+};
+
+sagaMiddleware.run(function *configSaga() {
+	yield takeEvery(LOAD_CONFIG, loadConfig);
+	yield takeEvery(CONFIG_LOADING, loadPreferences);
+	yield takeEvery(CONFIG_LOADING, loadView);
+	yield takeEvery(CONFIG_LOADING, loadServers);
+
+	yield takeEvery('*', saveConfig);
+});

@@ -1,16 +1,18 @@
 import { remote } from 'electron';
-import { EventEmitter } from 'events';
 import i18n from '../i18n';
-import { connect } from '../store';
-const { app } = remote;
+import { connect, store } from '../store';
+import {
+	hideModal,
+	skipUpdate,
+	downloadUpdate,
+} from '../store/actions';
+const { app, dialog, getCurrentWindow } = remote;
 
 
 let state = {
 	visible: false,
 	newVersion: null,
 };
-
-const events = new EventEmitter();
 
 let root;
 
@@ -38,18 +40,38 @@ const setState = (partialState) => {
 	update(previousState);
 };
 
-const handleSkipClick = () => {
-	const { newVersion } = state;
-	events.emit('skip', newVersion);
+const warnItWillSkipVersion = () => new Promise((resolve) => {
+	dialog.showMessageBox(getCurrentWindow(), {
+		title: i18n.__('dialog.updateSkip.title'),
+		message: i18n.__('dialog.updateSkip.message'),
+		type: 'warning',
+		buttons: [i18n.__('dialog.updateSkip.ok')],
+		defaultId: 0,
+	}, () => resolve());
+});
+
+const informItWillDownloadUpdate = () => new Promise((resolve) => {
+	dialog.showMessageBox(getCurrentWindow(), {
+		title: i18n.__('dialog.updateDownloading.title'),
+		message: i18n.__('dialog.updateDownloading.message'),
+		type: 'info',
+		buttons: [i18n.__('dialog.updateDownloading.ok')],
+		defaultId: 0,
+	}, () => resolve());
+});
+
+const handleSkipClick = async () => {
+	await warnItWillSkipVersion();
+	store.dispatch(skipUpdate());
 };
 
 const handleRemindLaterClick = () => {
-	const { newVersion } = state;
-	events.emit('remind-later', newVersion);
+	store.dispatch(hideModal());
 };
 
-const handleInstallClick = () => {
-	events.emit('install');
+const handleInstallClick = async () => {
+	await informItWillDownloadUpdate();
+	store.dispatch(downloadUpdate());
 };
 
 let disconnect;
@@ -84,10 +106,9 @@ const mount = () => {
 
 const unmount = () => {
 	disconnect();
-	events.removeAllListeners();
 };
 
-export const updateModal = Object.assign(events, {
+export const updateModal = {
 	mount,
 	unmount,
-});
+};

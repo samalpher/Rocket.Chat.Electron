@@ -1,40 +1,58 @@
-import { EventEmitter } from 'events';
 import querystring from 'querystring';
-import url from 'url';
+import { put, takeEvery } from 'redux-saga/effects';
+import { parse as parseUrl } from 'url';
 import { normalizeServerUrl } from '../utils';
+import { sagaMiddleware } from '../store';
+import {
+	COMMAND_LINE_ARGUMENT_PASSED,
+	DEEP_LINK_REQUESTED,
+	processAuthDeepLink,
+	processRoomDeepLink,
+} from '../store/actions';
 
 
-const events = new EventEmitter();
+const isRocketChatLink = (link) => parseUrl(link).protocol === 'rocketchat:';
 
-const processAuth = ({ host, token, userId }) => {
-	const serverUrl = normalizeServerUrl(host);
-	events.emit('auth', { serverUrl, token, userId });
-};
+const handleLink = function *(link) {
+	const { hostname:	action, query } = parseUrl(link);
 
-const processRoom = ({ host, rid, path }) => {
-	const serverUrl = normalizeServerUrl(host);
-	events.emit('room', { serverUrl, rid, path });
-};
+	const { host, ...params } = querystring.parse(query);
+	const url = normalizeServerUrl(host);
 
-const handle = (link) => {
-	const { protocol, hostname:	action, query } = url.parse(link);
-
-	if (protocol !== 'rocketchat:') {
+	if (!url) {
 		return;
 	}
 
 	switch (action) {
-		case 'auth': {
-			processAuth(querystring.parse(query));
+		case 'auth':
+			yield put(processAuthDeepLink({ url, ...params }));
 			break;
-		}
+
 		case 'room': {
-			processRoom(querystring.parse(query));
+			yield put(processRoomDeepLink({ url, ...params }));
 			break;
 		}
 	}
 };
 
-export const deepLinks = Object.assign(events, {
-	handle,
+const deepLinkRequested = function *(event, link) {
+	if (!isRocketChatLink(link)) {
+		return;
+	}
+
+	event.preventDefault();
+	yield handleLink(link);
+};
+
+const commandLineArgumentPassed = function *({ payload: arg }) {
+	if (!isRocketChatLink(arg)) {
+		return;
+	}
+
+	yield handleLink(arg);
+};
+
+sagaMiddleware.run(function *deepLinksSaga() {
+	yield takeEvery(DEEP_LINK_REQUESTED, deepLinkRequested);
+	yield takeEvery(COMMAND_LINE_ARGUMENT_PASSED, commandLineArgumentPassed);
 });

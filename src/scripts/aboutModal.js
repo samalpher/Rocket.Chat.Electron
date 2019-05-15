@@ -1,9 +1,15 @@
 import { remote } from 'electron';
-import { EventEmitter } from 'events';
+import { takeEvery } from 'redux-saga/effects';
 import { copyright } from '../../package.json';
 import i18n from '../i18n';
-import { connect, store } from '../store';
+import { connect, store, sagaMiddleware } from '../store';
 import { hideModal } from '../store/actions/modal.js';
+import {
+	CHECKING_FOR_UPDATE_ERRORED,
+	UPDATE_NOT_AVAILABLE,
+	checkForUpdate,
+	setAutoUpdate,
+} from '../store/actions';
 const { app } = remote;
 
 
@@ -15,8 +21,6 @@ let state = {
 	checkingUpdate: false,
 	checkingMessage: null,
 };
-
-const events = new EventEmitter();
 
 let root;
 
@@ -48,7 +52,7 @@ const update = () => {
 		root.querySelector('.check-for-updates-on-start').setAttribute('disabled', 'disabled');
 	}
 
-	if (checkingUpdate) {
+	if (checkingUpdate || checkingMessage) {
 		root.querySelector('.check-for-updates').setAttribute('disabled', 'disabled');
 		root.querySelector('.check-for-updates').classList.add('hidden');
 		root.querySelector('.checking-for-updates').classList.remove('hidden');
@@ -83,11 +87,11 @@ const setState = (partialState) => {
 };
 
 const handleCheckForUpdatesClick = () => {
-	events.emit('check-for-updates');
+	store.dispatch(checkForUpdate());
 };
 
 const handleCheckForUpdatesOnStartChange = ({ target: { checked } }) => {
-	events.emit('set-check-for-updates-on-start', checked);
+	store.dispatch(setAutoUpdate(checked));
 };
 
 const handleOkClick = () => {
@@ -113,9 +117,11 @@ const mount = () => {
 	disconnect = connect(({
 		modal,
 		update: {
-			canUpdate,
-			canAutoUpdate,
-			canSetAutoUpdate,
+			configuration: {
+				canUpdate,
+				canAutoUpdate,
+				canSetAutoUpdate,
+			},
 			checking,
 		},
 	}) => ({
@@ -129,10 +135,31 @@ const mount = () => {
 
 const unmount = () => {
 	disconnect();
-	events.removeAllListeners();
 };
 
-export const aboutModal = Object.assign(events, {
+sagaMiddleware.run(function *aboutModalSaga() {
+	yield takeEvery(CHECKING_FOR_UPDATE_ERRORED, function *checkingForUpdateErrored() {
+		setState({
+			checkingMessage: i18n.__('dialog.about.errorWhileLookingForUpdates'),
+		});
+		yield new Promise((resolve) => setTimeout(resolve, 5000));
+		setState({
+			checkingMessage: null,
+		});
+	});
+
+	yield takeEvery(UPDATE_NOT_AVAILABLE, function *updateNotAvailable() {
+		setState({
+			checkingMessage: i18n.__('dialog.about.noUpdatesAvailable'),
+		});
+		yield new Promise((resolve) => setTimeout(resolve, 5000));
+		setState({
+			checkingMessage: null,
+		});
+	});
+});
+
+export const aboutModal = {
 	mount,
 	unmount,
-});
+};

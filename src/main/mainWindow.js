@@ -1,8 +1,17 @@
+import debug from 'debug';
 import { app, BrowserWindow, screen } from 'electron';
-import { takeEvery } from 'redux-saga/effects';
+import { put, takeEvery } from 'redux-saga/effects';
 import { store, sagaMiddleware } from '../store';
-import { windowStateUpdated, FOCUS_WINDOW, SHOW_WINDOW_IF_NEEDED, SHOW_WINDOW } from '../store/actions';
-import { debounce } from '../utils';
+import {
+	CONFIG_LOADING,
+	FOCUS_WINDOW,
+	SHOW_WINDOW,
+	DESTROY_WINDOW,
+	windowStateUpdated,
+	windowStateLoaded,
+	WINDOW_STATE_LOADED,
+} from '../store/actions';
+import { debounce, loadJson, purgeFile } from '../utils';
 
 
 export let mainWindow = null;
@@ -106,6 +115,18 @@ const handleClose = async (event) => {
 	}
 };
 
+const loadWindowState = function *({ payload: { windowState } }) {
+	if (Object.keys(windowState).length === 0) {
+		debug('rc:data')('window-state-main.json', 'user');
+		const { x, y, width, height, isMinimized, isMaximized, isHidden } =
+			yield loadJson('window-state-main.json', 'user');
+		windowState = { x, y, width, height, isMinimized, isMaximized, isHidden };
+		yield purgeFile('window-state-main.json', 'user');
+	}
+
+	yield put(windowStateLoaded(windowState));
+};
+
 const forceFocus = () => {
 	mainWindow.showInactive();
 
@@ -157,11 +178,10 @@ const showIfNeeded = () => {
 	}
 };
 
-sagaMiddleware.run(function *mainWindowSaga() {
-	yield takeEvery(FOCUS_WINDOW, forceFocus);
-	yield takeEvery(SHOW_WINDOW_IF_NEEDED, showIfNeeded);
-	yield takeEvery(SHOW_WINDOW, () => mainWindow.show());
-});
+const destroy = () => {
+	mainWindow.removeAllListeners();
+	mainWindow.close();
+};
 
 const connectToStore = () => {
 	const {
@@ -173,7 +193,7 @@ const connectToStore = () => {
 	hideOnClose = hasTray;
 };
 
-export const createMainWindow = async () => {
+const createMainWindow = function *() {
 	mainWindow = new BrowserWindow({
 		width: 1000,
 		height: 700,
@@ -208,5 +228,15 @@ export const createMainWindow = async () => {
 
 	store.subscribe(connectToStore);
 
-	await new Promise((resolve) => mainWindow.once('ready-to-show', resolve));
+	yield new Promise((resolve) => mainWindow.once('ready-to-show', resolve));
+
+	showIfNeeded();
 };
+
+sagaMiddleware.run(function *mainWindowSaga() {
+	yield takeEvery(CONFIG_LOADING, loadWindowState);
+	yield takeEvery(WINDOW_STATE_LOADED, createMainWindow);
+	yield takeEvery(FOCUS_WINDOW, forceFocus);
+	yield takeEvery(SHOW_WINDOW, () => mainWindow.show());
+	yield takeEvery(DESTROY_WINDOW, destroy);
+});

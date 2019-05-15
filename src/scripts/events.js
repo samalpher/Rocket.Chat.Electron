@@ -1,8 +1,14 @@
 import { remote, clipboard } from 'electron';
+import { put, takeEvery } from 'redux-saga/effects';
 import i18n from '../i18n';
 import * as channels from '../preload/channels';
-import { store } from '../store';
+import { store, sagaMiddleware } from '../store';
 import {
+	ASK_FOR_CERTIFICATE_TRUST,
+	ASK_BASIC_AUTH_CREDENTIALS,
+	PROCESS_AUTH_DEEP_LINK,
+	SPELLCHECKING_DICTIONARY_INSTALL_FAILED,
+	UPDATE_DOWNLOAD_COMPLETED,
 	loadingDone,
 	showLanding,
 	showServer,
@@ -15,8 +21,13 @@ import {
 	historyFlagsUpdated,
 	editFlagsUpdated,
 	showAboutModal,
-	hideModal,
 	focusWindow,
+	clearCertificates,
+	replyCertificateTrustRequest,
+	basicAuthCredentialsFetched,
+	installSpellCheckingDictionaries,
+	quitAndInstallUpdate,
+	resetAppData,
 } from '../store/actions';
 import { queryEditFlags } from '../utils';
 import { migrateDataFromLocalStorage } from './data';
@@ -30,16 +41,11 @@ import { sidebar } from './sidebar';
 import { webviews } from './webviews';
 const { app, dialog, getCurrentWindow, shell } = remote;
 const {
-	basicAuth,
-	certificates,
-	deepLinks,
 	dock,
 	menus,
-	relaunch,
-	spellchecking,
 	touchBar,
 	tray,
-	updates,
+	getSpellCorrections,
 } = remote.require('./main');
 
 
@@ -98,13 +104,13 @@ const warnDelayedUpdateInstall = () => new Promise ((resolve) => {
 	}, () => resolve());
 });
 
-const warnCertificateError = ({ requestUrl, error, certificate: { issuerName }, replace }) => new Promise((resolve) => {
+const warnCertificateError = ({ requestUrl, error, certificate: { issuerName }, replacing }) => new Promise((resolve) => {
 	const detail = `URL: ${ requestUrl }\nError: ${ error }`;
 
 	dialog.showMessageBox(getCurrentWindow(), {
 		title: i18n.__('dialog.certificateError.title'),
 		message: i18n.__('dialog.certificateError.message', { issuerName }),
-		detail: replace ? i18n.__('error.differentCertificate', { detail }) : detail,
+		detail: replacing ? i18n.__('error.differentCertificate', { detail }) : detail,
 		type: 'warning',
 		buttons: [
 			i18n.__('dialog.certificateError.yes'),
@@ -143,33 +149,9 @@ const confirmAppDataReset = () => new Promise((resolve) => {
 	}, (response) => resolve(response === 0));
 });
 
-const warnItWillSkipVersion = () => new Promise((resolve) => {
-	dialog.showMessageBox(getCurrentWindow(), {
-		title: i18n.__('dialog.updateSkip.title'),
-		message: i18n.__('dialog.updateSkip.message'),
-		type: 'warning',
-		buttons: [i18n.__('dialog.updateSkip.ok')],
-		defaultId: 0,
-	}, () => resolve());
-});
-
-const informItWillInstallUpdate = () => new Promise((resolve) => {
-	dialog.showMessageBox(getCurrentWindow(), {
-		title: i18n.__('dialog.updateDownloading.title'),
-		message: i18n.__('dialog.updateDownloading.message'),
-		type: 'info',
-		buttons: [i18n.__('dialog.updateDownloading.ok')],
-		defaultId: 0,
-	}, () => resolve());
-});
-
 const destroyAll = () => {
 	try {
 		unmountAll();
-		deepLinks.removeAllListeners();
-		basicAuth.removeAllListeners();
-		certificates.removeAllListeners();
-		updates.removeAllListeners();
 		getCurrentWindow().removeAllListeners();
 	} catch (error) {
 		remote.getGlobal('console').error(error.stack || error);
@@ -179,28 +161,32 @@ const destroyAll = () => {
 const getFocusedWebContents = () => webviews.getWebContents({ focused: true }) || getCurrentWindow().webContents;
 
 const browseForDictionary = () => {
-	const callback = async (filePaths = []) => {
-		try {
-			await spellchecking.installDictionaries(filePaths);
-		} catch (error) {
-			console.error(error);
-			dialog.showErrorBox(
-				i18n.__('dialog.loadDictionaryError.title'),
-				i18n.__('dialog.loadDictionaryError.message', { message: error.message })
-			);
-		}
-	};
+	const { spellchecking: { dictionaryInstallationDirectory } } = store.getState();
 
 	dialog.showOpenDialog(getCurrentWindow(), {
 		title: i18n.__('dialog.loadDictionary.title'),
-		defaultPath: spellchecking.getDictionaryInstallationDirectory(),
+		defaultPath: dictionaryInstallationDirectory,
 		filters: [
 			{ name: i18n.__('dialog.loadDictionary.dictionaries'), extensions: ['aff', 'dic'] },
 			{ name: i18n.__('dialog.loadDictionary.allFiles'), extensions: ['*'] },
 		],
 		properties: ['openFile', 'multiSelections'],
-	}, callback);
+	}, (filePaths = []) => {
+		store.dispatch(installSpellCheckingDictionaries(filePaths));
+	});
 };
+
+const spellCheckingDictionaryInstallFailed = ({ payload: error }) => {
+	console.error(error);
+	dialog.showErrorBox(
+		i18n.__('dialog.loadDictionaryError.title'),
+		i18n.__('dialog.loadDictionaryError.message', { message: error.message })
+	);
+};
+
+sagaMiddleware.run(function *spellCheckingSaga() {
+	yield takeEvery(SPELLCHECKING_DICTIONARY_INSTALL_FAILED, spellCheckingDictionaryInstallFailed);
+});
 
 const getServerFromUrl = (subUrl) => {
 	const { servers } = store.getState();
@@ -270,6 +256,48 @@ const addServer = async (serverUrl, askForConfirmation = false) => {
 	return result;
 };
 
+const askBasicAuthCredentials = function *({ payload: { webContentsUrl } }) {
+	const { username, password } = getServerFromUrl(webContentsUrl) || {};
+	store.dispatch(basicAuthCredentialsFetched((username && password) ? [username, password] : null));
+};
+
+sagaMiddleware.run(function *basicAuthSaga() {
+	yield takeEvery(ASK_BASIC_AUTH_CREDENTIALS, askBasicAuthCredentials);
+});
+
+const askForCertificateTrust = function *({ payload: { requestUrl, error, certificate, replacing } }) {
+	const isTrusted = yield warnCertificateError({ requestUrl, error, certificate, replacing });
+	store.dispatch(replyCertificateTrustRequest(isTrusted));
+};
+
+sagaMiddleware.run(function *certificatesSaga() {
+	yield takeEvery(ASK_FOR_CERTIFICATE_TRUST, askForCertificateTrust);
+});
+
+const processAuthDeepLink = function *({ payload: { serverUrl } }) {
+	yield put(focusWindow());
+	yield addServer(serverUrl, true);
+};
+
+sagaMiddleware.run(function *deepLinksSaga() {
+	yield takeEvery(PROCESS_AUTH_DEEP_LINK, processAuthDeepLink);
+});
+
+const updateDownloadCompleted = function *() {
+	const whenInstall = yield askWhenToInstallUpdate();
+
+	if (whenInstall === 'later') {
+		yield warnDelayedUpdateInstall();
+		return;
+	}
+
+	yield put(quitAndInstallUpdate());
+};
+
+sagaMiddleware.run(function *updatesSaga() {
+	yield takeEvery(UPDATE_DOWNLOAD_COMPLETED, updateDownloadCompleted);
+});
+
 export default async () => {
 	window.addEventListener('beforeunload', destroyAll);
 
@@ -281,19 +309,6 @@ export default async () => {
 			canGoBack: false,
 			canGoForward: false,
 		}));
-	});
-
-	aboutModal.on('check-for-updates', () => updates.checkForUpdates());
-	aboutModal.on('set-check-for-updates-on-start', (enabled) => updates.setAutoUpdate(enabled));
-
-	basicAuth.on('login-requested', ({ webContentsUrl, callback }) => {
-		const { username, password } = getServerFromUrl(webContentsUrl) || {};
-		callback((username && password) ? [username, password] : null);
-	});
-
-	certificates.on('ask-for-trust', async ({ requestUrl, error, certificate, replace, callback }) => {
-		const isTrusted = await warnCertificateError({ requestUrl, error, certificate, replace });
-		callback(isTrusted);
 	});
 
 	contextMenu.on('replace-misspelling', (correction) => getFocusedWebContents().replaceMisspelling(correction));
@@ -310,10 +325,7 @@ export default async () => {
 	contextMenu.on('paste', () => getFocusedWebContents().paste());
 	contextMenu.on('select-all', () => getFocusedWebContents().selectAll());
 
-	deepLinks.on('auth', async ({ serverUrl }) => {
-		store.dispatch(focusWindow());
-		await addServer(serverUrl, true);
-	});
+
 
 	landing.on('add-server', async (serverUrl, callback) => {
 		callback(await addServer(serverUrl));
@@ -344,9 +356,9 @@ export default async () => {
 		store.dispatch(showServer(url));
 	});
 
-	menus.on('reload-server', ({ ignoringCache = false, clearCertificates = false } = {}) => {
-		if (clearCertificates) {
-			certificates.clear();
+	menus.on('reload-server', ({ ignoringCache = false, clearCertificates: clearCerts = false } = {}) => {
+		if (clearCerts) {
+			store.dispatch(clearCertificates);
 		}
 
 		webviews.reload({ active: true }, { ignoringCache });
@@ -370,9 +382,8 @@ export default async () => {
 
 	menus.on('reset-app-data', async () => {
 		const shouldReset = await confirmAppDataReset();
-
 		if (shouldReset) {
-			relaunch('--reset-app-data');
+			store.dispatch(resetAppData());
 		}
 	});
 
@@ -436,32 +447,6 @@ export default async () => {
 		(visible ? getCurrentWindow().show() : getCurrentWindow().hide()));
 	tray.on('quit', () => app.quit());
 
-	updateModal.on('skip', async (newVersion) => {
-		await warnItWillSkipVersion();
-		updates.skipVersion(newVersion);
-		store.dispatch(hideModal());
-	});
-	updateModal.on('remind-later', () => {
-		store.dispatch(hideModal());
-	});
-	updateModal.on('install', async () => {
-		await informItWillInstallUpdate();
-		updates.downloadUpdate();
-		store.dispatch(hideModal());
-	});
-
-	updates.on('update-downloaded', async () => {
-		const whenInstall = await askWhenToInstallUpdate();
-
-		if (whenInstall === 'later') {
-			await warnDelayedUpdateInstall();
-			return;
-		}
-
-		destroyAll();
-		updates.quitAndInstall();
-	});
-
 	webviews.on(channels.badgeChanged, (url, badge) => {
 		const { preferences: { showWindowOnUnreadChanged } } = store.getState();
 		if (typeof badge === 'number' && showWindowOnUnreadChanged) {
@@ -478,15 +463,18 @@ export default async () => {
 			preferences: {
 				enabledDictionaries,
 			},
+			spellchecking: {
+				availableDictionaries,
+				supportsMultipleDictionaries,
+			},
 		} = store.getState();
 		const { selectionText } = params;
-		const corrections = spellchecking.getCorrections(selectionText);
-		const availableDictionaries = spellchecking.getAvailableDictionaries();
+		const corrections = getSpellCorrections(selectionText);
 		const dictionaries = availableDictionaries.map((dictionary) => ({
 			dictionary,
 			enabled: enabledDictionaries.includes(dictionary),
 		}));
-		const multipleDictionaries = spellchecking.supportsMultipleDictionaries();
+		const multipleDictionaries = supportsMultipleDictionaries;
 
 		contextMenu.trigger({ ...params, corrections, dictionaries, multipleDictionaries });
 	});

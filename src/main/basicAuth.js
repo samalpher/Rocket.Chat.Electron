@@ -1,28 +1,26 @@
-import { EventEmitter } from 'events';
-import url from 'url';
+import { put, take, takeEvery } from 'redux-saga/effects';
+import { parse as parseUrl } from 'url';
+import { sagaMiddleware } from '../store';
+import {
+	BASIC_AUTH_LOGIN_REQUEST,
+	BASIC_AUTH_CREDENTIALS_FETCHED,
+	askBasicAuthCredentials,
+} from '../store/actions';
 
 
-const events = new EventEmitter();
-
-const requestLogin = async ({ webContentsUrl, request, authInfo }) => {
-	const { auth } = url.parse(request.url);
+const basicAuthLoginRequested = function *({ payload: { event, webContents, request, authInfo, callback } }) {
+	const { auth } = parseUrl(request.url);
 
 	if (auth) {
+		event.preventDefault();
 		const [username, password] = auth.split(':');
-		return { username, password };
+		callback(username, password);
+		return;
 	}
 
-	return await new Promise((callback) => events.emit('login-requested', {
-		webContentsUrl,
-		request,
-		authInfo,
-		callback,
-	}));
-};
+	yield put(askBasicAuthCredentials({ webContentsUrl: webContents.getURL(), request, authInfo }));
 
-const handleLoginEvent = async (event, webContents, request, authInfo, callback) => {
-
-	const credentials = await requestLogin({ webContentsUrl: webContents.getURL(), request, authInfo });
+	const { payload: credentials } = yield take(BASIC_AUTH_CREDENTIALS_FETCHED);
 
 	if (!credentials) {
 		return;
@@ -36,7 +34,6 @@ const handleLoginEvent = async (event, webContents, request, authInfo, callback)
 	}
 };
 
-export const basicAuth = Object.assign(events, {
-	requestLogin,
-	handleLoginEvent,
+sagaMiddleware.run(function *basicAuthSaga() {
+	yield takeEvery(BASIC_AUTH_LOGIN_REQUEST, basicAuthLoginRequested);
 });

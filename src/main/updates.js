@@ -1,150 +1,148 @@
+import debug from 'debug';
 import { app } from 'electron';
 import { autoUpdater } from 'electron-updater';
-import { EventEmitter } from 'events';
-import i18n from '../i18n';
-import { store } from '../store';
-import { checkingForUpdateStarted, checkingForUpdateStopped, updateVersionSet, showUpdateModal, updateConfigurationSet, setCheckingForUpdateMessage, updateDownloadProgressed } from '../store/actions';
-import { loadJson, writeJson } from '../utils';
+import { put, select, takeEvery } from 'redux-saga/effects';
+import { store, sagaMiddleware } from '../store';
+import {
+	CONFIG_LOADING,
+	UPDATE_CONFIGURATION_LOADED,
+	SET_AUTO_UPDATE,
+	CHECK_FOR_UPDATE,
+	SKIP_UPDATE,
+	DOWNLOAD_UPDATE,
+	QUIT_AND_INSTALL_UPDATE,
+	updateConfigurationLoaded as updateConfigurationLoadedAction,
+	autoUpdateSet,
+	checkingForAutoUpdateStarted,
+	checkingForUpdateStarted,
+	checkingForUpdateErrored,
+	updateNotAvailable,
+	updateAvailable,
+	updateSkipped,
+	updateDownloadProgressed,
+	updateDownloadCompleted,
+	updateDownloadErrored,
+	destroyWindow,
+} from '../store/actions';
+import { loadJson, purgeFile } from '../utils';
 
 
-let settings = {
-	fromAdmin: true,
-	canUpdate: false,
-	canAutoUpdate: false,
-	canSetAutoUpdate: false,
-	skippedVersion: null,
-};
-const events = new EventEmitter();
+const loadUpdateConfiguration = function *({ payload: { update } }) {
+	debug('rc:data')('update.json');
+	const appUpdateConfiguration = yield loadJson('update.json', 'app');
+	const userUpdateConfiguration = yield loadJson('update.json', 'user');
 
-const isUpdatePossible = (
-	(process.platform === 'linux' && Boolean(process.env.APPIMAGE)) ||
-	(process.platform === 'win32' && !process.windowsStore) ||
-	(process.platform === 'darwin' && !process.mas)
-);
+	const fromAdmin = !!appUpdateConfiguration.forced;
 
-const loadSettings = async () => {
-	const defaultSettings = { canUpdate: true, autoUpdate: true };
-	const appSettings = await loadJson('update.json', 'app');
-	const userSettings = await loadJson('update.json', 'user');
-	const mergedSettings = Object.assign({}, defaultSettings, appSettings, !appSettings.forced ? userSettings : undefined);
+	const isUpdatePossible = (
+		(process.platform === 'linux' && Boolean(process.env.APPIMAGE)) ||
+		(process.platform === 'win32' && !process.windowsStore) ||
+		(process.platform === 'darwin' && !process.mas)
+	);
 
-	settings = {
-		...settings,
-		fromAdmin: !!appSettings.forced,
-		canUpdate: mergedSettings.canUpdate && isUpdatePossible,
-		canAutoUpdate: mergedSettings.autoUpdate !== false,
-		canSetAutoUpdate: !appSettings.forced || appSettings.autoUpdate !== false,
-		skippedVersion: mergedSettings.skip,
+	update = {
+		...update,
+		fromAdmin,
+		canUpdate: isUpdatePossible && (
+			fromAdmin ?
+				(appUpdateConfiguration.canUpdate !== false || true) :
+				(userUpdateConfiguration.canUpdate !== false || update.canUpdate || true)
+		),
+		canAutoUpdate: (
+			fromAdmin ?
+				(appUpdateConfiguration.autoUpdate !== false || true) :
+				(userUpdateConfiguration.autoUpdate !== false || update.canAutoUpdate || true)
+		),
+		canSetAutoUpdate: !appUpdateConfiguration.forced || appUpdateConfiguration.autoUpdate !== false,
+		skippedVersion: (
+			fromAdmin ?
+				(appUpdateConfiguration.skip || null) :
+				(userUpdateConfiguration.skip || update.skippedVersion || null)
+		),
 	};
-	store.dispatch(updateConfigurationSet(settings));
+	yield purgeFile('update.json', 'user');
+
+	yield put(updateConfigurationLoadedAction(update));
 };
 
-const updateSettings = async (newSettings) => {
-	if (settings.fromAdmin) {
-		return;
-	}
-
-	settings = {
-		...settings,
-		...newSettings,
-	};
-	store.dispatch(updateConfigurationSet(settings));
-
-	const data = {
-		canUpdate: settings.canUpdate,
-		autoUpdate: settings.canAutoUpdate,
-		...(settings.skippedVersion ? {
-			skip: settings.skippedVersion,
-		} : {}),
-	};
-
-	await writeJson('update.json', data);
-};
-
-const setAutoUpdate = async (canAutoUpdate) => {
-	if (!settings.canSetAutoUpdate) {
-		return;
-	}
-
-	await updateSettings({ canAutoUpdate: !!canAutoUpdate });
-};
-
-const skipVersion = async (version) => {
-	await updateSettings({ skippedVersion: version });
-};
-
-let isCheckingForUpdate = false;
-let isForcedChecking = false;
-
-const checkForUpdatesIfAllowed = async () => {
-	if (isCheckingForUpdate) {
-		return;
-	}
-
-	const { canUpdate, canAutoUpdate } = settings;
-
+const updateConfigurationLoaded = function *({ payload: { canUpdate, canAutoUpdate } }) {
 	if (canUpdate && canAutoUpdate) {
-		isCheckingForUpdate = true;
-		isForcedChecking = false;
-		await autoUpdater.checkForUpdates();
+		yield put(checkingForAutoUpdateStarted());
+		try {
+			yield autoUpdater.checkForUpdates();
+		} catch (error) {
+			yield put(checkingForUpdateErrored(error));
+		}
 	}
 };
 
-const checkForUpdates = async () => {
-	if (isCheckingForUpdate) {
+const setAutoUpdate = function *(enabled) {
+	const { update: { configuration: { canSetAutoUpdate } } } = yield select();
+	if (!canSetAutoUpdate) {
 		return;
 	}
 
-	const { canUpdate } = settings;
+	yield put(autoUpdateSet(enabled));
+};
 
-	if (canUpdate) {
-		isCheckingForUpdate = true;
-		isForcedChecking = true;
-		await autoUpdater.checkForUpdates();
+const checkForUpdate = function *() {
+	const { update: { configuration: { canUpdate }, checking } } = yield select();
+
+	if (checking || !canUpdate) {
+		return;
+	}
+
+	yield put(checkingForUpdateStarted());
+	try {
+		yield autoUpdater.checkForUpdates();
+	} catch (error) {
+		yield put(checkingForUpdateErrored(error));
 	}
 };
 
-const downloadUpdate = async () => {
-	await autoUpdater.downloadUpdate();
+const skipUpdate = function *() {
+	const { update: { configuration: { fromAdmin }, version } } = yield select();
+	if (fromAdmin) {
+		return;
+	}
+
+	yield put(updateSkipped(version));
 };
 
-const quitAndInstall = () => {
+const downloadUpdate = function *() {
+	try {
+		yield autoUpdater.downloadUpdate();
+	} catch (error) {
+		yield updateDownloadErrored(error);
+	}
+};
+
+const quitAndInstallUpdate = function *() {
+	yield put(destroyWindow());
 	app.removeAllListeners();
 	autoUpdater.quitAndInstall();
 };
 
-const handleError = () => {
-	isCheckingForUpdate = false;
-	store.dispatch(setCheckingForUpdateMessage(i18n.__('dialog.about.errorWhileLookingForUpdates')));
-	setTimeout(() => store.dispatch(checkingForUpdateStopped()), 5000);
-};
-
-const handleCheckingForUpdate = () => {
-	store.dispatch(checkingForUpdateStarted());
-};
-
-const handleUpdateAvailable = (info) => {
-	isCheckingForUpdate = false;
-
-	const { skippedVersion } = settings;
-	const { version } = info;
+const handleUpdateAvailable = ({ version }) => {
+	const {
+		update: {
+			configuration: { skippedVersion },
+			checking: { mode } = {},
+		},
+	} = store.getState();
+	const isAutoUpdate = mode === 'auto';
 	const shouldSkip = skippedVersion === version;
 
-	if (!isForcedChecking && shouldSkip) {
-		store.dispatch(setCheckingForUpdateMessage(i18n.__('dialog.about.noUpdatesAvailable')));
-		setTimeout(() => store.dispatch(checkingForUpdateStopped()), 5000);
-	} else {
-		store.dispatch(checkingForUpdateStopped());
-		store.dispatch(updateVersionSet(version));
-		store.dispatch(showUpdateModal());
+	if (isAutoUpdate && shouldSkip) {
+		store.dispatch(updateNotAvailable());
+		return;
 	}
+
+	store.dispatch(updateAvailable(version));
 };
 
 const handleUpdateNotAvailable = () => {
-	isCheckingForUpdate = false;
-
-	store.dispatch(setCheckingForUpdateMessage(i18n.__('dialog.about.noUpdatesAvailable')));
-	setTimeout(() => store.dispatch(checkingForUpdateStopped()), 5000);
+	store.dispatch(updateNotAvailable());
 };
 
 const handleDownloadProgress = (progress) => {
@@ -152,28 +150,22 @@ const handleDownloadProgress = (progress) => {
 };
 
 const handleUpdateDownloaded = (info) => {
-	events.emit('update-downloaded', info);
+	store.dispatch(updateDownloadCompleted(info));
 };
 
 autoUpdater.autoDownload = false;
 autoUpdater.logger = null;
-autoUpdater.on('error', handleError);
-autoUpdater.on('checking-for-update', handleCheckingForUpdate);
 autoUpdater.on('update-available', handleUpdateAvailable);
 autoUpdater.on('update-not-available', handleUpdateNotAvailable);
 autoUpdater.on('download-progress', handleDownloadProgress);
 autoUpdater.on('update-downloaded', handleUpdateDownloaded);
 
-const initialize = async () => {
-	await loadSettings();
-	await checkForUpdatesIfAllowed();
-};
-
-export const updates = Object.assign(events, {
-	initialize,
-	setAutoUpdate,
-	checkForUpdates,
-	skipVersion,
-	downloadUpdate,
-	quitAndInstall,
+sagaMiddleware.run(function *updatesSaga() {
+	yield takeEvery(CONFIG_LOADING, loadUpdateConfiguration);
+	yield takeEvery(UPDATE_CONFIGURATION_LOADED, updateConfigurationLoaded);
+	yield takeEvery(SET_AUTO_UPDATE, setAutoUpdate);
+	yield takeEvery(CHECK_FOR_UPDATE, checkForUpdate);
+	yield takeEvery(SKIP_UPDATE, skipUpdate);
+	yield takeEvery(DOWNLOAD_UPDATE, downloadUpdate);
+	yield takeEvery(QUIT_AND_INSTALL_UPDATE, quitAndInstallUpdate);
 });

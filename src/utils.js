@@ -50,6 +50,15 @@ export const writeJson = async (filename, data) => {
 	}
 };
 
+export const purgeFile = async (filename, dir = 'user') => {
+	setupDirs();
+	try {
+		await dirs[dir].removeAsync(filename);
+	} catch (error) {
+		console.error(error && (error.stack || error));
+	}
+};
+
 export const getDirectory = (dirname, dir = 'user') => {
 	setupDirs();
 	return dirs[dir].cwd(dirname);
