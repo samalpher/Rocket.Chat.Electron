@@ -238,11 +238,6 @@ const update = () => {
 		newVersion: version,
 	});
 
-	dock.setState({
-		hasTray,
-		badge: globalBadge,
-	});
-
 	landing.setState({
 		visible: !loading && view === 'landing',
 	});
