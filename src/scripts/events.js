@@ -458,7 +458,7 @@ export default async () => {
 		webviews.reload({ url }, { fromUrl: true });
 	});
 
-	webviews.on(channels.triggerContextMenu, (url, params) => {
+	webviews.on('context-menu', (url, params) => {
 		const {
 			preferences: {
 				enabledDictionaries,

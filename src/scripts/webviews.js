@@ -127,6 +127,11 @@ const handleDidGetResponseDetails = (webview, { resourceType, httpResponseCode }
 	}
 };
 
+const handleContextMenu = (webview, event) => {
+	event.preventDefault();
+	events.emit('context-menu', webview.dataset.url, event.params);
+};
+
 const handleFocus = (webview) => {
 	focusedWebview = webview;
 };
@@ -161,6 +166,7 @@ const renderServer = ({ active, hasSpacingForTitleBarButtons, ...server }) => {
 		webview.addEventListener('dom-ready', handleDomReady.bind(null, url, webview));
 		webview.addEventListener('did-fail-load', handleDidFailLoad.bind(null, webview));
 		webview.addEventListener('did-get-response-details', handleDidGetResponseDetails.bind(null, webview));
+		webview.addEventListener('context-menu', handleContextMenu.bind(null, webview));
 		webview.addEventListener('focus', handleFocus.bind(null, webview));
 		webview.addEventListener('blur', handleBlur.bind(null, webview));
 

@@ -1,7 +1,6 @@
 import { ipcRenderer } from 'electron';
 import i18n from './i18n';
 import { reloadServer } from './preload/channels';
-import setupContextMenuPreload from './preload/contextMenu';
 import setupEventsPreload from './preload/events';
 import setupFormatPreload from './preload/format';
 import setupJitsiPreload from './preload/jitsi';
@@ -14,7 +13,6 @@ import setupTitleChangePreload from './preload/titleChange';
 import setupUserPresencePreload from './preload/userPresence';
 
 
-setupContextMenuPreload();
 setupEventsPreload();
 setupFormatPreload();
 setupJitsiPreload();
