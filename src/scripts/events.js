@@ -465,7 +465,6 @@ export default async () => {
 			},
 			spellchecking: {
 				availableDictionaries,
-				supportsMultipleDictionaries,
 			},
 		} = store.getState();
 		const { selectionText } = params;
@@ -474,9 +473,8 @@ export default async () => {
 			dictionary,
 			enabled: enabledDictionaries.includes(dictionary),
 		}));
-		const multipleDictionaries = supportsMultipleDictionaries;
 
-		contextMenu.trigger({ ...params, corrections, dictionaries, multipleDictionaries });
+		contextMenu.trigger({ ...params, corrections, dictionaries });
 	});
 
 	webviews.on('did-navigate', (url, lastPath) => {

@@ -6,9 +6,11 @@ import { store, sagaMiddleware } from '../store';
 import {
 	LOAD_CONFIG,
 	INSTALL_SPELLCHECKING_DICTIONARIES,
+	TOGGLE_SPELLCHECKING_DICTIONARY,
 	spellCheckingConfigurationLoaded,
 	spellCheckingDictionaryInstalled,
 	spellCheckingDictionaryInstallFailed,
+	spellCheckingDictionariesEnabled,
 } from '../store/actions';
 import { getDirectory } from '../utils';
 
@@ -46,6 +48,43 @@ const installSpellCheckingDictionaries = function *({ payload: { filePaths } }) 
 			yield put(spellCheckingDictionaryInstallFailed(dictionary));
 		}
 	}
+};
+
+const filterDictionaries = (availableDictionaries, supportsMultipleDictionaries, dictionaries) => (
+	Array.from(
+		new Set(
+			dictionaries
+				.flatMap((dictionary) => {
+					const matches = /^(\w+?)[-_](\w+)$/.exec(dictionary);
+					return matches ?
+						[`${ matches[1] }_${ matches[2] }`, `${ matches[1] }-${ matches[2] }`, matches[1]] :
+						[dictionary];
+				})
+				.filter((dictionary) => availableDictionaries.includes(dictionary))
+		)
+	)
+		.slice(...supportsMultipleDictionaries ? [] : [0, 1])
+);
+
+const toggleSpellcheckingDictionary = function *({ payload: { dictionary, enabled } }) {
+	const {
+		preferences: {
+			enabledDictionaries,
+		},
+		spellchecking: {
+			availableDictionaries,
+			supportsMultipleDictionaries,
+		},
+	} = yield select();
+
+	const dictionaries = filterDictionaries(
+		availableDictionaries,
+		supportsMultipleDictionaries,
+		enabled ?
+			[dictionary, ...enabledDictionaries] :
+			enabledDictionaries.filter((_dictionary) => _dictionary !== dictionary)
+	);
+	yield put(spellCheckingDictionariesEnabled(dictionaries));
 };
 
 const getMisspeledWords = (words) => {
@@ -97,4 +136,5 @@ export const getSpellCorrections = (word) => {
 sagaMiddleware.run(function *spellCheckingSaga() {
 	yield takeEvery(LOAD_CONFIG, loadSpellCheckingConfiguration);
 	yield takeEvery(INSTALL_SPELLCHECKING_DICTIONARIES, installSpellCheckingDictionaries);
+	yield takeEvery(TOGGLE_SPELLCHECKING_DICTIONARY, toggleSpellcheckingDictionary);
 });
