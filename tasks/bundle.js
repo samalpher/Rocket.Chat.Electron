@@ -2,7 +2,9 @@ const builtinModules = require('builtin-modules');
 const jetpack = require('fs-jetpack');
 const path = require('path');
 const { rollup } = require('rollup');
+const babel = require('rollup-plugin-babel');
 const commonjs = require('rollup-plugin-commonjs');
+const globImport = require('rollup-plugin-glob-import');
 const istanbul = require('rollup-plugin-istanbul');
 const json = require('rollup-plugin-json');
 const nodeResolve = require('rollup-plugin-node-resolve');
@@ -32,6 +34,8 @@ const bundle = async (src, dest, { coverage = false, env = 'development' } = {})
 			replace({
 				'process.env.NODE_ENV': JSON.stringify(env),
 			}),
+			globImport(),
+			babel(),
 			nodeResolve(),
 			commonjs(),
 		],
