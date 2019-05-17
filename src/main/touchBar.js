@@ -22,26 +22,26 @@ const events = new EventEmitter();
 let isUsingSegmentedControl;
 let selectServerControl;
 
-const createSegmentedControl = ({ servers, activeServerUrl, onSelectServer }) => (
+const createSegmentedControl = () => (
 	new TouchBarSegmentedControl({
 		segmentStyle: 'separated',
-		segments: servers.map((server) => ({ label: server.title, server })),
-		selectedIndex: servers.findIndex(({ url }) => url === activeServerUrl),
-		change: (index) => onSelectServer(servers[index].url),
+		segments: props.servers.map((server) => ({ label: server.title, server })),
+		selectedIndex: props.servers.findIndex(({ url }) => url === props.activeServerUrl),
+		change: (index) => props.onSelectServer(props.servers[index].url),
 	})
 );
 
-const createScrubber = ({ servers, onSelectServer }) => (
+const createScrubber = () => (
 	new TouchBarScrubber({
-		items: servers.map((server) => ({ label: server.title, server })),
-		highlight: (index) => onSelectServer(servers[index].url),
+		items: props.servers.map((server) => ({ label: server.title, server })),
+		highlight: (index) => props.onSelectServer(props.servers[index].url),
 		selectedStyle: 'background',
 		showArrowButtons: true,
 		mode: 'fixed',
 	})
 );
 
-const createTouchBar = (selectServerControl, onTouchFormatButton) => (
+const createTouchBar = (selectServerControl) => (
 	new TouchBar({
 		items: [
 			new TouchBarPopover({
@@ -57,9 +57,8 @@ const createTouchBar = (selectServerControl, onTouchFormatButton) => (
 			...(
 				['bold', 'italic', 'strike', 'inline_code', 'multi_line']
 					.map((buttonId) => new TouchBarButton({
-						backgroundColor: '#A4A4A4',
 						icon: nativeImage.createFromPath(`${ __dirname }/public/images/touch-bar/${ buttonId }.png`),
-						click: () => onTouchFormatButton(buttonId),
+						click: () => props.onTouchFormatButton(buttonId),
 					}))
 			),
 		],
@@ -71,14 +70,14 @@ const render = () => {
 		return;
 	}
 
-	const { servers, activeServerUrl, onTouchFormatButton } = props;
+	const { servers, activeServerUrl } = props;
 	const serverTitlesLength = servers.reduce((length, { url, title }) => length + (title || url).length, 0);
 	const maxLengthForSegmentsControl = 76 - i18n.__('touchBar.selectServer').length;
 	const shouldUseSegmentedControl = serverTitlesLength <= maxLengthForSegmentsControl;
 
 	if (isUsingSegmentedControl !== shouldUseSegmentedControl) {
 		selectServerControl = shouldUseSegmentedControl ? createSegmentedControl(props) : createScrubber(props);
-		mainWindow.setTouchBar(createTouchBar(selectServerControl, onTouchFormatButton));
+		mainWindow.setTouchBar(createTouchBar(selectServerControl));
 		isUsingSegmentedControl = shouldUseSegmentedControl;
 	}
 
@@ -126,6 +125,8 @@ const unmount = () => {
 
 	events.removeAllListeners();
 	mainWindow.setTouchBar(null);
+	isUsingSegmentedControl = false;
+	selectServerControl = null;
 };
 
 export const touchBar = Object.assign(events, {
