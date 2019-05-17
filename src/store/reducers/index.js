@@ -10,6 +10,7 @@ import { reducer as servers } from './servers';
 import { reducer as spellchecking } from './spellchecking';
 import { reducer as update } from './update';
 import { reducer as view } from './view';
+import { reducer as webviews } from './webviews';
 import { reducer as windowState } from './windowState';
 
 
@@ -25,5 +26,6 @@ export const reducer = combineReducers({
 	spellchecking,
 	update,
 	view,
+	webviews,
 	windowState,
 });

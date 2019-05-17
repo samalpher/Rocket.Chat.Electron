@@ -13,6 +13,8 @@ export * from './preferences';
 export * from './screensharing';
 export * from './servers';
 export * from './spellchecking';
+export * from './touchBar';
 export * from './update';
 export * from './view';
+export * from './webviews';
 export * from './windowState';

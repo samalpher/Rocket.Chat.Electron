@@ -1,6 +1,5 @@
-import { ipcRenderer } from 'electron';
+import { remote } from 'electron';
 import i18n from './i18n';
-import { reloadServer } from './preload/channels';
 import setupEventsPreload from './preload/events';
 import setupFormatPreload from './preload/format';
 import setupJitsiPreload from './preload/jitsi';
@@ -11,6 +10,9 @@ import setupSidebarPreload from './preload/sidebar';
 import setupSpellcheckingPreload from './preload/spellchecking';
 import setupTitleChangePreload from './preload/titleChange';
 import setupUserPresencePreload from './preload/userPresence';
+import { store } from './store';
+import { reloadWebview } from './store/actions';
+const { getCurrentWebContents } = remote;
 
 
 setupEventsPreload();
@@ -24,5 +26,5 @@ setupSpellcheckingPreload();
 setupTitleChangePreload();
 setupUserPresencePreload();
 
-window.reloadServer = () => ipcRenderer.sendToHost(reloadServer);
+window.reloadServer = () => store.dispatch(reloadWebview({ webContentsId: getCurrentWebContents().id, fromUrl: true }));
 window.i18n = i18n;

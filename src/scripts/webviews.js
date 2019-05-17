@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events';
-import * as channels from '../preload/channels';
-import { connect } from '../store';
+import { select, takeEvery } from 'redux-saga/effects';
+import { connect, store, sagaMiddleware } from '../store';
+import { webviewCreated, RELOAD_WEBVIEW } from '../store/actions';
 
 
 let state = {
@@ -22,12 +23,6 @@ const getWebview = ({ url, active, focused }) => (
 	(focused && focusedWebview)
 );
 
-const onPreload = (channel) => (webview, ...args) => {
-	const isReady = webview.classList.contains('webview--ready');
-	const f = () => webview.send(channel, ...args);
-	isReady ? f() : webview.addEventListener('dom-ready', f);
-};
-
 const onWebview = (f) => (webviewSelector, ...args) => {
 	const webview = getWebview(webviewSelector);
 	if (!webview) {
@@ -36,20 +31,6 @@ const onWebview = (f) => (webviewSelector, ...args) => {
 
 	return f.call(null, webview, ...args);
 };
-
-const reload = onWebview((webview, { ignoringCache = false, fromUrl = false } = {}) => {
-	if (ignoringCache) {
-		webview.reloadIgnoringCache();
-		return;
-	}
-
-	if (fromUrl) {
-		webview.loadURL(webview.dataset.url);
-		return;
-	}
-
-	webview.reload();
-});
 
 const openDevTools = onWebview((webview) => {
 	webview.openDevTools();
@@ -76,8 +57,6 @@ const zoomOut = onWebview((webview) => {
 });
 
 const getWebContents = onWebview((webview) => webview.getWebContents());
-
-const format = onWebview(onPreload(channels.format));
 
 const getAll = () => Array.from(root.querySelectorAll('.webview'));
 
@@ -174,6 +153,7 @@ const renderServer = ({ active, hasSpacingForTitleBarButtons, ...server }) => {
 		isAllReady = false;
 
 		root.appendChild(webview);
+		store.dispatch(webviewCreated(url, webview.getWebContents().id));
 		webview.setAttribute('src', lastPath || url);
 	}
 
@@ -246,10 +226,33 @@ const unmount = () => {
 	events.removeAllListeners();
 };
 
+const reload = function *({ payload: { url, webContentsId, ignoringCache = false, fromUrl = false } }) {
+	url = yield url || select(({ webviews }) => {
+		const webview = webviews.find(({ webContentsId: id }) => id === webContentsId);
+		return webview && webview.url;
+	});
+	const webview = getWebview({ url });
+
+	if (ignoringCache) {
+		webview.reloadIgnoringCache();
+		return;
+	}
+
+	if (fromUrl) {
+		webview.loadURL(webview.dataset.url);
+		return;
+	}
+
+	webview.reload();
+};
+
+sagaMiddleware.run(function *() {
+	yield takeEvery(RELOAD_WEBVIEW, reload);
+});
+
 export const webviews = Object.assign(events, {
 	mount,
 	unmount,
-	reload,
 	openDevTools,
 	goBack,
 	goForward,
@@ -257,5 +260,4 @@ export const webviews = Object.assign(events, {
 	zoomIn,
 	zoomOut,
 	getWebContents,
-	format,
 });

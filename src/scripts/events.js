@@ -1,7 +1,6 @@
 import { remote, clipboard } from 'electron';
 import { put, select, take, takeEvery } from 'redux-saga/effects';
 import i18n from '../i18n';
-import * as channels from '../preload/channels';
 import { store, sagaMiddleware } from '../store';
 import {
 	ASK_FOR_CERTIFICATE_TRUST,
@@ -32,6 +31,9 @@ import {
 	TRIGGER_CONTEXT_MENU,
 	triggerContextMenu,
 	SPELLCHECKING_CORRECTIONS_UPDATED,
+	formatButtonTouched,
+	SET_SERVER_PROPERTIES,
+	reloadWebview,
 } from '../store/actions';
 import { queryEditFlags } from '../utils';
 import { migrateDataFromLocalStorage } from './data';
@@ -323,6 +325,15 @@ sagaMiddleware.run(function *updatesSaga() {
 	yield takeEvery(UPDATE_DOWNLOAD_COMPLETED, updateDownloadCompleted);
 });
 
+sagaMiddleware.run(function *mainWindowSaga() {
+	yield takeEvery(SET_SERVER_PROPERTIES, function *({ payload: { badge } }) {
+		const { preferences: { showWindowOnUnreadChanged } } = yield select();
+		if (typeof badge === 'number' && showWindowOnUnreadChanged) {
+			getCurrentWindow().showInactive();
+		}
+	});
+});
+
 export default async () => {
 	window.addEventListener('beforeunload', destroyAll);
 
@@ -380,11 +391,16 @@ export default async () => {
 	});
 
 	menus.on('reload-server', ({ ignoringCache = false, clearCertificates: clearCerts = false } = {}) => {
+		const { view } = store.getState();
+		if (!view.url) {
+			return;
+		}
+
 		if (clearCerts) {
 			store.dispatch(clearCertificates);
 		}
 
-		webviews.reload({ active: true }, { ignoringCache });
+		store.dispatch(reloadWebview({ url: view.url, ignoringCache }));
 	});
 
 	menus.on('open-devtools-for-server', () => {
@@ -439,7 +455,7 @@ export default async () => {
 	});
 
 	sidebar.on('reload-server', (url) => {
-		webviews.reload({ url });
+		store.dispatch(reloadWebview({ url }));
 	});
 
 	sidebar.on('remove-server', (url) => {
@@ -459,22 +475,11 @@ export default async () => {
 	});
 
 	touchBar.on('format', (buttonId) => {
-		webviews.format({ active: true }, buttonId);
+		store.dispatch(formatButtonTouched(buttonId));
 	});
 
 	touchBar.on('select-server', (url) => {
 		store.dispatch(showServer(url));
-	});
-
-	webviews.on(channels.badgeChanged, (url, badge) => {
-		const { preferences: { showWindowOnUnreadChanged } } = store.getState();
-		if (typeof badge === 'number' && showWindowOnUnreadChanged) {
-			getCurrentWindow().showInactive();
-		}
-	});
-
-	webviews.on(channels.reloadServer, (url) => {
-		webviews.reload({ url }, { fromUrl: true });
 	});
 
 	webviews.on('context-menu', (url, params) => {
