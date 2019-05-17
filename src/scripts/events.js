@@ -325,8 +325,6 @@ export default async () => {
 	contextMenu.on('paste', () => getFocusedWebContents().paste());
 	contextMenu.on('select-all', () => getFocusedWebContents().selectAll());
 
-
-
 	landing.on('add-server', async (serverUrl, callback) => {
 		callback(await addServer(serverUrl));
 	});
@@ -442,10 +440,6 @@ export default async () => {
 	touchBar.on('select-server', (url) => {
 		store.dispatch(showServer(url));
 	});
-
-	tray.on('activate', (visible) =>
-		(visible ? getCurrentWindow().show() : getCurrentWindow().hide()));
-	tray.on('quit', () => app.quit());
 
 	webviews.on(channels.badgeChanged, (url, badge) => {
 		const { preferences: { showWindowOnUnreadChanged } } = store.getState();

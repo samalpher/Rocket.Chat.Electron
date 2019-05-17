@@ -1,5 +1,6 @@
 export const FOCUS_WINDOW = 'FOCUS_WINDOW';
 export const SHOW_WINDOW = 'SHOW_WINDOW';
+export const HIDE_WINDOW = 'HIDE_WINDOW';
 export const DESTROY_WINDOW = 'DESTROY_WINDOW';
 
 export const focusWindow = () => ({
@@ -8,6 +9,10 @@ export const focusWindow = () => ({
 
 export const showWindow = () => ({
 	type: SHOW_WINDOW,
+});
+
+export const hideWindow = () => ({
+	type: HIDE_WINDOW,
 });
 
 export const destroyWindow = () => ({

@@ -1,4 +1,4 @@
-import createDebugLogger from 'debug';
+import debug from 'debug';
 import { store } from '../store';
 import {
 	preferencesLoaded,
@@ -6,7 +6,6 @@ import {
 	viewLoaded,
 } from '../store/actions';
 import { normalizeServerUrl } from '../utils';
-const debug = createDebugLogger('rc:data');
 
 
 const parseServers = (value) => {
@@ -55,7 +54,7 @@ export const migrateDataFromLocalStorage = async () => {
 	let { preferences, servers, view } = store.getState();
 
 	if (localStorage.getItem('hideTray')) {
-		debug('hideTray');
+		debug('rc:data')('hideTray');
 		preferences = {
 			...preferences,
 			hasTray: localStorage.getItem('hideTray') !== 'true',
@@ -64,7 +63,7 @@ export const migrateDataFromLocalStorage = async () => {
 	}
 
 	if (localStorage.getItem('autohideMenu')) {
-		debug('autohideMenu');
+		debug('rc:data')('autohideMenu');
 		preferences = {
 			...preferences,
 			hasMenus: localStorage.getItem('autohideMenu') !== 'true',
@@ -73,7 +72,7 @@ export const migrateDataFromLocalStorage = async () => {
 	}
 
 	if (localStorage.getItem('sidebar-closed')) {
-		debug('sidebar-closed');
+		debug('rc:data')('sidebar-closed');
 		preferences = {
 			...preferences,
 			hasSidebar: localStorage.getItem('sidebar-closed') !== 'true',
@@ -82,7 +81,7 @@ export const migrateDataFromLocalStorage = async () => {
 	}
 
 	if (localStorage.getItem('showWindowOnUnreadChanged')) {
-		debug('showWindowOnUnreadChanged');
+		debug('rc:data')('showWindowOnUnreadChanged');
 		preferences = {
 			...preferences,
 			showWindowOnUnreadChanged: localStorage.getItem('showWindowOnUnreadChanged') === 'true',
@@ -91,7 +90,7 @@ export const migrateDataFromLocalStorage = async () => {
 	}
 
 	if (localStorage.getItem('spellcheckerDictionaries')) {
-		debug('spellcheckerDictionaries');
+		debug('rc:data')('spellcheckerDictionaries');
 		try {
 			const dictionaries = JSON.parse(localStorage.getItem('spellcheckerDictionaries'));
 			preferences = {
@@ -104,7 +103,7 @@ export const migrateDataFromLocalStorage = async () => {
 	}
 
 	if (localStorage.getItem('rocket.chat.hosts') || localStorage.getItem('rocket.chat.sortOrder')) {
-		debug('rocket.chat.hosts, rocket.chat.sortOrder');
+		debug('rc:data')('rocket.chat.hosts, rocket.chat.sortOrder');
 		const sorting = parseServerSorting(localStorage.getItem('rocket.chat.sortOrder'));
 		servers = (
 			parseServers(localStorage.getItem('rocket.chat.hosts'))
@@ -115,7 +114,7 @@ export const migrateDataFromLocalStorage = async () => {
 	}
 
 	if (localStorage.getItem('rocket.chat.currentHost')) {
-		debug('rocket.chat.currentHost');
+		debug('rc:data')('rocket.chat.currentHost');
 		try {
 			const value = localStorage.getItem('rocket.chat.currentHost');
 			const hasActiveServer = (!value || value === 'null');

@@ -4,12 +4,13 @@ import { put, takeEvery } from 'redux-saga/effects';
 import { store, sagaMiddleware } from '../store';
 import {
 	CONFIG_LOADING,
+	WINDOW_STATE_LOADED,
 	FOCUS_WINDOW,
 	SHOW_WINDOW,
+	HIDE_WINDOW,
 	DESTROY_WINDOW,
 	windowStateUpdated,
 	windowStateLoaded,
-	WINDOW_STATE_LOADED,
 } from '../store/actions';
 import { debounce, loadJson, purgeFile } from '../utils';
 
@@ -238,5 +239,6 @@ sagaMiddleware.run(function *mainWindowSaga() {
 	yield takeEvery(WINDOW_STATE_LOADED, createMainWindow);
 	yield takeEvery(FOCUS_WINDOW, forceFocus);
 	yield takeEvery(SHOW_WINDOW, () => mainWindow.show());
+	yield takeEvery(HIDE_WINDOW, () => mainWindow.hide());
 	yield takeEvery(DESTROY_WINDOW, destroy);
 });

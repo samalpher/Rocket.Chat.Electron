@@ -1,17 +1,15 @@
 import { app, Menu, systemPreferences, Tray } from 'electron';
-import { EventEmitter } from 'events';
 import i18n from '../i18n';
-import { connect } from '../store';
+import { connect, store } from '../store';
 import { getTrayIconImage } from './icon';
+import { showWindow, hideWindow } from '../store/actions';
 
 
-let state = {
+let props = {
 	badge: null,
 	windowVisible: true,
 	visible: false,
 };
-
-const events = new EventEmitter();
 
 let trayIcon = null;
 let darwinThemeSubscriberId = null;
@@ -32,19 +30,19 @@ const getIconTooltip = ({ badge }) => {
 	return i18n.__('tray.tooltip.noUnreadMessage', { appName });
 };
 
-const createContextMenuTemplate = ({ windowVisible }) => ([
+const createContextMenuTemplate = ({ windowVisible, onClickActivate, onClickQuit }) => ([
 	{
 		label: !windowVisible ? i18n.__('tray.menu.show') : i18n.__('tray.menu.hide'),
-		click: () => events.emit('activate', !windowVisible),
+		click: () => onClickActivate(windowVisible),
 	},
 	{
 		label: i18n.__('tray.menu.quit'),
-		click: () => events.emit('quit'),
+		click: () => onClickQuit(),
 	},
 ]);
 
 const createIcon = () => {
-	const { badge, windowVisible } = state;
+	const { badge, windowVisible, onClickActivate } = props;
 
 	const image = getTrayIconImage({ badge });
 
@@ -61,7 +59,7 @@ const createIcon = () => {
 		});
 	}
 
-	trayIcon.on('click', () => events.emit('activate', !windowVisible));
+	trayIcon.on('click', () => onClickActivate(windowVisible));
 	trayIcon.on('right-click', (event, bounds) => trayIcon.popUpContextMenu(undefined, bounds));
 };
 
@@ -75,75 +73,74 @@ const destroyIcon = () => {
 		darwinThemeSubscriberId = null;
 	}
 
-
 	trayIcon.destroy();
 	trayIcon = null;
 };
 
-const update = () => {
-	if (!state.visible) {
+const render = () => {
+	if (!props.visible) {
 		destroyIcon();
 		return;
 	}
 
 	createIcon();
 
-	trayIcon.setToolTip(getIconTooltip(state));
+	trayIcon.setToolTip(getIconTooltip(props));
 
 	if (process.platform === 'darwin') {
-		trayIcon.setTitle(getIconTitle(state));
+		trayIcon.setTitle(getIconTitle(props));
 	}
 
-	const template = createContextMenuTemplate(state, events);
+	const template = createContextMenuTemplate(props);
 	const menu = Menu.buildFromTemplate(template);
 	trayIcon.setContextMenu(menu);
 };
 
-const setState = (partialState) => {
-	const previousState = state;
-	state = {
-		...state,
-		...partialState,
-	};
-	update(previousState);
+const setProps = (newProps) => {
+	props = newProps;
+	render();
+};
+
+const mapStateToProps = ({
+	preferences: {
+		hasTray,
+	},
+	servers,
+	windowState: {
+		isHidden,
+	},
+}) => {
+	const badges = servers.map(({ badge }) => badge);
+	const mentionCount = (
+		badges
+			.filter((badge) => Number.isInteger(badge))
+			.reduce((sum, count) => sum + count, 0)
+	);
+	const badge = mentionCount || (badges.some((badge) => !!badge) && '•') || null;
+
+	return ({
+		badge,
+		windowVisible: !isHidden,
+		visible: hasTray,
+		onClickActivate: (windowVisible) => store.dispatch(windowVisible ? hideWindow() : showWindow()),
+		onClickQuit: () => app.quit(),
+	});
 };
 
 let disconnect;
 
 const mount = () => {
-	update();
-	disconnect = connect(({
-		preferences: {
-			hasTray,
-		},
-		servers,
-		windowState: {
-			visible,
-		},
-	}) => {
-		const badges = servers.map(({ badge }) => badge);
-		const mentionCount = (
-			badges
-				.filter((badge) => Number.isInteger(badge))
-				.reduce((sum, count) => sum + count, 0)
-		);
-		const badge = mentionCount || (badges.some((badge) => !!badge) && '•') || null;
+	render();
 
-		return ({
-			badge,
-			windowVisible: visible,
-			visible: hasTray,
-		});
-	})(setState);
+	disconnect = connect(mapStateToProps)(setProps);
 };
 
 const unmount = () => {
 	disconnect();
-	events.removeAllListeners();
 	destroyIcon();
 };
 
-export const tray = Object.assign(events, {
+export const tray = {
 	mount,
 	unmount,
-});
+};
