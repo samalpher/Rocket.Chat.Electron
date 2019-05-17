@@ -1,6 +1,5 @@
-import { remote } from 'electron';
+import idle from '@paulcbetts/system-idle-time';
 import { getMeteor, getTracker, getGetUserPreference, getUserPresence } from './rocketChat';
-const { systemIdleTime } = remote.require('./main');
 
 
 const pollUserPresence = (UserPresence, maximumIdleTime) => {
@@ -10,7 +9,7 @@ const pollUserPresence = (UserPresence, maximumIdleTime) => {
 		let isUserPresent = true;
 
 		try {
-			const idleTime = systemIdleTime.get();
+			const idleTime = idle.getIdleTime();
 			isUserPresent = idleTime < maximumIdleTime;
 
 			if (isUserPresent === wasUserPresent) {

@@ -1,5 +1,5 @@
 import { remote, clipboard } from 'electron';
-import { put, takeEvery } from 'redux-saga/effects';
+import { put, select, take, takeEvery } from 'redux-saga/effects';
 import i18n from '../i18n';
 import * as channels from '../preload/channels';
 import { store, sagaMiddleware } from '../store';
@@ -28,6 +28,10 @@ import {
 	installSpellCheckingDictionaries,
 	quitAndInstallUpdate,
 	resetAppData,
+	updateSpellCheckingCorrections,
+	TRIGGER_CONTEXT_MENU,
+	triggerContextMenu,
+	SPELLCHECKING_CORRECTIONS_UPDATED,
 } from '../store/actions';
 import { queryEditFlags } from '../utils';
 import { migrateDataFromLocalStorage } from './data';
@@ -45,7 +49,6 @@ const {
 	menus,
 	touchBar,
 	tray,
-	getSpellCorrections,
 } = remote.require('./main');
 
 
@@ -283,6 +286,28 @@ sagaMiddleware.run(function *deepLinksSaga() {
 	yield takeEvery(PROCESS_AUTH_DEEP_LINK, processAuthDeepLink);
 });
 
+sagaMiddleware.run(function *contextMenuSaga() {
+	yield takeEvery(TRIGGER_CONTEXT_MENU, function *({ payload: params }) {
+		const {
+			preferences: {
+				enabledDictionaries,
+			},
+			spellchecking: {
+				availableDictionaries,
+			},
+		} = yield select();
+		yield put(updateSpellCheckingCorrections(params.selectionText));
+
+		const { payload: corrections } = yield take(SPELLCHECKING_CORRECTIONS_UPDATED);
+		const dictionaries = availableDictionaries.map((dictionary) => ({
+			dictionary,
+			enabled: enabledDictionaries.includes(dictionary),
+		}));
+
+		contextMenu.trigger({ ...params, corrections, dictionaries });
+	});
+});
+
 const updateDownloadCompleted = function *() {
 	const whenInstall = yield askWhenToInstallUpdate();
 
@@ -453,22 +478,7 @@ export default async () => {
 	});
 
 	webviews.on('context-menu', (url, params) => {
-		const {
-			preferences: {
-				enabledDictionaries,
-			},
-			spellchecking: {
-				availableDictionaries,
-			},
-		} = store.getState();
-		const { selectionText } = params;
-		const corrections = getSpellCorrections(selectionText);
-		const dictionaries = availableDictionaries.map((dictionary) => ({
-			dictionary,
-			enabled: enabledDictionaries.includes(dictionary),
-		}));
-
-		contextMenu.trigger({ ...params, corrections, dictionaries });
+		store.dispatch(triggerContextMenu(params));
 	});
 
 	webviews.on('did-navigate', (url, lastPath) => {

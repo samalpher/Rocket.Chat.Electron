@@ -4,6 +4,8 @@ export const SPELLCHECKING_DICTIONARY_INSTALLED = 'SPELLCHECKING_DICTIONARY_INST
 export const SPELLCHECKING_DICTIONARY_INSTALL_FAILED = 'SPELLCHECKING_DICTIONARY_INSTALL_FAILED';
 export const TOGGLE_SPELLCHECKING_DICTIONARY = 'TOGGLE_SPELLCHECKING_DICTIONARY';
 export const SPELLCHECKING_DICTIONARIES_ENABLED = 'SPELLCHECKING_DICTIONARIES_ENABLED';
+export const UPDATE_SPELLCHECKING_CORRECTIONS = 'UPDATE_SPELLCHECKING_CORRECTIONS';
+export const SPELLCHECKING_CORRECTIONS_UPDATED = 'SPELLCHECKING_CORRECTIONS_UPDATED';
 
 export const spellCheckingConfigurationLoaded = (config) => ({
 	type: SPELLCHECKING_CONFIGURATION_LOADED,
@@ -33,4 +35,14 @@ export const toggleSpellcheckingDictionary = (dictionary, enabled) => ({
 export const spellCheckingDictionariesEnabled = (dictionaries) => ({
 	type: SPELLCHECKING_DICTIONARIES_ENABLED,
 	payload: dictionaries,
+});
+
+export const updateSpellCheckingCorrections = (text) => ({
+	type: UPDATE_SPELLCHECKING_CORRECTIONS,
+	payload: text,
+});
+
+export const spellCheckingCorrectionsUpdated = (corrections) => ({
+	type: SPELLCHECKING_CORRECTIONS_UPDATED,
+	payload: corrections,
 });

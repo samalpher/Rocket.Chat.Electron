@@ -7,10 +7,12 @@ import {
 	LOAD_CONFIG,
 	INSTALL_SPELLCHECKING_DICTIONARIES,
 	TOGGLE_SPELLCHECKING_DICTIONARY,
+	UPDATE_SPELLCHECKING_CORRECTIONS,
 	spellCheckingConfigurationLoaded,
 	spellCheckingDictionaryInstalled,
 	spellCheckingDictionaryInstallFailed,
 	spellCheckingDictionariesEnabled,
+	spellCheckingCorrectionsUpdated,
 } from '../store/actions';
 import { getDirectory } from '../utils';
 
@@ -66,7 +68,7 @@ const filterDictionaries = (availableDictionaries, supportsMultipleDictionaries,
 		.slice(...supportsMultipleDictionaries ? [] : [0, 1])
 );
 
-const toggleSpellcheckingDictionary = function *({ payload: { dictionary, enabled } }) {
+const toggleSpellCheckingDictionary = function *({ payload: { dictionary, enabled } }) {
 	const {
 		preferences: {
 			enabledDictionaries,
@@ -109,7 +111,7 @@ const getMisspeledWords = (words) => {
 	);
 };
 
-export const getSpellCorrections = (word) => {
+const updateSpellCheckingCorrections = function *({ payload: word }) {
 	const {
 		preferences: {
 			enabledDictionaries,
@@ -117,24 +119,26 @@ export const getSpellCorrections = (word) => {
 		spellchecking: {
 			dictionaryInstallationDirectory,
 		},
-	} = store.getState();
+	} = yield select();
 
 	word = word.trim();
 
-	if (word === '' || getMisspeledWords(word).length === 0) {
-		return null;
+	if (word === '' || getMisspeledWords([word]).length === 0) {
+		yield put(spellCheckingCorrectionsUpdated(null));
+		return;
 	}
 
-	return Array.from(new Set(
+	yield put(spellCheckingCorrectionsUpdated(Array.from(new Set(
 		enabledDictionaries.flatMap((dictionary) => {
 			spellchecker.setDictionary(dictionary, dictionaryInstallationDirectory);
 			return spellchecker.getCorrectionsForMisspelling(word);
 		})
-	));
+	))));
 };
 
 sagaMiddleware.run(function *spellCheckingSaga() {
 	yield takeEvery(LOAD_CONFIG, loadSpellCheckingConfiguration);
 	yield takeEvery(INSTALL_SPELLCHECKING_DICTIONARIES, installSpellCheckingDictionaries);
-	yield takeEvery(TOGGLE_SPELLCHECKING_DICTIONARY, toggleSpellcheckingDictionary);
+	yield takeEvery(TOGGLE_SPELLCHECKING_DICTIONARY, toggleSpellCheckingDictionary);
+	yield takeEvery(UPDATE_SPELLCHECKING_CORRECTIONS, updateSpellCheckingCorrections);
 });

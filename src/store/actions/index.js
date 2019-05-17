@@ -2,6 +2,7 @@ export * from './app';
 export * from './basicAuth';
 export * from './certificates';
 export * from './config';
+export * from './contextMenu';
 export * from './deepLinks';
 export * from './editFlags';
 export * from './historyFlags';
