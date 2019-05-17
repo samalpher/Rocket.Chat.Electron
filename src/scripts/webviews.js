@@ -155,7 +155,8 @@ const renderServer = ({ active, hasSpacingForTitleBarButtons, ...server }) => {
 	if (shouldAppend) {
 		webview.dataset.url = url;
 		webview.setAttribute('preload', '../preload.js');
-		webview.setAttribute('allowpopups', 'on');
+		webview.setAttribute('allowpopups', true);
+		webview.setAttribute('disablewebsecurity', true);
 		webview.setAttribute('webpreferences', Object.entries({
 			webSecurity: false,
 		}).map(([key, value]) => `${ key }=${ value ? 'on' : 'off' }`).join(' '));

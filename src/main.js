@@ -15,7 +15,6 @@ store.dispatch(appLaunched(process.argv.slice(2)));
 export { contextMenu } from './main/contextMenu';
 export { dock } from './main/dock';
 export { menus } from './main/menus';
-export { notifications } from './main/notifications';
 export { getSpellCorrections } from './main/spellchecking';
 export { systemIdleTime } from './main/systemIdleTime';
 export { touchBar } from './main/touchBar';
