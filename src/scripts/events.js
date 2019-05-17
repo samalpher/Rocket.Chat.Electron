@@ -8,6 +8,9 @@ import {
 	PROCESS_AUTH_DEEP_LINK,
 	SPELLCHECKING_DICTIONARY_INSTALL_FAILED,
 	UPDATE_DOWNLOAD_COMPLETED,
+	TRIGGER_CONTEXT_MENU,
+	SPELLCHECKING_CORRECTIONS_UPDATED,
+	SET_SERVER_PROPERTIES,
 	loadingDone,
 	showLanding,
 	showServer,
@@ -28,12 +31,9 @@ import {
 	quitAndInstallUpdate,
 	resetAppData,
 	updateSpellCheckingCorrections,
-	TRIGGER_CONTEXT_MENU,
 	triggerContextMenu,
-	SPELLCHECKING_CORRECTIONS_UPDATED,
-	formatButtonTouched,
-	SET_SERVER_PROPERTIES,
 	reloadWebview,
+	showWindow,
 } from '../store/actions';
 import { queryEditFlags } from '../utils';
 import { migrateDataFromLocalStorage } from './data';
@@ -44,14 +44,9 @@ import { screenshareModal } from './screenshareModal';
 import { landing } from './landing';
 import { sidebar } from './sidebar';
 import { webviews } from './webviews';
+import { MENU_ITEM_CLICKED } from '../store/actions/menus';
 const { app, dialog, getCurrentWindow, shell } = remote;
-const {
-	contextMenu,
-	dock,
-	menus,
-	touchBar,
-	tray,
-} = remote.require('./main');
+const { contextMenu } = remote.require('./main');
 
 
 const mountAll = () => {
@@ -62,11 +57,6 @@ const mountAll = () => {
 	aboutModal.mount();
 	screenshareModal.mount();
 	updateModal.mount();
-
-	menus.mount();
-	dock.mount();
-	tray.mount();
-	touchBar.mount();
 };
 
 const unmountAll = () => {
@@ -77,11 +67,6 @@ const unmountAll = () => {
 	aboutModal.unmount();
 	screenshareModal.unmount();
 	updateModal.unmount();
-
-	menus.unmount();
-	dock.unmount();
-	tray.unmount();
-	touchBar.unmount();
 };
 
 
@@ -153,15 +138,6 @@ const confirmAppDataReset = () => new Promise((resolve) => {
 		cancelId: 1,
 	}, (response) => resolve(response === 0));
 });
-
-const destroyAll = () => {
-	try {
-		unmountAll();
-		getCurrentWindow().removeAllListeners();
-	} catch (error) {
-		remote.getGlobal('console').error(error.stack || error);
-	}
-};
 
 const getFocusedWebContents = () => webviews.getWebContents({ focused: true }) || getCurrentWindow().webContents;
 
@@ -334,8 +310,152 @@ sagaMiddleware.run(function *mainWindowSaga() {
 	});
 });
 
+sagaMiddleware.run(function *menusSaga() {
+	yield takeEvery(MENU_ITEM_CLICKED, function *({ payload: { action, args } }) {
+		switch (action) {
+			case 'quit':
+				app.quit();
+				break;
+
+			case 'about':
+				yield put(showAboutModal());
+				break;
+
+			case 'open-url': {
+				const [url] = args;
+				shell.openExternal(url);
+				break;
+			}
+
+			case 'undo':
+				getFocusedWebContents().undo();
+				break;
+
+			case 'redo':
+				getFocusedWebContents().redo();
+				break;
+
+			case 'cut':
+				getFocusedWebContents().cut();
+				break;
+
+			case 'copy':
+				getFocusedWebContents().copy();
+				break;
+
+			case 'paste':
+				getFocusedWebContents().paste();
+				break;
+
+			case 'select-all':
+				getFocusedWebContents().selectAll();
+				break;
+
+			case 'reset-zoom':
+				webviews.resetZoom({ active: true });
+				break;
+
+			case 'zoom-in':
+				webviews.zoomIn({ active: true });
+				break;
+
+			case 'zoom-out':
+				webviews.zoomOut({ active: true });
+				break;
+
+			case 'add-new-server':
+				yield put(showWindow());
+				yield put(showLanding());
+				break;
+
+			case 'select-server': {
+				const [url] = args;
+				yield put(showWindow());
+				yield put(showServer(url));
+				break;
+			}
+
+			case 'reload-server': {
+				const [{ ignoringCache = false, clearCertificates: clearCerts = false }] = args;
+				const { view } = yield select();
+				if (!view.url) {
+					break;
+				}
+
+				if (clearCerts) {
+					yield put(clearCertificates());
+				}
+
+				yield put(reloadWebview({ url: view.url, ignoringCache }));
+				break;
+			}
+
+			case 'open-devtools-for-server':
+				webviews.openDevTools({ active: true });
+				break;
+
+			case 'go-back':
+				webviews.goBack({ active: true });
+				break;
+
+			case 'go-forward':
+				webviews.goForward({ active: true });
+				break;
+
+			case 'reload-app':
+				getCurrentWindow().reload();
+				break;
+
+			case 'toggle-devtools':
+				getCurrentWindow().toggleDevTools();
+				break;
+
+			case 'reset-app-data': {
+				const shouldReset = yield confirmAppDataReset();
+				if (shouldReset) {
+					yield put(resetAppData());
+				}
+				break;
+			}
+
+			case 'toggle': {
+				const [property, value] = args;
+				switch (property) {
+					case 'hasTray': {
+						yield put(setPreferences({ hasTray: value }));
+						break;
+					}
+
+					case 'hasMenus': {
+						yield put(setPreferences({ hasMenus: value }));
+						break;
+					}
+
+					case 'hasSidebar': {
+						yield put(setPreferences({ hasSidebar: value }));
+						break;
+					}
+
+					case 'showWindowOnUnreadChanged': {
+						yield put(setPreferences({ showWindowOnUnreadChanged: value }));
+						break;
+					}
+				}
+				break;
+			}
+		}
+	});
+});
+
 export default async () => {
-	window.addEventListener('beforeunload', destroyAll);
+	window.addEventListener('beforeunload', () => {
+		try {
+			unmountAll();
+			getCurrentWindow().removeAllListeners();
+		} catch (error) {
+			remote.getGlobal('console').error(error.stack || error);
+		}
+	});
 
 	await i18n.initialize();
 
@@ -365,91 +485,6 @@ export default async () => {
 		callback(await addServer(serverUrl));
 	});
 
-	menus.on('quit', () => app.quit());
-	menus.on('about', () => store.dispatch(showAboutModal()));
-	menus.on('open-url', (url) => shell.openExternal(url));
-
-	menus.on('undo', () => getFocusedWebContents().undo());
-	menus.on('redo', () => getFocusedWebContents().redo());
-	menus.on('cut', () => getFocusedWebContents().cut());
-	menus.on('copy', () => getFocusedWebContents().copy());
-	menus.on('paste', () => getFocusedWebContents().paste());
-	menus.on('select-all', () => getFocusedWebContents().selectAll());
-
-	menus.on('reset-zoom', () => webviews.resetZoom({ active: true }));
-	menus.on('zoom-in', () => webviews.zoomIn({ active: true }));
-	menus.on('zoom-out', () => webviews.zoomOut({ active: true }));
-
-	menus.on('add-new-server', () => {
-		getCurrentWindow().show();
-		store.dispatch(showLanding());
-	});
-
-	menus.on('select-server', ({ url }) => {
-		getCurrentWindow().show();
-		store.dispatch(showServer(url));
-	});
-
-	menus.on('reload-server', ({ ignoringCache = false, clearCertificates: clearCerts = false } = {}) => {
-		const { view } = store.getState();
-		if (!view.url) {
-			return;
-		}
-
-		if (clearCerts) {
-			store.dispatch(clearCertificates);
-		}
-
-		store.dispatch(reloadWebview({ url: view.url, ignoringCache }));
-	});
-
-	menus.on('open-devtools-for-server', () => {
-		webviews.openDevTools({ active: true });
-	});
-
-	menus.on('go-back', () => {
-		webviews.goBack({ active: true });
-	});
-
-	menus.on('go-forward', () => {
-		webviews.goForward({ active: true });
-	});
-
-	menus.on('reload-app', () => getCurrentWindow().reload());
-
-	menus.on('toggle-devtools', () => getCurrentWindow().toggleDevTools());
-
-	menus.on('reset-app-data', async () => {
-		const shouldReset = await confirmAppDataReset();
-		if (shouldReset) {
-			store.dispatch(resetAppData());
-		}
-	});
-
-	menus.on('toggle', (property, value) => {
-		switch (property) {
-			case 'hasTray': {
-				store.dispatch(setPreferences({ hasTray: value }));
-				break;
-			}
-
-			case 'hasMenus': {
-				store.dispatch(setPreferences({ hasMenus: value }));
-				break;
-			}
-
-			case 'hasSidebar': {
-				store.dispatch(setPreferences({ hasSidebar: value }));
-				break;
-			}
-
-			case 'showWindowOnUnreadChanged': {
-				store.dispatch(setPreferences({ showWindowOnUnreadChanged: value }));
-				break;
-			}
-		}
-	});
-
 	sidebar.on('select-server', (url) => {
 		store.dispatch(showServer(url));
 	});
@@ -472,14 +507,6 @@ export default async () => {
 
 	sidebar.on('servers-sorted', (urls) => {
 		store.dispatch(sortServers(urls));
-	});
-
-	touchBar.on('format', (buttonId) => {
-		store.dispatch(formatButtonTouched(buttonId));
-	});
-
-	touchBar.on('select-server', (url) => {
-		store.dispatch(showServer(url));
 	});
 
 	webviews.on('context-menu', (url, params) => {

@@ -1,7 +1,7 @@
 import { app, Menu } from 'electron';
-import { EventEmitter } from 'events';
 import i18n from '../i18n';
-import { connect } from '../store';
+import { connect, store } from '../store';
+import { menuItemClicked } from '../store/actions/menus';
 import { mainWindow } from './mainWindow';
 
 
@@ -317,8 +317,6 @@ const setProps = (newProps) => {
 
 let disconnect;
 
-const events = new EventEmitter();
-
 const mapStateToProps = ({
 	servers,
 	view,
@@ -355,7 +353,7 @@ const mapStateToProps = ({
 	canSelectAll,
 	canGoBack,
 	canGoForward,
-	onAction: (...args) => events.emit(...args),
+	onAction: (action, ...args) => store.dispatch(menuItemClicked(action, ...args)),
 });
 
 const mount = () => {
@@ -366,8 +364,6 @@ const mount = () => {
 
 const unmount = () => {
 	disconnect();
-
-	events.removeAllListeners();
 
 	if (process.platform !== 'darwin') {
 		Menu.setApplicationMenu(null);
@@ -387,7 +383,7 @@ const unmount = () => {
 	Menu.setApplicationMenu(Menu.buildFromTemplate(emptyMenuTemplate));
 };
 
-export const menus = Object.assign(events, {
+export const menus = {
 	mount,
 	unmount,
-});
+};

@@ -1,8 +1,9 @@
 import { nativeImage, TouchBar } from 'electron';
 import { EventEmitter } from 'events';
 import i18n from '../i18n';
-import { connect } from '../store';
+import { connect, store } from '../store';
 import { mainWindow } from './mainWindow';
+import { showServer, formatButtonTouched } from '../store/actions';
 const {
 	TouchBarButton,
 	TouchBarLabel,
@@ -100,8 +101,8 @@ const mapStateToProps = ({
 }) => ({
 	servers,
 	activeServerUrl: view.url,
-	onSelectServer: (url) => event.emit('select-server', url),
-	onTouchFormatButton: (buttonId) => events.emit('format', buttonId),
+	onSelectServer: (url) => store.dispatch(showServer(url)),
+	onTouchFormatButton: (buttonId) => store.dispatch(formatButtonTouched(buttonId)),
 });
 
 let disconnect;
