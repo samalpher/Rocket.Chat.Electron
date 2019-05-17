@@ -35,12 +35,12 @@ import { loading } from './loading';
 import { aboutModal } from './aboutModal';
 import { updateModal } from './updateModal';
 import { screenshareModal } from './screenshareModal';
-import { contextMenu } from './contextMenu';
 import { landing } from './landing';
 import { sidebar } from './sidebar';
 import { webviews } from './webviews';
 const { app, dialog, getCurrentWindow, shell } = remote;
 const {
+	contextMenu,
 	dock,
 	menus,
 	touchBar,

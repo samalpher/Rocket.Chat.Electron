@@ -1,7 +1,7 @@
-import { remote } from 'electron';
+import { Menu } from 'electron';
 import { EventEmitter } from 'events';
 import i18n from '../i18n';
-const { getCurrentWindow, Menu } = remote;
+import { mainWindow } from './mainWindow';
 
 
 const events = new EventEmitter();
@@ -169,7 +169,7 @@ const trigger = (params) => {
 		...createLinkMenuTemplate(params),
 		...createDefaultMenuTemplate(params),
 	]);
-	menu.popup({ window: getCurrentWindow() });
+	menu.popup({ window: mainWindow });
 };
 
 export const contextMenu = Object.assign(events, {
