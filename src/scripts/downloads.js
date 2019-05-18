@@ -1,6 +1,15 @@
-import { shell, ipcRenderer } from 'electron';
+import { shell } from 'electron';
+import { takeEvery } from 'redux-saga/effects';
 import i18n from '../i18n';
+import { sagaMiddleware } from '../store';
+import { DOWNLOAD_STARTED, DOWNLOAD_UPDATED } from '../store/actions';
 
+
+const formatMemorySize = (fileBytes) => {
+	const formats = ['Bytes', 'KB', 'MB', 'GB'];
+	const calcFormat = Math.floor(Math.log(fileBytes) / Math.log(1024));
+	return `${ parseFloat((fileBytes / Math.pow(1024, calcFormat)).toFixed(2)) } ${ formats[calcFormat] }`;
+};
 
 const createStorage = async () => {
 	const openRequest = indexedDB.open('rocket.chat-db', 1);
@@ -53,13 +62,6 @@ class DownloadManager {
 		this.downloadManagerClearDownloadsButton = document.querySelector('.app-download-manager-clear-action');
 		this.downloadManagerClearDownloadsButton.addEventListener('click', this.clearAllDbItems.bind(this), false);
 		this.downloadManagerClearDownloadsButton.innerText = i18n.__('sidebar.downloadManager.clear');
-		/**
-		 * event dispatcher
-		 */
-		ipcRenderer.on('download-manager-start', this.downloadStarted.bind(this));
-		ipcRenderer.on('download-manager-error', this.downloadError.bind(this));
-		ipcRenderer.on('download-manager-finish', this.downloadFinished.bind(this));
-		ipcRenderer.on('download-manager-data-received', this.downloadDataReceived.bind(this));
 	}
 
 	/**
@@ -98,7 +100,7 @@ class DownloadManager {
 		titleDiv.setAttribute('class', 'app-download-manager-item_title');
 
 		const downloadDiv = document.createElement('div');
-		downloadDiv.textContent = `${ item.fileReceivedBytes } of ${ item.fileSize }`;
+		downloadDiv.textContent = `${ formatMemorySize(item.transferred) } of ${ formatMemorySize(item.total) }`;
 		downloadDiv.setAttribute('class', 'app-download-manager-item_dl_state');
 
 		const buttonsDiv = document.createElement('div');
@@ -215,7 +217,7 @@ class DownloadManager {
 	/**
 	 * download of item started, set downloadManagerButton to active
 	 */
-	async downloadStarted(event, downloadItem) {
+	async downloadStarted(downloadItem) {
 		if (!this.downloadManagerButton.className.includes('active')) {
 			this.downloadManagerButton.className = `${ this.downloadManagerButton.className } ${ this.downloadManagerButton.className }-active`;
 		}
@@ -230,10 +232,10 @@ class DownloadManager {
 		this.saveDbItem(downloadItem);
 	}
 
-	downloadFinished(event, downloadItem) {
+	downloadFinished(downloadItem) {
 		const request = this.updateDbItem(downloadItem);
-		request.onsuccess = (e) => {
-			this.inactiveDownloadManagerButton(e, this.downloadManagerButton);
+		request.onsuccess = () => {
+			this.inactiveDownloadManagerButton(this.downloadManagerButton);
 		};
 		request.onerror = () => {
 			// set item in list to error?
@@ -243,7 +245,7 @@ class DownloadManager {
 	/**
 	 * check htmlElement an change class if no download is running
 	 */
-	async inactiveDownloadManagerButton(event, htmlElement) {
+	async inactiveDownloadManagerButton(htmlElement) {
 		if (htmlElement.className.includes('active')) {
 			// check if any other
 			const runningDownloads = await this.checkRunningDownloads();
@@ -275,16 +277,42 @@ class DownloadManager {
 		});
 	}
 
-	downloadError(event) {
-		this.inactiveDownloadManagerButton(event, this.downloadManagerButton);
+	downloadError() {
+		this.inactiveDownloadManagerButton(this.downloadManagerButton);
 	}
 
-	downloadDataReceived(event, downloadItem) {
+	downloadDataReceived(downloadItem) {
 		if (this.downloadManagerWindowIsActive) {
 			const element = document.getElementById(downloadItem.creationDate);
-			element.childNodes[1].innerHTML = `${ downloadItem.fileReceivedBytes } of ${ downloadItem.fileSize }`;
+			element.childNodes[1].innerHTML = `${ formatMemorySize(downloadItem.transferred) } of ${ formatMemorySize(downloadItem.total) }`;
 		}
 	}
 }
 
-export const downloadManager = new DownloadManager();
+export const downloads = new DownloadManager();
+
+function *didDownloadStart({ payload: download }) {
+	downloads.downloadStarted(download);
+}
+
+function *didDownloadUpdate({ payload: download }) {
+	if (download.state === 'progressing' && !download.paused) {
+		downloads.downloadDataReceived(download);
+		return;
+	}
+
+	if (download.state === 'completed') {
+		downloads.downloadFinished(download);
+		return;
+	}
+
+	if (download.state === 'interrupted' || download.state === 'cancelled') {
+		downloads.downloadError(download);
+		return;
+	}
+}
+
+sagaMiddleware.run(function *watchDownloadsActions() {
+	yield takeEvery(DOWNLOAD_STARTED, didDownloadStart);
+	yield takeEvery(DOWNLOAD_UPDATED, didDownloadUpdate);
+});

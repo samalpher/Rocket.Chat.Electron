@@ -1,7 +1,8 @@
-import { Menu } from 'electron';
+import { Menu, BrowserWindow } from 'electron';
 import { EventEmitter } from 'events';
+import { select } from 'redux-saga/effects';
 import i18n from '../i18n';
-import { mainWindow } from './mainWindow';
+import { sagaMiddleware } from '../store';
 
 
 const events = new EventEmitter();
@@ -162,15 +163,16 @@ const createDefaultMenuTemplate = ({
 	},
 ];
 
-const trigger = (params) => {
+const trigger = (params) => sagaMiddleware.run(function *trigger() {
 	const menu = Menu.buildFromTemplate([
 		...createSpellCheckingMenuTemplate(params),
 		...createImageMenuTemplate(params),
 		...createLinkMenuTemplate(params),
 		...createDefaultMenuTemplate(params),
 	]);
+	const mainWindow = yield select(({ mainWindow: { id } }) => BrowserWindow.fromId(id));
 	menu.popup({ window: mainWindow });
-};
+});
 
 export const contextMenu = Object.assign(events, {
 	trigger,

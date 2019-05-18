@@ -1,34 +1,37 @@
 import debug from 'debug';
 import { app, BrowserWindow, screen } from 'electron';
-import { put, takeEvery } from 'redux-saga/effects';
-import { store, sagaMiddleware } from '../store';
+import { call, put, select, take, takeEvery } from 'redux-saga/effects';
+import { sagaMiddleware } from '../store';
 import {
-	CONFIG_LOADING,
-	WINDOW_STATE_LOADED,
-	FOCUS_WINDOW,
-	SHOW_WINDOW,
-	HIDE_WINDOW,
-	DESTROY_WINDOW,
-	windowStateUpdated,
-	windowStateLoaded,
+	LOAD_CONFIG,
+	MAIN_WINDOW_STATE_LOADED,
+	FOCUS_MAIN_WINDOW,
+	SHOW_MAIN_WINDOW,
+	HIDE_MAIN_WINDOW,
+	DESTROY_MAIN_WINDOW,
+	APP_READY,
+	mainWindowStateUpdated,
+	mainWindowStateLoaded,
+	mainWindowCreated,
 } from '../store/actions';
-import { debounce, loadJson, purgeFile } from '../utils';
+import { loadJson, purgeFile } from '../utils';
 
 
-export let mainWindow = null;
+let mainWindow = null;
 
-let hideOnClose = false;
+const doLoadConfig = function *({ payload: { mainWindow } }) {
+	if (Object.keys(mainWindow).length === 0) {
+		debug('rc:data')('window-state-main.json', 'user');
+		const { x, y, width, height, isMinimized, isMaximized, isHidden } =
+			yield call(loadJson, 'window-state-main.json', 'user');
+		mainWindow = { x, y, width, height, isMinimized, isMaximized, isHidden };
+		yield call(purgeFile, 'window-state-main.json', 'user');
+	}
 
-const applyWindowBoundsFromState = () => {
-	let {
-		windowState: {
-			x,
-			y,
-			width,
-			height,
-		},
-	} = store.getState();
+	yield put(mainWindowStateLoaded(mainWindow));
+};
 
+const applyWindowBoundsFromState = function *({ x, y, width, height }) {
 	if (!x || !y || !width || !height) {
 		({ x, y, width, height } = mainWindow.getNormalBounds());
 	}
@@ -49,9 +52,7 @@ const applyWindowBoundsFromState = () => {
 	mainWindow.setBounds({ x, y, width, height });
 };
 
-const dispatchWindowState = debounce((windowState) => store.dispatch(windowStateUpdated(windowState)), 100);
-
-const fetchWindowState = () => {
+const fetchWindowState = () => sagaMiddleware.run(function * fetchWindowState() {
 	const windowState = {};
 	({
 		x: windowState.x,
@@ -63,24 +64,30 @@ const fetchWindowState = () => {
 	windowState.isMaximized = mainWindow.isMaximized();
 	windowState.isHidden = !mainWindow.isVisible();
 
-	dispatchWindowState(windowState);
-};
+	yield put(mainWindowStateUpdated(windowState));
+});
 
 const handleFocus = () => {
 	mainWindow.flashFrame(false);
 };
 
-const handleClose = async (event) => {
+const handleClose = (event) => sagaMiddleware.run(function *handleClose() {
 	event.preventDefault();
-	await new Promise((resolve) => {
+	yield call(() => new Promise((resolve) => {
 		if (mainWindow.isFullScreen()) {
 			mainWindow.once('leave-full-screen', resolve);
 			mainWindow.setFullScreen(false);
 			return;
 		}
 		resolve();
-	});
+	}));
 	mainWindow.blur();
+
+	const {
+		preferences: {
+			hasTray: hideOnClose,
+		},
+	} = yield select();
 
 	if (!hideOnClose) {
 		fetchWindowState();
@@ -114,38 +121,19 @@ const handleClose = async (event) => {
 	if (hideOnClose) {
 		fetchWindowState();
 	}
-};
+});
 
-const loadWindowState = function *({ payload: { windowState } }) {
-	if (Object.keys(windowState).length === 0) {
-		debug('rc:data')('window-state-main.json', 'user');
-		const { x, y, width, height, isMinimized, isMaximized, isHidden } =
-			yield loadJson('window-state-main.json', 'user');
-		windowState = { x, y, width, height, isMinimized, isMaximized, isHidden };
-		yield purgeFile('window-state-main.json', 'user');
-	}
-
-	yield put(windowStateLoaded(windowState));
-};
-
-const forceFocus = () => {
-	mainWindow.showInactive();
-
-	if (mainWindow.isMinimized()) {
-		mainWindow.restore();
-	}
-
-	mainWindow.focus();
-};
-
-const showIfNeeded = () => {
+const showIfNeeded = function *() {
 	const {
-		windowState: {
+		preferences: {
+			hasTray: hideOnClose,
+		},
+		mainWindow: {
 			isMaximized,
 			isMinimized,
 			isHidden,
 		},
-	} = store.getState();
+	} = yield select();
 
 	if (isMaximized) {
 		mainWindow.maximize();
@@ -179,22 +167,9 @@ const showIfNeeded = () => {
 	}
 };
 
-const destroy = () => {
-	mainWindow.removeAllListeners();
-	mainWindow.close();
-};
+const didWindowStateLoaded = function *({ payload: mainWindowState }) {
+	yield take(APP_READY);
 
-const connectToStore = () => {
-	const {
-		preferences: {
-			hasTray,
-		},
-	} = store.getState();
-
-	hideOnClose = hasTray;
-};
-
-const createMainWindow = function *() {
 	mainWindow = new BrowserWindow({
 		width: 1000,
 		height: 700,
@@ -208,7 +183,7 @@ const createMainWindow = function *() {
 		},
 	});
 
-	applyWindowBoundsFromState();
+	yield* applyWindowBoundsFromState(mainWindowState);
 
 	mainWindow.on('move', fetchWindowState);
 	mainWindow.on('resize', fetchWindowState);
@@ -227,18 +202,41 @@ const createMainWindow = function *() {
 		mainWindow.webContents.openDevTools();
 	}
 
-	store.subscribe(connectToStore);
+	yield put(mainWindowCreated(mainWindow.id));
 
-	yield new Promise((resolve) => mainWindow.once('ready-to-show', resolve));
+	yield call(() => new Promise((resolve) => mainWindow.once('ready-to-show', resolve)));
 
-	showIfNeeded();
+	yield* showIfNeeded();
 };
 
-sagaMiddleware.run(function *mainWindowSaga() {
-	yield takeEvery(CONFIG_LOADING, loadWindowState);
-	yield takeEvery(WINDOW_STATE_LOADED, createMainWindow);
-	yield takeEvery(FOCUS_WINDOW, forceFocus);
-	yield takeEvery(SHOW_WINDOW, () => mainWindow.show());
-	yield takeEvery(HIDE_WINDOW, () => mainWindow.hide());
-	yield takeEvery(DESTROY_WINDOW, destroy);
+const doFocusMainWindow = function *() {
+	mainWindow.showInactive();
+
+	if (mainWindow.isMinimized()) {
+		mainWindow.restore();
+	}
+
+	mainWindow.focus();
+};
+
+const doShowMainWindow = function *() {
+	mainWindow.show();
+};
+
+const doHideMainWindow = function *() {
+	mainWindow.hide();
+};
+
+const doDestroyMainWindow = function *() {
+	mainWindow.removeAllListeners();
+	mainWindow.close();
+};
+
+sagaMiddleware.run(function *watchMainWindowActions() {
+	yield takeEvery(LOAD_CONFIG, doLoadConfig);
+	yield takeEvery(MAIN_WINDOW_STATE_LOADED, didWindowStateLoaded);
+	yield takeEvery(FOCUS_MAIN_WINDOW, doFocusMainWindow);
+	yield takeEvery(SHOW_MAIN_WINDOW, doShowMainWindow);
+	yield takeEvery(HIDE_MAIN_WINDOW, doHideMainWindow);
+	yield takeEvery(DESTROY_MAIN_WINDOW, doDestroyMainWindow);
 });

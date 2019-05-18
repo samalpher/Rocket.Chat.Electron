@@ -4,7 +4,6 @@ import i18n from '../i18n';
 import { store, sagaMiddleware } from '../store';
 import {
 	ASK_FOR_CERTIFICATE_TRUST,
-	ASK_BASIC_AUTH_CREDENTIALS,
 	PROCESS_AUTH_DEEP_LINK,
 	SPELLCHECKING_DICTIONARY_INSTALL_FAILED,
 	UPDATE_DOWNLOAD_COMPLETED,
@@ -23,17 +22,16 @@ import {
 	historyFlagsUpdated,
 	editFlagsUpdated,
 	showAboutModal,
-	focusWindow,
+	focusMainWindow,
 	clearCertificates,
 	replyCertificateTrustRequest,
-	basicAuthCredentialsFetched,
 	installSpellCheckingDictionaries,
 	quitAndInstallUpdate,
 	resetAppData,
 	updateSpellCheckingCorrections,
 	triggerContextMenu,
 	reloadWebview,
-	showWindow,
+	showMainWindow,
 } from '../store/actions';
 import { queryEditFlags } from '../utils';
 import { migrateDataFromLocalStorage } from './data';
@@ -41,7 +39,7 @@ import { loading } from './loading';
 import { aboutModal } from './aboutModal';
 import { updateModal } from './updateModal';
 import { screenshareModal } from './screenshareModal';
-import { downloadManager } from './downloadManager';
+import { downloads } from './downloads';
 import { landing } from './landing';
 import { sidebar } from './sidebar';
 import { webviews } from './webviews';
@@ -170,11 +168,6 @@ sagaMiddleware.run(function *spellCheckingSaga() {
 	yield takeEvery(SPELLCHECKING_DICTIONARY_INSTALL_FAILED, spellCheckingDictionaryInstallFailed);
 });
 
-const getServerFromUrl = (subUrl) => {
-	const { servers } = store.getState();
-	return servers.find(({ url }) => subUrl.indexOf(url) === 0);
-};
-
 const validateServer = async (serverUrl, timeout = 5000) => {
 	try {
 		const headers = new Headers();
@@ -238,15 +231,6 @@ const addServer = async (serverUrl, askForConfirmation = false) => {
 	return result;
 };
 
-const askBasicAuthCredentials = function *({ payload: { webContentsUrl } }) {
-	const { username, password } = getServerFromUrl(webContentsUrl) || {};
-	store.dispatch(basicAuthCredentialsFetched((username && password) ? [username, password] : null));
-};
-
-sagaMiddleware.run(function *basicAuthSaga() {
-	yield takeEvery(ASK_BASIC_AUTH_CREDENTIALS, askBasicAuthCredentials);
-});
-
 const askForCertificateTrust = function *({ payload: { requestUrl, error, certificate, replacing } }) {
 	const isTrusted = yield warnCertificateError({ requestUrl, error, certificate, replacing });
 	store.dispatch(replyCertificateTrustRequest(isTrusted));
@@ -257,7 +241,7 @@ sagaMiddleware.run(function *certificatesSaga() {
 });
 
 const processAuthDeepLink = function *({ payload: { serverUrl } }) {
-	yield put(focusWindow());
+	yield put(focusMainWindow());
 	yield addServer(serverUrl, true);
 };
 
@@ -365,13 +349,13 @@ sagaMiddleware.run(function *menusSaga() {
 				break;
 
 			case 'add-new-server':
-				yield put(showWindow());
+				yield put(showMainWindow());
 				yield put(showLanding());
 				break;
 
 			case 'select-server': {
 				const [url] = args;
-				yield put(showWindow());
+				yield put(showMainWindow());
 				yield put(showServer(url));
 				break;
 			}
@@ -482,7 +466,7 @@ export default async () => {
 	contextMenu.on('paste', () => getFocusedWebContents().paste());
 	contextMenu.on('select-all', () => getFocusedWebContents().selectAll());
 
-	downloadManager.initialize();
+	downloads.initialize();
 
 	landing.on('add-server', async (serverUrl, callback) => {
 		callback(await addServer(serverUrl));
@@ -497,7 +481,7 @@ export default async () => {
 	});
 
 	sidebar.on('show-download-manager', () => {
-		downloadManager.showWindow();
+		downloads.showWindow();
 	});
 
 	sidebar.on('remove-server', (url) => {

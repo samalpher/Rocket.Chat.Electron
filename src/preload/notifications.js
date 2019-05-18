@@ -1,6 +1,6 @@
 import { remote } from 'electron';
 import { store } from '../store';
-import { focusWindow, showServer } from '../store/actions';
+import { focusMainWindow, showServer } from '../store/actions';
 import { getServerUrl } from './getServerUrl';
 const { Notification: ElectronNotification, nativeImage } = remote.require('electron');
 const fetchWithoutOrigin = remote.require('electron-fetch').default;
@@ -70,7 +70,7 @@ class Notification extends EventTarget {
 	}
 
 	async handleClick(event) {
-		store.dispatch(focusWindow());
+		store.dispatch(focusMainWindow());
 		store.dispatch(showServer(await getServerUrl()));
 		this.onclick && this.onclick.call(this, event);
 		this.dispatchEvent(new CustomEvent('close'));

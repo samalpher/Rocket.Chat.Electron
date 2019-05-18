@@ -43,7 +43,8 @@
     "react-redux": "^7.0.3",
     "redux": "^4.0.1",
     "redux-saga": "^1.0.2",
-    "spellchecker": "^3.5.0"
+    "spellchecker": "^3.5.0",
+    "uniqid": "^5.0.3"
   },
   "devDependencies": {
     "@babel/core": "^7.4.4",

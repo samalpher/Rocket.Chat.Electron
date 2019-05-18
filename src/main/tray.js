@@ -2,7 +2,7 @@ import { app, Menu, systemPreferences, Tray } from 'electron';
 import i18n from '../i18n';
 import { connect, store } from '../store';
 import { getTrayIconImage } from './icon';
-import { showWindow, hideWindow } from '../store/actions';
+import { showMainWindow, hideMainWindow } from '../store/actions';
 
 
 let props = {
@@ -106,7 +106,7 @@ const mapStateToProps = ({
 		hasTray,
 	},
 	servers,
-	windowState: {
+	mainWindow: {
 		isHidden,
 	},
 }) => {
@@ -122,7 +122,7 @@ const mapStateToProps = ({
 		badge,
 		windowVisible: !isHidden,
 		visible: hasTray,
-		onClickActivate: (windowVisible) => store.dispatch(windowVisible ? hideWindow() : showWindow()),
+		onClickActivate: (windowVisible) => store.dispatch(windowVisible ? hideMainWindow() : showMainWindow()),
 		onClickQuit: () => app.quit(),
 	});
 };

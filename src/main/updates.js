@@ -1,36 +1,36 @@
 import debug from 'debug';
 import { app } from 'electron';
 import { autoUpdater } from 'electron-updater';
-import { put, select, takeEvery } from 'redux-saga/effects';
-import { store, sagaMiddleware } from '../store';
+import { call, put, select, takeEvery } from 'redux-saga/effects';
+import { sagaMiddleware } from '../store';
 import {
-	CONFIG_LOADING,
-	UPDATE_CONFIGURATION_LOADED,
-	SET_AUTO_UPDATE,
 	CHECK_FOR_UPDATE,
-	SKIP_UPDATE,
 	DOWNLOAD_UPDATE,
+	LOAD_CONFIG,
 	QUIT_AND_INSTALL_UPDATE,
-	updateConfigurationLoaded as updateConfigurationLoadedAction,
+	SET_AUTO_UPDATE,
+	SKIP_UPDATE,
+	UPDATE_CONFIGURATION_LOADED,
 	autoUpdateSet,
 	checkingForAutoUpdateStarted,
-	checkingForUpdateStarted,
 	checkingForUpdateErrored,
-	updateNotAvailable,
+	checkingForUpdateStarted,
+	destroyMainWindow,
 	updateAvailable,
-	updateSkipped,
+	updateConfigurationLoaded,
 	updateDownloadProgressed,
 	updateDownloadCompleted,
 	updateDownloadErrored,
-	destroyWindow,
+	updateNotAvailable,
+	updateSkipped,
 } from '../store/actions';
 import { loadJson, purgeFile } from '../utils';
 
 
-const loadUpdateConfiguration = function *({ payload: { update } }) {
+const doLoadConfig = function *({ payload: { update } }) {
 	debug('rc:data')('update.json');
-	const appUpdateConfiguration = yield loadJson('update.json', 'app');
-	const userUpdateConfiguration = yield loadJson('update.json', 'user');
+	const appUpdateConfiguration = yield call(loadJson, 'update.json', 'app');
+	const userUpdateConfiguration = yield call(loadJson, 'update.json', 'user');
 
 	const fromAdmin = !!appUpdateConfiguration.forced;
 
@@ -60,23 +60,23 @@ const loadUpdateConfiguration = function *({ payload: { update } }) {
 				(userUpdateConfiguration.skip || update.skippedVersion || null)
 		),
 	};
-	yield purgeFile('update.json', 'user');
+	yield call(purgeFile, 'update.json', 'user');
 
-	yield put(updateConfigurationLoadedAction(update));
+	yield put(updateConfigurationLoaded(update));
 };
 
-const updateConfigurationLoaded = function *({ payload: { canUpdate, canAutoUpdate } }) {
+const didUpdateConfigurationLoad = function *({ payload: { canUpdate, canAutoUpdate } }) {
 	if (canUpdate && canAutoUpdate) {
 		yield put(checkingForAutoUpdateStarted());
 		try {
-			yield autoUpdater.checkForUpdates();
+			yield call(() => autoUpdater.checkForUpdates());
 		} catch (error) {
 			yield put(checkingForUpdateErrored(error));
 		}
 	}
 };
 
-const setAutoUpdate = function *(enabled) {
+const doSetAutoUpdate = function *(enabled) {
 	const { update: { configuration: { canSetAutoUpdate } } } = yield select();
 	if (!canSetAutoUpdate) {
 		return;
@@ -85,7 +85,7 @@ const setAutoUpdate = function *(enabled) {
 	yield put(autoUpdateSet(enabled));
 };
 
-const checkForUpdate = function *() {
+const doCheckForUpdate = function *() {
 	const { update: { configuration: { canUpdate }, checking } } = yield select();
 
 	if (checking || !canUpdate) {
@@ -94,14 +94,15 @@ const checkForUpdate = function *() {
 
 	yield put(checkingForUpdateStarted());
 	try {
-		yield autoUpdater.checkForUpdates();
+		yield call(() => autoUpdater.checkForUpdates());
 	} catch (error) {
 		yield put(checkingForUpdateErrored(error));
 	}
 };
 
-const skipUpdate = function *() {
+const doSkipUpdate = function *() {
 	const { update: { configuration: { fromAdmin }, version } } = yield select();
+
 	if (fromAdmin) {
 		return;
 	}
@@ -109,49 +110,50 @@ const skipUpdate = function *() {
 	yield put(updateSkipped(version));
 };
 
-const downloadUpdate = function *() {
+const doDownloadUpdate = function *() {
 	try {
-		yield autoUpdater.downloadUpdate();
+		yield call(() => autoUpdater.downloadUpdate());
 	} catch (error) {
 		yield updateDownloadErrored(error);
 	}
 };
 
-const quitAndInstallUpdate = function *() {
-	yield put(destroyWindow());
+const doQuitAndInstallUpdate = function *() {
+	yield put(destroyMainWindow());
 	app.removeAllListeners();
 	autoUpdater.quitAndInstall();
 };
 
-const handleUpdateAvailable = ({ version }) => {
+const handleUpdateAvailable = ({ version }) => sagaMiddleware.run(function *handleUpdateAvailable() {
 	const {
 		update: {
 			configuration: { skippedVersion },
 			checking: { mode } = {},
 		},
-	} = store.getState();
+	} = yield select();
+
 	const isAutoUpdate = mode === 'auto';
 	const shouldSkip = skippedVersion === version;
 
 	if (isAutoUpdate && shouldSkip) {
-		store.dispatch(updateNotAvailable());
+		yield put(updateNotAvailable());
 		return;
 	}
 
-	store.dispatch(updateAvailable(version));
-};
+	yield put(updateAvailable(version));
+});
 
-const handleUpdateNotAvailable = () => {
-	store.dispatch(updateNotAvailable());
-};
+const handleUpdateNotAvailable = () => sagaMiddleware.run(function *handleUpdateNotAvailable() {
+	yield put(updateNotAvailable());
+});
 
-const handleDownloadProgress = (progress) => {
-	store.dispatch(updateDownloadProgressed(progress));
-};
+const handleDownloadProgress = (progress) => sagaMiddleware.run(function *handleDownloadProgress() {
+	yield put(updateDownloadProgressed(progress));
+});
 
-const handleUpdateDownloaded = (info) => {
-	store.dispatch(updateDownloadCompleted(info));
-};
+const handleUpdateDownloaded = (info) => sagaMiddleware.run(function *handleUpdateDownloaded() {
+	yield put(updateDownloadCompleted(info));
+});
 
 autoUpdater.autoDownload = false;
 autoUpdater.logger = null;
@@ -160,12 +162,12 @@ autoUpdater.on('update-not-available', handleUpdateNotAvailable);
 autoUpdater.on('download-progress', handleDownloadProgress);
 autoUpdater.on('update-downloaded', handleUpdateDownloaded);
 
-sagaMiddleware.run(function *updatesSaga() {
-	yield takeEvery(CONFIG_LOADING, loadUpdateConfiguration);
-	yield takeEvery(UPDATE_CONFIGURATION_LOADED, updateConfigurationLoaded);
-	yield takeEvery(SET_AUTO_UPDATE, setAutoUpdate);
-	yield takeEvery(CHECK_FOR_UPDATE, checkForUpdate);
-	yield takeEvery(SKIP_UPDATE, skipUpdate);
-	yield takeEvery(DOWNLOAD_UPDATE, downloadUpdate);
-	yield takeEvery(QUIT_AND_INSTALL_UPDATE, quitAndInstallUpdate);
+sagaMiddleware.run(function *watchUpdateActions() {
+	yield takeEvery(LOAD_CONFIG, doLoadConfig);
+	yield takeEvery(UPDATE_CONFIGURATION_LOADED, didUpdateConfigurationLoad);
+	yield takeEvery(SET_AUTO_UPDATE, doSetAutoUpdate);
+	yield takeEvery(CHECK_FOR_UPDATE, doCheckForUpdate);
+	yield takeEvery(SKIP_UPDATE, doSkipUpdate);
+	yield takeEvery(DOWNLOAD_UPDATE, doDownloadUpdate);
+	yield takeEvery(QUIT_AND_INSTALL_UPDATE, doQuitAndInstallUpdate);
 });

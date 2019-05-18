@@ -35,24 +35,24 @@ const handleLink = function *(link) {
 	}
 };
 
-const deepLinkRequested = function *(event, link) {
+const didDeepLinkRequest = function *(event, link) {
 	if (!isRocketChatLink(link)) {
 		return;
 	}
 
 	event.preventDefault();
-	yield handleLink(link);
+	yield* handleLink(link);
 };
 
-const commandLineArgumentPassed = function *({ payload: arg }) {
+const didCommandLineArgumentPass = function *({ payload: arg }) {
 	if (!isRocketChatLink(arg)) {
 		return;
 	}
 
-	yield handleLink(arg);
+	yield* handleLink(arg);
 };
 
-sagaMiddleware.run(function *deepLinksSaga() {
-	yield takeEvery(DEEP_LINK_REQUESTED, deepLinkRequested);
-	yield takeEvery(COMMAND_LINE_ARGUMENT_PASSED, commandLineArgumentPassed);
+sagaMiddleware.run(function *watchDeepLinksActions() {
+	yield takeEvery(DEEP_LINK_REQUESTED, didDeepLinkRequest);
+	yield takeEvery(COMMAND_LINE_ARGUMENT_PASSED, didCommandLineArgumentPass);
 });

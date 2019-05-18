@@ -1,12 +1,11 @@
 import debug from 'debug';
 import ElectronStore from 'electron-store';
-import { put, select, takeEvery } from 'redux-saga/effects';
+import { call, delay, put, select, takeEvery, takeLatest } from 'redux-saga/effects';
 import { sagaMiddleware } from '../store';
-import { debounce, loadJson, normalizeServerUrl } from '../utils';
+import { loadJson, normalizeServerUrl } from '../utils';
 import {
-	LOAD_CONFIG,
-	CONFIG_LOADING,
-	configLoading,
+	INITIALIZE_CONFIG,
+	loadConfig,
 	preferencesLoaded,
 	viewLoaded,
 	serversLoaded,
@@ -16,23 +15,23 @@ import {
 } from '../store/actions';
 
 
-const loadPreferences = function *({ payload: { preferences } }) {
+const loadPreferences = function *(preferences) {
 	yield put(preferencesLoaded(preferences));
 };
 
-const loadView = function *({ payload: { view } }) {
+const loadView = function *(view) {
 	yield put(viewLoaded(view));
 };
 
-const loadServers = function *({ payload: { servers } }) {
+const loadServers = function *(servers) {
 	if (servers.length !== 0) {
 		yield put(serversLoaded(servers));
 		return;
 	}
 
 	debug('rc:data')('servers.json');
-	const appEntries = yield loadJson('servers.json', 'app');
-	const userEntries = yield loadJson('servers.json', 'user');
+	const appEntries = yield call(loadJson, 'servers.json', 'app');
+	const userEntries = yield call(loadJson, 'servers.json', 'user');
 	servers = [
 		...(
 			Object.entries(appEntries)
@@ -55,50 +54,46 @@ const loadServers = function *({ payload: { servers } }) {
 
 let config;
 
-const loadConfig = function *() {
+const doInitializeConfig = function *() {
 	config = new ElectronStore();
-	yield put(configLoading({
-		preferences: config.get('preferences', {}),
-		servers: config.get('servers', []),
-		view: config.get('view', 'landing'),
-		windowState: config.get('windowState', {}),
+	yield* loadPreferences(config.get('preferences', {}));
+	yield* loadView(config.get('view', 'landing'));
+	yield* loadServers(config.get('servers', []));
+
+	yield put(loadConfig({
+		mainWindow: config.get('mainWindow', {}),
 		certificates: config.get('certificates', {}),
 		update: config.get('update', {}),
 	}));
 };
 
-const persist = debounce((data) => {
-	debug('rc:data')('persist');
-	config.set(data);
-}, 500);
+const doPersistConfig = function *() {
+	yield delay(500);
 
-const saveConfig = function *() {
 	const {
 		preferences,
 		servers,
 		view,
-		windowState,
+		mainWindow,
 		certificates,
 		update: {
 			configuration,
 		},
 	} = yield select();
 
-	persist({
+	config.set(({
 		preferences,
 		servers,
 		view,
-		windowState,
+		mainWindow,
 		certificates,
 		update: configuration,
-	});
+	}));
+
+	debug('rc:data')('persisted');
 };
 
-sagaMiddleware.run(function *configSaga() {
-	yield takeEvery(LOAD_CONFIG, loadConfig);
-	yield takeEvery(CONFIG_LOADING, loadPreferences);
-	yield takeEvery(CONFIG_LOADING, loadView);
-	yield takeEvery(CONFIG_LOADING, loadServers);
-
-	yield takeEvery('*', saveConfig);
+sagaMiddleware.run(function *watchConfigActions() {
+	yield takeEvery(INITIALIZE_CONFIG, doInitializeConfig);
+	yield takeLatest('*', doPersistConfig);
 });

@@ -1,8 +1,7 @@
-import { app, Menu } from 'electron';
+import { app, Menu, BrowserWindow } from 'electron';
 import i18n from '../i18n';
 import { connect, store } from '../store';
 import { menuItemClicked } from '../store/actions/menus';
-import { mainWindow } from './mainWindow';
 
 
 let props = {};
@@ -304,7 +303,7 @@ const render = () => {
 	Menu.setApplicationMenu(menu);
 
 	if (process.platform !== 'darwin') {
-		const { hasMenus } = props;
+		const { mainWindow, hasMenus } = props;
 		mainWindow.setAutoHideMenuBar(!hasMenus);
 		mainWindow.setMenuBarVisibility(!!hasMenus);
 	}
@@ -320,6 +319,9 @@ let disconnect;
 const mapStateToProps = ({
 	servers,
 	view,
+	mainWindow: {
+		id,
+	},
 	preferences: {
 		hasTray,
 		hasMenus,
@@ -339,6 +341,7 @@ const mapStateToProps = ({
 		canGoForward,
 	},
 }) => ({
+	mainWindow: BrowserWindow.fromId(id),
 	servers,
 	activeServerUrl: view.url,
 	hasTray,
@@ -357,8 +360,6 @@ const mapStateToProps = ({
 });
 
 const mount = () => {
-	render();
-
 	disconnect = connect(mapStateToProps)(setProps);
 };
 

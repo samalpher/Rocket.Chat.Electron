@@ -1,19 +1,27 @@
 import { app } from 'electron';
 import jetpack from 'fs-jetpack';
-import { takeEvery } from 'redux-saga/effects';
+import { call, put, take, takeEvery } from 'redux-saga/effects';
 import i18n from '../i18n';
 import { sagaMiddleware, store } from '../store';
 import {
+	APP_ACTIVATED,
 	APP_LAUNCHED,
+	APP_SECOND_INSTANCE_LAUNCHED,
+	APP_WILL_QUIT,
+	PREFERENCES_LOADED,
 	RESET_APP_DATA,
-	loadConfig,
-	focusWindow,
-	showWindow,
-	destroyWindow,
-	certificateErrorThrown,
+	appActivated,
+	appReady,
+	appSecondInstanceLaunched,
+	appWillQuit,
 	basicAuthLoginRequested,
-	deepLinkRequested,
+	certificateErrorThrown,
 	commandLineArgumentPassed,
+	deepLinkRequested,
+	destroyMainWindow,
+	focusMainWindow,
+	initializeConfig,
+	showMainWindow,
 } from '../store/actions';
 
 
@@ -29,6 +37,13 @@ const setupErrorHandling = () => {
 	});
 };
 
+const setupUserDataPath = () => {
+	const appName = app.getName();
+	const dirName = process.env.NODE_ENV === 'production' ? appName : `${ appName } (${ process.env.NODE_ENV })`;
+
+	app.setPath('userData', jetpack.path(app.getPath('appData'), dirName));
+};
+
 const setupAppParameters = () => {
 	app.setAsDefaultProtocolClient('rocketchat');
 	app.setAppUserModelId('chat.rocket');
@@ -39,57 +54,31 @@ const setupAppParameters = () => {
 	}
 };
 
-const setupUserDataPath = () => {
-	const appName = app.getName();
-	const dirName = process.env.NODE_ENV === 'production' ? appName : `${ appName } (${ process.env.NODE_ENV })`;
-
-	app.setPath('userData', jetpack.path(app.getPath('appData'), dirName));
-};
-
-const doResetAppData = () => {
+const resetAppData = () => {
 	jetpack.remove(app.getPath('userData'));
 	app.relaunch({ args: [process.argv[1]] });
 	app.quit();
 };
 
 const attachAppEvents = () => {
-	app.on('window-all-closed', () => {
-		app.quit();
-	});
-
-	app.on('activate', () => {
-		store.dispatch(showWindow());
-	});
-
-	app.on('before-quit', () => {
-		store.dispatch(destroyWindow());
-	});
-
-	app.on('open-url', (event, url) => {
-		store.dispatch(deepLinkRequested(event, url));
-	});
-
-	app.on('second-instance', (event, argv) => {
-		store.dispatch(focusWindow());
-		argv.slice(2).forEach((arg) => store.dispatch(commandLineArgumentPassed(arg)));
-	});
-
-	app.on('login', (...args) => {
-		store.dispatch(basicAuthLoginRequested(...args));
-	});
-
-	app.on('certificate-error', (...args) => {
-		store.dispatch(certificateErrorThrown(...args));
-	});
+	app.on('window-all-closed', () => app.quit());
+	app.on('activate', () => store.dispatch(appActivated()));
+	app.on('before-quit', () => store.dispatch(appWillQuit()));
+	app.on('open-url', (event, url) => store.dispatch(deepLinkRequested(event, url)));
+	app.on('second-instance', (event, argv) => store.dispatch(appSecondInstanceLaunched(argv.slice(2))));
+	app.on('login', (...args) => store.dispatch(basicAuthLoginRequested(...args)));
+	app.on('certificate-error', (...args) => store.dispatch(certificateErrorThrown(...args)));
 };
 
-const appLaunched = function *({ payload: args }) {
+const didAppLaunch = function *({ payload: args }) {
 	setupErrorHandling();
-	setupAppParameters();
 	setupUserDataPath();
+	yield put(initializeConfig());
+	yield take(PREFERENCES_LOADED);
+	setupAppParameters();
 
 	if (args.includes('--reset-app-data')) {
-		doResetAppData();
+		resetAppData();
 		return;
 	}
 
@@ -101,20 +90,41 @@ const appLaunched = function *({ payload: args }) {
 
 	attachAppEvents();
 
-	yield app.whenReady();
+	yield call(app.whenReady.bind(app));
+	yield call(i18n.initialize);
 
-	yield i18n.initialize();
+	yield put(appReady());
 
-	store.dispatch(loadConfig());
-	args.forEach((arg) => store.dispatch(commandLineArgumentPassed(arg)));
+	for (const arg of args) {
+		yield put(commandLineArgumentPassed(arg));
+	}
 };
 
-const resetAppData = function *() {
+const didAppActivate = function *() {
+	yield put(showMainWindow());
+};
+
+const doAppWillQuit = function *() {
+	yield put(destroyMainWindow());
+};
+
+const didAppSecondInstanceLaunch = function *({ payload: args }) {
+	yield put(focusMainWindow());
+
+	for (const arg of args) {
+		yield put(commandLineArgumentPassed(arg));
+	}
+};
+
+const doResetAppData = function *() {
 	app.relaunch({ args: [process.argv[1], '--reset-app-data'] });
 	app.quit();
 };
 
-sagaMiddleware.run(function *appSaga() {
-	yield takeEvery(APP_LAUNCHED, appLaunched);
-	yield takeEvery(RESET_APP_DATA, resetAppData);
+sagaMiddleware.run(function *watchAppActions() {
+	yield takeEvery(APP_LAUNCHED, didAppLaunch);
+	yield takeEvery(APP_ACTIVATED, didAppActivate);
+	yield takeEvery(APP_WILL_QUIT, doAppWillQuit);
+	yield takeEvery(APP_SECOND_INSTANCE_LAUNCHED, didAppSecondInstanceLaunch);
+	yield takeEvery(RESET_APP_DATA, doResetAppData);
 });

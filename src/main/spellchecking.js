@@ -2,7 +2,7 @@ import jetpack from 'fs-jetpack';
 import path from 'path';
 import { put, select, takeEvery } from 'redux-saga/effects';
 import spellchecker from 'spellchecker';
-import { store, sagaMiddleware } from '../store';
+import { sagaMiddleware } from '../store';
 import {
 	LOAD_CONFIG,
 	INSTALL_SPELLCHECKING_DICTIONARIES,
@@ -17,7 +17,7 @@ import {
 import { getDirectory } from '../utils';
 
 
-const loadSpellCheckingConfiguration = function *() {
+const doLoadConfig = function *() {
 	const embeddedDictionaries = spellchecker.getAvailableDictionaries();
 	const supportsMultipleDictionaries = embeddedDictionaries.length > 0 && process.platform !== 'win32';
 
@@ -36,7 +36,7 @@ const loadSpellCheckingConfiguration = function *() {
 	}));
 };
 
-const installSpellCheckingDictionaries = function *({ payload: { filePaths } }) {
+const doInstallSpellCheckingDictionaries = function *({ payload: { filePaths } }) {
 	const { spellchecking: { dictionaryInstallationDirectory } } = yield select();
 
 	for (const filePath of filePaths) {
@@ -68,7 +68,7 @@ const filterDictionaries = (availableDictionaries, supportsMultipleDictionaries,
 		.slice(...supportsMultipleDictionaries ? [] : [0, 1])
 );
 
-const toggleSpellCheckingDictionary = function *({ payload: { dictionary, enabled } }) {
+const doToggleSpellCheckingDictionary = function *({ payload: { dictionary, enabled } }) {
 	const {
 		preferences: {
 			enabledDictionaries,
@@ -89,29 +89,7 @@ const toggleSpellCheckingDictionary = function *({ payload: { dictionary, enable
 	yield put(spellCheckingDictionariesEnabled(dictionaries));
 };
 
-const getMisspeledWords = (words) => {
-	const {
-		preferences: {
-			enabledDictionaries,
-		},
-		spellchecking: {
-			dictionaryInstallationDirectory,
-		},
-	} = store.getState();
-
-	if (enabledDictionaries.length === 0) {
-		return [];
-	}
-
-	return (
-		enabledDictionaries.reduce((misspelledWords, dictionary) => {
-			spellchecker.setDictionary(dictionary, dictionaryInstallationDirectory);
-			return misspelledWords.filter((word) => spellchecker.isMisspelled(word));
-		}, words)
-	);
-};
-
-const updateSpellCheckingCorrections = function *({ payload: word }) {
+const doUpdateSpellCheckingCorrections = function *({ payload: word }) {
 	const {
 		preferences: {
 			enabledDictionaries,
@@ -123,7 +101,7 @@ const updateSpellCheckingCorrections = function *({ payload: word }) {
 
 	word = word.trim();
 
-	if (word === '' || getMisspeledWords([word]).length === 0) {
+	if (word === '' || enabledDictionaries.length === 0) {
 		yield put(spellCheckingCorrectionsUpdated(null));
 		return;
 	}
@@ -136,9 +114,9 @@ const updateSpellCheckingCorrections = function *({ payload: word }) {
 	))));
 };
 
-sagaMiddleware.run(function *spellCheckingSaga() {
-	yield takeEvery(LOAD_CONFIG, loadSpellCheckingConfiguration);
-	yield takeEvery(INSTALL_SPELLCHECKING_DICTIONARIES, installSpellCheckingDictionaries);
-	yield takeEvery(TOGGLE_SPELLCHECKING_DICTIONARY, toggleSpellCheckingDictionary);
-	yield takeEvery(UPDATE_SPELLCHECKING_CORRECTIONS, updateSpellCheckingCorrections);
+sagaMiddleware.run(function *watchSpellCheckingActions() {
+	yield takeEvery(LOAD_CONFIG, doLoadConfig);
+	yield takeEvery(INSTALL_SPELLCHECKING_DICTIONARIES, doInstallSpellCheckingDictionaries);
+	yield takeEvery(TOGGLE_SPELLCHECKING_DICTIONARY, doToggleSpellCheckingDictionary);
+	yield takeEvery(UPDATE_SPELLCHECKING_CORRECTIONS, doUpdateSpellCheckingCorrections);
 });

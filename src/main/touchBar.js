@@ -1,8 +1,7 @@
-import { nativeImage, TouchBar } from 'electron';
+import { nativeImage, TouchBar, BrowserWindow } from 'electron';
 import { EventEmitter } from 'events';
 import i18n from '../i18n';
 import { connect, store } from '../store';
-import { mainWindow } from './mainWindow';
 import { showServer, formatButtonTouched } from '../store/actions';
 const {
 	TouchBarButton,
@@ -14,6 +13,7 @@ const {
 
 
 let props = {
+	mainWindow: null,
 	servers: [],
 	activeServerUrl: null,
 };
@@ -71,7 +71,7 @@ const render = () => {
 		return;
 	}
 
-	const { servers, activeServerUrl } = props;
+	const { mainWindow, servers, activeServerUrl } = props;
 	const serverTitlesLength = servers.reduce((length, { url, title }) => length + (title || url).length, 0);
 	const maxLengthForSegmentsControl = 76 - i18n.__('touchBar.selectServer').length;
 	const shouldUseSegmentedControl = serverTitlesLength <= maxLengthForSegmentsControl;
@@ -96,9 +96,13 @@ const setProps = (newProps) => {
 };
 
 const mapStateToProps = ({
+	mainWindow: {
+		id,
+	},
 	servers,
 	view,
 }) => ({
+	mainWindow: BrowserWindow.fromId(id),
 	servers,
 	activeServerUrl: view.url,
 	onSelectServer: (url) => store.dispatch(showServer(url)),
@@ -112,8 +116,6 @@ const mount = () => {
 		return;
 	}
 
-	render();
-
 	disconnect = connect(mapStateToProps)(setProps);
 };
 
@@ -125,7 +127,7 @@ const unmount = () => {
 	disconnect();
 
 	events.removeAllListeners();
-	mainWindow.setTouchBar(null);
+	props.mainWindow.setTouchBar(null);
 	isUsingSegmentedControl = false;
 	selectServerControl = null;
 };

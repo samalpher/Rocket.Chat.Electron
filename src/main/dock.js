@@ -1,12 +1,12 @@
-import { app } from 'electron';
+import { app, BrowserWindow } from 'electron';
 import { connect } from '../store';
-import { mainWindow } from './mainWindow';
 import { getTrayIconImage, getAppIconImage } from './icon';
 
 
 let props = {
 	badge: null,
 	hasTray: false,
+	mainWindow: null,
 };
 
 let state = {
@@ -26,7 +26,7 @@ const getBadgeText = (badge) => {
 };
 
 const render = () => {
-	const { badge } = props;
+	const { badge, mainWindow } = props;
 	const { prevBadge } = state;
 
 	if (process.platform === 'darwin') {
@@ -60,6 +60,9 @@ const setProps = (newProps) => {
 };
 
 const mapStateToProps = ({
+	mainWindow: {
+		id,
+	},
 	preferences: {
 		hasTray,
 	},
@@ -73,25 +76,26 @@ const mapStateToProps = ({
 	);
 	const badge = mentionCount || (badges.some((badge) => !!badge) && '•') || null;
 
+	const mainWindow = BrowserWindow.fromId(id);
+
 	return ({
-		hasTray,
 		badge,
+		hasTray,
+		mainWindow,
 	});
 };
 
 let disconnect;
 
 const mount = () => {
-	render();
-
 	disconnect = connect(mapStateToProps)(setProps);
 };
 
 const unmount = async () => {
-	disconnect();
+	props.mainWindow.setIcon(getAppIconImage());
+	props.mainWindow.flashFrame(false);
 
-	mainWindow.setIcon(getAppIconImage());
-	mainWindow.flashFrame(false);
+	disconnect();
 };
 
 export const dock = {
