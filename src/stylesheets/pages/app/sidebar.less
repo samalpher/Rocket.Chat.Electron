@@ -46,6 +46,16 @@
 		align-items: stretch;
 	}
 
+	.sidebar__submenu {
+
+		display: flex;
+		flex-direction: column;
+
+		border-top: 1px solid;
+		border-top-color: rgba(0, 0, 0, 0.1);
+		background-color: rgba(0, 0, 0, 0.1);
+	}
+
 	.sidebar__list {
 		display: flex;
 		flex-direction: column;
@@ -55,6 +65,45 @@
 		padding: 0;
 		align-items: stretch;
 		-webkit-app-region: no-drag;
+	}
+
+	.sidebar__submenu-action {
+		display: flex;
+		flex-direction: row;
+
+		height: 20px;
+		margin: 5px;
+
+		cursor: pointer;
+
+		color: white;
+		border: none;
+		border-bottom: 1px solid;
+		border-bottom-color: rgba(0, 0, 0, 0.1);
+		background-color: rgba(0, 0, 0, 0.1);
+		align-items: center;
+		justify-content: center;
+	}
+
+	.sidebar__submenu-action-active {
+		animation: pulse 2s infinite;
+
+		border-bottom: 1px solid;
+		border-bottom-color: aqua;
+	}
+
+	@keyframes pulse {
+		0% {
+			border-bottom-color: #8f221a;
+		}
+
+		50% {
+			border-bottom-color: #e43325;
+		}
+
+		100% {
+			border-bottom-color: #8f221a;
+		}
 	}
 
 	.sidebar__action,
@@ -280,4 +329,113 @@
 			opacity: 0.8;
 		}
 	}
+}
+
+.app-download-manager {
+	position: absolute;
+	z-index: 10;
+	bottom: 0;
+	left: 68px;
+
+	display: none;
+
+	overflow: scroll;
+	overflow-x: hidden;
+
+	width: 400px;
+	height: 30%;
+
+	color: #ffffff;
+
+	border-left: 1px solid;
+	border-left-color: rgba(0, 0, 0, 0.1);
+	background-color: rgb(47, 52, 61);
+
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.app-download-manager-actions {
+	display: flex;
+
+	padding: 10px;
+	flex-flow: nowrap;
+}
+
+.app-download-manager-clear-action {
+	position: absolute;
+	right: 10px;
+
+	color: rgba(255, 255, 255, 0.85);
+	border: none;
+	border-radius: 2px;
+	background-color: #1d74f5;
+}
+
+.app-download-manager-items {
+	padding: 5px;
+}
+
+.app-download-manager-item {
+	display: flex;
+
+	padding: 5px;
+
+	border-color: rgba(0, 0, 0, 0.1);
+	border-top: 1px solid;
+	flex-flow: row wrap;
+}
+
+.app-download-manager-item_title {
+	width: 310px;
+	height: 30px;
+
+	color: #ffffff;
+
+	line-height: 25px;
+}
+
+.app-download-manager-item_dl_state {
+	width: 100%;
+
+	font-size: 0.5em;
+}
+
+.app-download-manager-item-button_show {
+	width: 20px;
+
+	text-align: center;
+
+	color: rgba(255, 255, 255, 0.85);
+	border: none;
+	border-radius: 2px;
+	background-color: #1d74f5;
+}
+
+.app-download-manager-item-button_show_icon {
+	width: 20px;
+
+	transform: rotate(-45deg);
+	text-align: center;
+}
+
+.app-download-manager-item-button_action {
+	width: 20px;
+
+	text-align: center;
+
+	color: rgba(255, 255, 255, 0.85);
+	border: none;
+	border-radius: 2px;
+	background-color: #1d74f5;
+}
+
+.app-download-manager-item_buttons {
+	position: absolute;
+	right: 0;
+
+	display: flex;
+
+	width: 70px;
+	padding: 5px;
+	justify-content: space-around;
 }

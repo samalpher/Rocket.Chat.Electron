@@ -41,6 +41,7 @@ import { loading } from './loading';
 import { aboutModal } from './aboutModal';
 import { updateModal } from './updateModal';
 import { screenshareModal } from './screenshareModal';
+import { downloadManager } from './downloadManager';
 import { landing } from './landing';
 import { sidebar } from './sidebar';
 import { webviews } from './webviews';
@@ -481,6 +482,8 @@ export default async () => {
 	contextMenu.on('paste', () => getFocusedWebContents().paste());
 	contextMenu.on('select-all', () => getFocusedWebContents().selectAll());
 
+	downloadManager.initialize();
+
 	landing.on('add-server', async (serverUrl, callback) => {
 		callback(await addServer(serverUrl));
 	});
@@ -491,6 +494,10 @@ export default async () => {
 
 	sidebar.on('reload-server', (url) => {
 		store.dispatch(reloadWebview({ url }));
+	});
+
+	sidebar.on('show-download-manager', () => {
+		downloadManager.showWindow();
 	});
 
 	sidebar.on('remove-server', (url) => {

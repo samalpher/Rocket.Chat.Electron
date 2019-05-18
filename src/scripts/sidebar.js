@@ -214,6 +214,10 @@ const handleAddServerClick = () => {
 	events.emit('add-server');
 };
 
+const handleShowDownloadManager = () => {
+	events.emit('show-download-manager');
+};
+
 let disconnect;
 
 const mount = () => {
@@ -225,8 +229,10 @@ const mount = () => {
 	window.addEventListener('keyup', handleShortcutsKey.bind(null, false));
 
 	root.querySelector('.sidebar__add-server').dataset.tooltip = i18n.__('sidebar.addNewServer');
+	root.querySelector('.sidebar__submenu-action').dataset.tooltip = i18n.__('sidebar.showDownloadManager');
 
 	root.querySelector('.sidebar__add-server').addEventListener('click', handleAddServerClick, false);
+	root.querySelector('.sidebar__submenu-action').addEventListener('click', handleShowDownloadManager, false);
 
 	serverList = root.querySelector('.sidebar__server-list');
 
