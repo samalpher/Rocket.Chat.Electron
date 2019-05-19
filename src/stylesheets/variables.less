@@ -1,12 +1,43 @@
 @primary-background-color: #2f343d;
-@secondary-background-color: #F4F4F4;
-@tertiary-background-color: #EAEAEA;
+@secondary-background-color: #f4f4f4;
+@tertiary-background-color: #eaeaea;
 
 @primary-font-color: #444444;
 @secondary-font-color: #7f7f7f;
 @quaternary-font-color: rgba(255, 255, 255, 0.85);
 
 :root {
+	--color-dark-100: #0c0d0f;
+	--color-dark-90: #1e232a;
+	--color-dark-80: #2e343e;
+	--color-dark-70: #53585f;
+	--color-dark-30: #9da2a9;
+	--color-dark-20: #caced1;
+	--color-dark-10: #e0e5e8;
+	--color-dark-05: #f1f2f4;
+	--color-dark-blue: #175cc4;
+	--color-blue: #1d74f5;
+	--color-light-blue: #4eb2f5;
+	--color-lighter-blue: #e8f2ff;
+	--color-purple: #861da8;
+	--color-red: #f5455c;
+	--color-dark-red: #e0364d;
+	--color-orange: #f59547;
+	--color-yellow: #ffd21f;
+	--color-dark-yellow: #f6c502;
+	--color-green: #2de0a5;
+	--color-dark-green: #26d198;
+	--color-darkest: #1f2329;
+	--color-dark: #2f343d;
+	--color-dark-medium: #414852;
+	--color-dark-light: #6c727a;
+	--color-gray: #9ea2a8;
+	--color-gray-medium: #cbced1;
+	--color-gray-light: #e1e5e8;
+	--color-gray-lightest: #f2f3f5;
+	--color-black: #000;
+	--color-white: #fff;
+
 	--font-family:
 		-apple-system,
 		BlinkMacSystemFont,
@@ -25,10 +56,10 @@
 
 	--font-size: 14px;
 
-	--primary-background-color: @primary-background-color;
-	--secondary-background-color: @secondary-background-color;
-	--tertiary-background-color: @tertiary-background-color;
+	--primary-background-color: var(--color-dark);
+	--secondary-background-color: var(--color-dark-05);
+	--tertiary-background-color: var(--color-dark-10);
 
-	--primary-color: @secondary-font-color;
-	--secondary-color: @primary-font-color;
+	--primary-color: var(--color-dark-30);
+	--secondary-color: var(--color-dark-70);
 }

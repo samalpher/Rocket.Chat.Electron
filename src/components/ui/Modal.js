@@ -3,6 +3,18 @@ import { css, jsx } from '@emotion/core';
 import { useEffect, useRef } from 'react';
 
 
+export const ModalTitle = ({ children }) => (
+	<h2
+		css={css`
+			margin: 0 0 1rem;
+			font-size: 1.5rem;
+			line-height: normal;
+		`}
+	>
+		{children}
+	</h2>
+);
+
 export const ModalActions = ({ children, ...props }) => (
 	<div
 		{...props}
@@ -39,9 +51,9 @@ export function Modal({ children, open, ...props }) {
 				padding: 0.75rem;
 				cursor: default;
 				user-select: none;
-				color: var(--secondary-color);
-				border: 1px solid var(--secondary-color);
-				background-color: var(--secondary-background-color);
+				color: var(--color-dark-70);
+				border: 1px solid var(--color-dark-70);
+				background-color: var(--color-dark-05);
 
 				&::backdrop {
 					background-color: rgba(0, 0, 0, 0.5);

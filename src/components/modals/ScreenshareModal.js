@@ -5,20 +5,8 @@ import { useEffect, useState } from 'react';
 import { connect } from 'react-redux';
 import i18n from '../../i18n';
 import { screensharingSourceSelected } from '../../store/actions';
-import { Modal } from '../ui/Modal';
+import { Modal, ModalTitle } from '../ui/Modal';
 
-
-const ScreenshareModalTitle = () => (
-	<h2
-		css={css`
-			margin: 0 0 1rem;
-			font-size: 1.5rem;
-			line-height: normal;
-		`}
-	>
-		{i18n.__('dialog.screenshare.announcement')}
-	</h2>
-);
 
 const ScreenshareSources = ({ children }) => (
 	<div
@@ -43,7 +31,7 @@ const ScreenshareSource = ({ name, thumbnail, onClick }) => (
 			padding: 1rem;
 			cursor: pointer;
 			&:hover {
-				background-color: var(--tertiary-background-color);
+				background-color: var(--color-dark-10);
 			}
 		`}
 		onClick={onClick}
@@ -103,7 +91,7 @@ export const ScreenshareModal = connect(mapStateToProps, mapDispatchToProps)(
 					justify-content: center;
 				`}
 			>
-				<ScreenshareModalTitle />
+				<ModalTitle>{i18n.__('dialog.screenshare.announcement')}</ModalTitle>
 				<ScreenshareSources>
 					{sources.map(({ id, name, thumbnail }) => (
 						<ScreenshareSource

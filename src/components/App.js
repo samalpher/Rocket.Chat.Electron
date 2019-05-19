@@ -5,6 +5,7 @@ import { store } from '../store';
 import { DragRegion } from './DragRegion';
 import { Preloader } from './Preloader';
 import { ScreenshareModal } from './modals/ScreenshareModal';
+import { UpdateModal } from './modals/UpdateModal';
 const { dock, menus, touchBar, tray } = remote.require('./main');
 
 
@@ -112,31 +113,6 @@ const AboutModal = () => (
 		<div className="copyright" />
 		<div className="modal__actions">
 			<button className="button primary ok">OK</button>
-		</div>
-	</dialog>
-);
-
-const UpdateModal = () => (
-	<dialog className="update-modal modal">
-		<div className="update-content">
-			<h1 className="update-title">New Update is Available</h1>
-			<p className="update-message">A new version of the Rocket.Chat Desktop App is available!</p>
-			<div className="update-info">
-				<div className="app-version current-version">
-					<div className="app-version-label">Current Version:</div>
-					<div className="app-version-value">a.b.c</div>
-				</div>
-				<div className="update-arrow">→</div>
-				<div className="app-version new-version">
-					<div className="app-version-label">New Version:</div>
-					<div className="app-version-value">x.y.z</div>
-				</div>
-			</div>
-		</div>
-		<div className="modal__actions">
-			<button className="update-skip-action button secondary modal__action--special">Skip This Version</button>
-			<button className="update-remind-action button secondary">Remind Me Later</button>
-			<button className="update-install-action button primary">Install Update</button>
 		</div>
 	</dialog>
 );
