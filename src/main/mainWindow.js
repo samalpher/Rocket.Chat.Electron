@@ -198,13 +198,13 @@ const didWindowStateLoaded = function *({ payload: mainWindowState }) {
 
 	mainWindow.loadFile(`${ app.getAppPath() }/app/public/app.html`);
 
-	if (process.env.NODE_ENV === 'development') {
-		mainWindow.webContents.openDevTools();
-	}
-
 	yield put(mainWindowCreated(mainWindow.id));
 
 	yield call(() => new Promise((resolve) => mainWindow.once('ready-to-show', resolve)));
+
+	if (process.env.NODE_ENV === 'development') {
+		mainWindow.webContents.openDevTools();
+	}
 
 	yield* showIfNeeded();
 };
