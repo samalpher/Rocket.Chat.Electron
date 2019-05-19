@@ -2,6 +2,8 @@ import { remote } from 'electron';
 import React, { useEffect } from 'react';
 import { Provider } from 'react-redux';
 import { store } from '../store';
+import { DragRegion } from './DragRegion';
+import { Preloader } from './Preloader';
 const { dock, menus, touchBar, tray } = remote.require('./main');
 
 
@@ -18,23 +20,6 @@ const unmountRemoteModules = () => {
 	touchBar.unmount();
 	tray.unmount();
 };
-
-const DragRegion = () => <div className="drag-region" />;
-
-const Loading = () => (
-	<section className="loading loading--visible">
-		<div className="loading__wrapper">
-			<header>
-				<img className="loading__logo" src="./images/logo-dark.svg" />
-			</header>
-			<div className="loading__indicator">
-				<span className="dot" />
-				<span className="dot" />
-				<span className="dot" />
-			</div>
-		</div>
-	</section>
-);
 
 const Sidebar = () => (
 	<div className="sidebar sidebar--hidden">
@@ -171,18 +156,18 @@ export function App() {
 
 	return (
 		<Provider store={store}>
-			<div className="App app-page">
+			<div className="app-page">
 				<DragRegion />
 
-				<Loading />
-
-				<Sidebar />
-				<Views>
-					<Landing />
-					<Webviews />
-					<Downloads />
-					<Preferences />
-				</Views>
+				<Preloader>
+					<Sidebar />
+					<Views>
+						<Landing />
+						<Webviews />
+						<Downloads />
+						<Preferences />
+					</Views>
+				</Preloader>
 
 				<AboutModal />
 				<UpdateModal />

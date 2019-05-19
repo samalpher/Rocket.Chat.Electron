@@ -35,7 +35,6 @@ import {
 } from '../store/actions';
 import { queryEditFlags } from '../utils';
 import { migrateDataFromLocalStorage } from './data';
-import { loading } from './loading';
 import { aboutModal } from './aboutModal';
 import { updateModal } from './updateModal';
 import { screenshareModal } from './screenshareModal';
@@ -49,7 +48,6 @@ const { contextMenu } = remote.require('./main');
 
 
 const mountAll = () => {
-	loading.mount();
 	sidebar.mount();
 	landing.mount();
 	webviews.mount();
@@ -59,7 +57,6 @@ const mountAll = () => {
 };
 
 const unmountAll = () => {
-	loading.unmount();
 	sidebar.unmount();
 	landing.unmount();
 	webviews.unmount();

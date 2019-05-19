@@ -27,6 +27,7 @@
     "e2e": "gulp e2e"
   },
   "dependencies": {
+    "@emotion/core": "^10.0.10",
     "@paulcbetts/system-idle-time": "^1.0.4",
     "electron-fetch": "^1.3.0",
     "electron-redux": "^1.4.0",
