@@ -6,6 +6,7 @@ import {
 	HIDE_MODAL,
 	SKIP_UPDATE,
 	DOWNLOAD_UPDATE,
+	SCREENSHARING_SOURCE_SELECTED,
 } from '../actions';
 
 
@@ -24,6 +25,7 @@ export const reducer = (state = null, { type }) => {
 		case HIDE_MODAL:
 		case SKIP_UPDATE:
 		case DOWNLOAD_UPDATE:
+		case SCREENSHARING_SOURCE_SELECTED:
 			return null;
 	}
 

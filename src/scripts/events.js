@@ -37,7 +37,6 @@ import { queryEditFlags } from '../utils';
 import { migrateDataFromLocalStorage } from './data';
 import { aboutModal } from './aboutModal';
 import { updateModal } from './updateModal';
-import { screenshareModal } from './screenshareModal';
 import { downloads } from './downloads';
 import { landing } from './landing';
 import { sidebar } from './sidebar';
@@ -52,7 +51,6 @@ const mountAll = () => {
 	landing.mount();
 	webviews.mount();
 	aboutModal.mount();
-	screenshareModal.mount();
 	updateModal.mount();
 };
 
@@ -61,7 +59,6 @@ const unmountAll = () => {
 	landing.unmount();
 	webviews.unmount();
 	aboutModal.unmount();
-	screenshareModal.unmount();
 	updateModal.unmount();
 };
 

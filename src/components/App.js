@@ -4,6 +4,7 @@ import { Provider } from 'react-redux';
 import { store } from '../store';
 import { DragRegion } from './DragRegion';
 import { Preloader } from './Preloader';
+import { ScreenshareModal } from './modals/ScreenshareModal';
 const { dock, menus, touchBar, tray } = remote.require('./main');
 
 
@@ -137,14 +138,6 @@ const UpdateModal = () => (
 			<button className="update-remind-action button secondary">Remind Me Later</button>
 			<button className="update-install-action button primary">Install Update</button>
 		</div>
-	</dialog>
-);
-
-const ScreenshareModal = () => (
-	<dialog className="screenshare-modal modal">
-		<h1 className="screenshare-title">Select a screen to share</h1>
-		<template className="screenshare-source-template" />
-		<div className="screenshare-sources" />
 	</dialog>
 );
 
