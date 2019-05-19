@@ -206,7 +206,7 @@ const handleWindowFocus = () => {
 let disconnect;
 
 const mount = () => {
-	root = document.body;
+	root = document.querySelector('.Views .Webviews');
 	window.addEventListener('focus', handleWindowFocus);
 	disconnect = connect(({
 		preferences: {

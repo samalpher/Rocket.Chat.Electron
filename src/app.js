@@ -2,11 +2,11 @@ import React from 'react';
 import { render, unmountComponentAtNode } from 'react-dom';
 import start from './scripts/events';
 import './store';
-import { RendererApp } from './components/renderer/RendererApp';
+import { App } from './components/App';
 
 
 window.addEventListener('load', () => {
-	render(<RendererApp />, document.getElementById('root'));
+	render(<App />, document.getElementById('root'));
 	start();
 });
 
