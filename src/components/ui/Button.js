@@ -6,8 +6,7 @@ const buttonStyle = css`
 	position: relative;
 	display: flex;
 	padding: 0 1.5rem;
-	margin: 0.25rem;
-	min-height: 40px;
+	min-height: 2.5rem;
 	cursor: pointer;
 	transition: opacity 300ms, background-color 300ms, color 300ms;
 	text-align: center;

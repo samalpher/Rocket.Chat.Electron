@@ -23,6 +23,10 @@ export const ModalActions = ({ children, ...props }) => (
 			flex: 0 0 auto;
 			flex-flow: row nowrap;
 			justify-content: flex-end;
+			margin: 0 -0.25rem;
+			* {
+				margin: 0 0.25rem;
+			}
 		`}
 	>
 		{children}

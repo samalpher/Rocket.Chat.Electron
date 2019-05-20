@@ -76,7 +76,7 @@ const didUpdateConfigurationLoad = function *({ payload: { canUpdate, canAutoUpd
 	}
 };
 
-const doSetAutoUpdate = function *(enabled) {
+const doSetAutoUpdate = function *({ payload: enabled }) {
 	const { update: { configuration: { canSetAutoUpdate } } } = yield select();
 	if (!canSetAutoUpdate) {
 		return;

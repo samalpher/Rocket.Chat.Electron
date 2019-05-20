@@ -139,8 +139,8 @@ const mapDispatchToProps = (dispatch) => ({
 
 export const UpdateModal = connect(mapStateToProps, mapDispatchToProps)(
 	function UpdateModal({ open, currentVersion, newVersion, onClickSkip, onClickRemindLater, onClickInstall }) {
-		return (
-			<Modal open={open}>
+		return open && (
+			<Modal open>
 				<Content>
 					<Title />
 					<Message />

@@ -4,6 +4,7 @@ import { Provider } from 'react-redux';
 import { store } from '../store';
 import { DragRegion } from './DragRegion';
 import { Preloader } from './Preloader';
+import { AboutModal } from './modals/AboutModal';
 import { ScreenshareModal } from './modals/ScreenshareModal';
 import { UpdateModal } from './modals/UpdateModal';
 const { dock, menus, touchBar, tray } = remote.require('./main');
@@ -85,37 +86,6 @@ const Downloads = () => (
 );
 
 const Preferences = () => null;
-
-const AboutModal = () => (
-	<dialog className="about-modal modal">
-		<section className="app-info">
-			<div className="app-logo">
-				<img src="./images/logo.svg" />
-			</div>
-			<div className="app-version">
-				Version <span className="version">%s</span>
-			</div>
-		</section>
-		<section className="updates hidden">
-			<button className="check-for-updates button primary">
-				Check for Updates
-			</button>
-			<div className="checking-for-updates hidden">
-				<span className="dot" />
-				<span className="dot" />
-				<span className="dot" />
-				<span className="message" />
-			</div>
-			<label className="check-for-updates-on-start__label">
-				<input className="check-for-updates-on-start" type="checkbox" defaultChecked /> <span>Check for Updates on Start</span>
-			</label>
-		</section>
-		<div className="copyright" />
-		<div className="modal__actions">
-			<button className="button primary ok">OK</button>
-		</div>
-	</dialog>
-);
 
 export function App() {
 	useEffect(() => {

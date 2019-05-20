@@ -22,8 +22,9 @@ const dotStyle = (i) => css`
 	background-color: currentColor;
 `;
 
-export const LoadingIndicator = () => (
+export const LoadingIndicator = (props) => (
 	<div
+		{...props}
 		css={css`
 			display: flex;
 			color: var(--primary-color, white);
