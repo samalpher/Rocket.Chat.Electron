@@ -16,20 +16,10 @@ import {
 import { Button } from '../ui/Button';
 import { LoadingIndicator } from '../ui/LoadingIndicator';
 import { Modal, ModalActions } from '../ui/Modal';
+import { RocketChatLogo } from '../ui/RocketChatLogo';
 import { useState, useEffect } from 'react';
 const { app } = remote;
 
-
-const RocketChatLogo = () => (
-	<div>
-		<img
-			src="./images/logo.svg"
-			css={css`
-				width: 100%;
-			`}
-		/>
-	</div>
-);
 
 const AppVersion = () => (
 	<div

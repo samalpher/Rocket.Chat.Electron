@@ -1,38 +1,36 @@
 /** @jsx jsx */
 import { css, jsx } from '@emotion/core';
 import { LoadingIndicator } from './ui/LoadingIndicator';
+import { RocketChatLogo } from './ui/RocketChatLogo';
 
-
-const RocketChatLogo = () => (
-	<div>
-		<img
-			css={css`
-				width: 100vw;
-				max-width: 520px;
-				padding: 0 1rem;
-			`}
-			src="./images/logo-dark.svg"
-		/>
-	</div>
-);
 
 export const LoadingScreen = () => (
 	<section
 		css={css`
 			display: flex;
 			flex-flow: column nowrap;
-			position: fixed;
-			top: 0;
-			right: 0;
-			bottom: 0;
-			left: 0;
+			width: 100vw;
+			height: 100vh;
 			align-items: center;
 			justify-content: center;
 			background-color: var(--primary-background-color);
 			-webkit-app-region: drag;
 		`}
 	>
-		<RocketChatLogo />
-		<LoadingIndicator />
+		<div
+			css={css`
+				display: flex;
+				flex-flow: column nowrap;
+				align-items: center;
+				justify-content: center;
+				width: 100vw;
+				max-width: 30rem;
+				height: 8rem;
+				padding: 0 1rem;
+			`}
+		>
+			<RocketChatLogo dark />
+			<LoadingIndicator />
+		</div>
 	</section>
 );

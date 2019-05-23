@@ -36,7 +36,6 @@ import {
 import { queryEditFlags } from '../utils';
 import { migrateDataFromLocalStorage } from './data';
 import { downloads } from './downloads';
-import { landing } from './landing';
 import { sidebar } from './sidebar';
 import { webviews } from './webviews';
 import { MENU_ITEM_CLICKED } from '../store/actions/menus';
@@ -46,13 +45,11 @@ const { contextMenu } = remote.require('./main');
 
 const mountAll = () => {
 	sidebar.mount();
-	landing.mount();
 	webviews.mount();
 };
 
 const unmountAll = () => {
 	sidebar.unmount();
-	landing.unmount();
 	webviews.unmount();
 };
 
@@ -455,10 +452,6 @@ export default async () => {
 	contextMenu.on('select-all', () => getFocusedWebContents().selectAll());
 
 	downloads.initialize();
-
-	landing.on('add-server', async (serverUrl, callback) => {
-		callback(await addServer(serverUrl));
-	});
 
 	sidebar.on('select-server', (url) => {
 		store.dispatch(showServer(url));
