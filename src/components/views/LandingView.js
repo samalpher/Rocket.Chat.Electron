@@ -276,18 +276,20 @@ export const LandingView = connect(mapStateToProps, mapDispatchToProps, mergePro
 		return (
 			<section
 				css={css`
+					position: absolute;
+					left: 0;
+					top: 0;
+					right: 0;
+					bottom: 0;
 					display: flex;
 					flex-flow: column nowrap;
-					flex: 1;
 					transition: opacity linear 100ms;
 					opacity: ${ visible ? 1 : 0 };
 					${ visible && css`z-index: 1;` };
-					flex: 1;
-					display: flex;
-					overflow-y: auto;
 					background-color: var(--primary-background-color);
 					align-items: center;
 					justify-content: center;
+					overflow-y: auto;
 					-webkit-app-region: drag;
 				`}
 			>

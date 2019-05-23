@@ -64,6 +64,7 @@ const doInitializeConfig = function *() {
 		mainWindow: config.get('mainWindow', {}),
 		certificates: config.get('certificates', {}),
 		update: config.get('update', {}),
+		downloads: config.get('downloads', []),
 	}));
 };
 
@@ -79,6 +80,7 @@ const doPersistConfig = function *() {
 		update: {
 			configuration,
 		},
+		downloads,
 	} = yield select();
 
 	config.set(({
@@ -88,6 +90,7 @@ const doPersistConfig = function *() {
 		mainWindow,
 		certificates,
 		update: configuration,
+		downloads,
 	}));
 
 	debug('rc:data')('persisted');

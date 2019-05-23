@@ -59,9 +59,9 @@ const buttonStyle = css`
 `;
 
 const primaryStyle = css`
-	color: white;
+	color: var(--color-white);
 	border: 0;
-	background-color: #1d74f5;
+	background-color: var(--color-blue);
 `;
 
 const secondaryStyle = css`
@@ -71,9 +71,29 @@ const secondaryStyle = css`
 	background-color: var(--color-gray-medium);
 `;
 
-export const Button = ({ children, primary, secondary, ...props }) => (
+const dangerStyle = css`
+	color: var(--color-white);
+	border: 0;
+	background-color: var(--color-red);
+`;
+
+const smallStyle = css`
+	min-height: 0;
+	padding: 0;
+	width: 2rem;
+	height: 2rem;
+	line-height: 1;
+`;
+
+export const Button = ({ children, primary, secondary, danger, small, ...props }) => (
 	<button
-		css={[buttonStyle, primary && primaryStyle, secondary && secondaryStyle]}
+		css={[
+			buttonStyle,
+			primary && primaryStyle,
+			secondary && secondaryStyle,
+			danger && dangerStyle,
+			small && smallStyle,
+		]}
 		{...props}
 	>
 		{children}

@@ -7,6 +7,7 @@ import { Preloader } from './Preloader';
 import { AboutModal } from './modals/AboutModal';
 import { ScreenshareModal } from './modals/ScreenshareModal';
 import { UpdateModal } from './modals/UpdateModal';
+import { DownloadsView } from './views/DownloadsView';
 import { LandingView } from './views/LandingView';
 const { dock, menus, touchBar, tray } = remote.require('./main');
 
@@ -43,30 +44,16 @@ const Sidebar = () => (
 );
 
 const Views = ({ children }) => (
-	<div className="Views" style={{ display: 'flex', alignItems: 'stretch', height: '100vh' }}>
+	<div className="Views" style={{ width: 'calc(100vw - 68px)', height: '100vh', position: 'relative', left: '68px' }}>
 		{children}
 	</div>
 );
 
-const Webviews = () => (
+const WebviewsView = () => (
 	<div className="Webviews" />
 );
 
-const Downloads = () => (
-	<div className="app-download-manager" style={{ display: 'none' }} data-tooltip="Show Download manager">
-		<div className="app-download-manager-actions">
-			<div className="app-download-manager-title"><b>Downloads</b></div>
-			<button className="app-download-manager-clear-action" data-tooltip="Clear download list">
-				Clear all items
-			</button>
-		</div>
-		<div className="app-download-manager-items">
-			{/* place download items*/}
-		</div>
-	</div>
-);
-
-const Preferences = () => null;
+const PreferencesView = () => null;
 
 export function App() {
 	useEffect(() => {
@@ -83,9 +70,9 @@ export function App() {
 					<Sidebar />
 					<Views>
 						<LandingView />
-						<Webviews />
-						<Downloads />
-						<Preferences />
+						<WebviewsView />
+						<DownloadsView />
+						<PreferencesView />
 					</Views>
 				</Preloader>
 

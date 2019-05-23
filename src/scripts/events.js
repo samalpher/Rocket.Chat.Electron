@@ -32,10 +32,10 @@ import {
 	triggerContextMenu,
 	reloadWebview,
 	showMainWindow,
+	showDownloads,
 } from '../store/actions';
 import { queryEditFlags } from '../utils';
 import { migrateDataFromLocalStorage } from './data';
-import { downloads } from './downloads';
 import { sidebar } from './sidebar';
 import { webviews } from './webviews';
 import { MENU_ITEM_CLICKED } from '../store/actions/menus';
@@ -427,8 +427,6 @@ export default async () => {
 		}
 	});
 
-	await i18n.initialize();
-
 	document.addEventListener('selectionchange', () => {
 		store.dispatch(editFlagsUpdated(queryEditFlags()));
 		store.dispatch(historyFlagsUpdated({
@@ -451,8 +449,6 @@ export default async () => {
 	contextMenu.on('paste', () => getFocusedWebContents().paste());
 	contextMenu.on('select-all', () => getFocusedWebContents().selectAll());
 
-	downloads.initialize();
-
 	sidebar.on('select-server', (url) => {
 		store.dispatch(showServer(url));
 	});
@@ -462,7 +458,7 @@ export default async () => {
 	});
 
 	sidebar.on('show-download-manager', () => {
-		downloads.showWindow();
+		store.dispatch(showDownloads());
 	});
 
 	sidebar.on('remove-server', (url) => {
