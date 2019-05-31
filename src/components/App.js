@@ -9,6 +9,7 @@ import { ScreenshareModal } from './modals/ScreenshareModal';
 import { UpdateModal } from './modals/UpdateModal';
 import { DownloadsView } from './views/DownloadsView';
 import { LandingView } from './views/LandingView';
+import { PreferencesView } from './views/PreferencesView';
 const { dock, menus, touchBar, tray } = remote.require('./main');
 
 
@@ -52,8 +53,6 @@ const Views = ({ children }) => (
 const WebviewsView = () => (
 	<div className="Webviews" />
 );
-
-const PreferencesView = () => null;
 
 export function App() {
 	useEffect(() => {
