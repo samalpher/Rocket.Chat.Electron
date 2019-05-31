@@ -30,14 +30,16 @@ const mapDispatchToProps = (dispatch) => ({
 	onClearAllDownloads: () => {
 		dispatch(clearAllDownloads());
 	},
-	onClearDownload: ({ id }) => {
+	onClearDownload: ({ id }, event) => {
 		dispatch(clearDownload(id));
+		event.stopPropagation();
 	},
 	onShowFile: (item) => {
 		shell.openItem(item.filePath);
 	},
-	onShowFileInFolder: (item) => {
+	onShowFileInFolder: (item, event) => {
 		shell.showItemInFolder(item.filePath);
+		event.stopPropagation();
 	},
 });
 
