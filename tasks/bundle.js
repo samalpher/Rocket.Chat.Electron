@@ -9,6 +9,7 @@ const istanbul = require('rollup-plugin-istanbul');
 const json = require('rollup-plugin-json');
 const nodeResolve = require('rollup-plugin-node-resolve');
 const replace = require('rollup-plugin-replace');
+const svgr = require('@svgr/rollup').default;
 const appManifest = require('../package.json');
 
 
@@ -30,6 +31,7 @@ const bundle = async (src, dest, { coverage = false, env = 'development' } = {})
 					sourcemap: true,
 				}),
 			] : []),
+			svgr(),
 			json(),
 			replace({
 				'process.env.NODE_ENV': JSON.stringify(env),

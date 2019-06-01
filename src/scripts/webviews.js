@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import { select, takeEvery } from 'redux-saga/effects';
 import { connect, store, sagaMiddleware } from '../store';
-import { webviewCreated, RELOAD_WEBVIEW } from '../store/actions';
+import { webviewCreated, RELOAD_WEBVIEW, OPEN_DEVTOOLS_FOR_WEBVIEW } from '../store/actions';
 
 
 let state = {
@@ -206,7 +206,7 @@ const handleWindowFocus = () => {
 let disconnect;
 
 const mount = () => {
-	root = document.querySelector('.Views .Webviews');
+	root = document.querySelector('.Webviews');
 	window.addEventListener('focus', handleWindowFocus);
 	disconnect = connect(({
 		preferences: {
@@ -246,8 +246,13 @@ const reload = function *({ payload: { url, webContentsId, ignoringCache = false
 	webview.reload();
 };
 
+const openDevToolsFor = function *({ payload: url }) {
+	openDevTools({ url });
+};
+
 sagaMiddleware.run(function *() {
 	yield takeEvery(RELOAD_WEBVIEW, reload);
+	yield takeEvery(OPEN_DEVTOOLS_FOR_WEBVIEW, openDevToolsFor);
 });
 
 export const webviews = Object.assign(events, {

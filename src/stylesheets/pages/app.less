@@ -1,27 +1,2 @@
 @import './app/sidebar.less';
 @import './app/webviews.less';
-
-
-.app-page {
-	cursor: default;
-	user-select: none;
-
-	background: @primary-background-color;
-
-	.hidden {
-		display: none !important;
-	}
-}
-
-webview {
-	position: fixed;
-	z-index: 0;
-	top: 0;
-	right: 0;
-	bottom: 0;
-	left: 68px;
-}
-
-webview.active {
-	z-index: 2;
-}

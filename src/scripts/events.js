@@ -16,8 +16,6 @@ import {
 	setPreferences,
 	toggleSpellcheckingDictionary,
 	addServerFromUrl,
-	removeServerFromUrl,
-	sortServers,
 	setServerProperties,
 	historyFlagsUpdated,
 	editFlagsUpdated,
@@ -32,26 +30,13 @@ import {
 	triggerContextMenu,
 	reloadWebview,
 	showMainWindow,
-	showDownloads,
 } from '../store/actions';
 import { queryEditFlags } from '../utils';
 import { migrateDataFromLocalStorage } from './data';
-import { sidebar } from './sidebar';
 import { webviews } from './webviews';
 import { MENU_ITEM_CLICKED } from '../store/actions/menus';
 const { app, dialog, getCurrentWindow, shell } = remote;
 const { contextMenu } = remote.require('./main');
-
-
-const mountAll = () => {
-	sidebar.mount();
-	webviews.mount();
-};
-
-const unmountAll = () => {
-	sidebar.unmount();
-	webviews.unmount();
-};
 
 
 const askWhenToInstallUpdate = () => new Promise((resolve) => {
@@ -420,7 +405,7 @@ sagaMiddleware.run(function *menusSaga() {
 export default async () => {
 	window.addEventListener('beforeunload', () => {
 		try {
-			unmountAll();
+			webviews.unmount();
 			getCurrentWindow().removeAllListeners();
 		} catch (error) {
 			remote.getGlobal('console').error(error.stack || error);
@@ -449,34 +434,6 @@ export default async () => {
 	contextMenu.on('paste', () => getFocusedWebContents().paste());
 	contextMenu.on('select-all', () => getFocusedWebContents().selectAll());
 
-	sidebar.on('select-server', (url) => {
-		store.dispatch(showServer(url));
-	});
-
-	sidebar.on('reload-server', (url) => {
-		store.dispatch(reloadWebview({ url }));
-	});
-
-	sidebar.on('show-download-manager', () => {
-		store.dispatch(showDownloads());
-	});
-
-	sidebar.on('remove-server', (url) => {
-		store.dispatch(removeServerFromUrl(url));
-	});
-
-	sidebar.on('open-devtools-for-server', (url) => {
-		webviews.openDevTools({ url });
-	});
-
-	sidebar.on('add-server', () => {
-		store.dispatch(showLanding());
-	});
-
-	sidebar.on('servers-sorted', (urls) => {
-		store.dispatch(sortServers(urls));
-	});
-
 	webviews.on('context-menu', (url, params) => {
 		store.dispatch(triggerContextMenu(params));
 	});
@@ -493,7 +450,7 @@ export default async () => {
 		store.dispatch(loadingDone());
 	});
 
-	mountAll();
+	webviews.mount();
 
 	await migrateDataFromLocalStorage();
 };
