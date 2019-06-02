@@ -46,7 +46,7 @@ const baseStyle = css`
 	color: var(--color, #ffffff);
 	background:
 		linear-gradient(rgba(0, 0, 0, .1), rgba(0, 0, 0, .1)),
-		var(--background, var(--primary-background-color));
+		var(--background, var(--color-dark));
 	z-index: 10;
 	transition: margin var(--transitions-duration);
 	-webkit-app-region: drag;

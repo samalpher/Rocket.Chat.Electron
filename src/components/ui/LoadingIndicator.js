@@ -27,7 +27,7 @@ export const LoadingIndicator = (props) => (
 		{...props}
 		css={css`
 			display: flex;
-			color: var(--primary-color, white);
+			color: var(--color-dark-30, white);
 			align-items: center;
 			justify-content: center;
 		`}

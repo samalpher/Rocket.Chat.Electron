@@ -13,7 +13,7 @@ export const LoadingScreen = () => (
 			height: 100vh;
 			align-items: center;
 			justify-content: center;
-			background-color: var(--primary-background-color);
+			background-color: var(--color-dark);
 			-webkit-app-region: drag;
 		`}
 	>

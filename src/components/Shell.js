@@ -26,7 +26,7 @@ export const Shell = connect(mapStateToProps)(
 					flex-flow: row nowrap;
 					cursor: default;
 					user-select: none;
-					background-color: var(--primary-background-color);
+					background-color: var(--color-dark);
 				`}
 			>
 				<DragRegion />

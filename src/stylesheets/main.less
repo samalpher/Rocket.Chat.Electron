@@ -1,7 +1,6 @@
 @import "variables.less";
 @import "utils/hidden.less";
 @import "utils/loading.less";
-@import "utils/modal.less";
 @import "pages/app.less";
 @import "pages/loading-error.less";
 
@@ -24,7 +23,7 @@ body {
 	padding: 0;
 	width: 100vw;
 	height: 100vh;
-	background-color: var(--primary-background-color);
+	background-color: var(--color-dark);
 	font-family: var(--font-family);
 	font-size: var(--font-size);
 	-webkit-font-smoothing: antialiased;
@@ -94,8 +93,8 @@ textarea {
 	}
 
 	&.secondary {
-		color: @primary-font-color;
-		background-color: @tertiary-background-color;
+		color: #444444;
+		background-color: #eaeaea;
 
 		&::before {
 			background-color: rgba(0, 0, 0, 0.045);

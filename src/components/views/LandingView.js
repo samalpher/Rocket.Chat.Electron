@@ -57,7 +57,7 @@ const ConnectToServerCard = ({ defaultServerUrl, serverUrl, error, validating, o
 				font-size: 1.25rem;
 				font-weight: normal;
 				text-transform: uppercase;
-				color: var(--secondary-color);
+				color: var(--color-dark-70);
 				line-height: 1.5;
 			`}
 		>
@@ -286,7 +286,7 @@ export const LandingView = connect(mapStateToProps, mapDispatchToProps, mergePro
 					transition: opacity linear 100ms;
 					opacity: ${ visible ? 1 : 0 };
 					${ visible && css`z-index: 1;` };
-					background-color: var(--primary-background-color);
+					background-color: var(--color-dark);
 					align-items: center;
 					justify-content: center;
 					overflow-y: auto;

@@ -55,7 +55,7 @@ const AppVersion = ({ label, version, current = false }) => (
 			css={css`
 				font-size: 1.5rem;
 				font-weight: bold;
-				${ current && 'color: var(--primary-color);' }
+				${ current && 'color: var(--color-dark-30);' }
 			`}
 		>
 			{version || 'x.y.z'}

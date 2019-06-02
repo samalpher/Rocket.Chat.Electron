@@ -76,7 +76,7 @@ const UpdateCheckIndicator = ({ checking, message, onClickCheckForUpdate }) => (
 		{message && (
 			<div
 				css={css`
-					color: var(--primary-color);
+					color: var(--color-dark-30);
 					text-align: center;
 				`}
 			>
