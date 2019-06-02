@@ -1,6 +1,7 @@
-/** @jsx jsx */
-import { css, jsx } from '@emotion/core';
+import { css } from '@emotion/core';
+import styled from '@emotion/styled';
 import { remote } from 'electron';
+import React from 'react';
 import { connect } from 'react-redux';
 import i18n from '../../i18n';
 import { Button } from '../ui/Button';
@@ -9,88 +10,54 @@ import { skipUpdate, hideModal, downloadUpdate } from '../../store/actions';
 const { app, dialog, getCurrentWindow } = remote;
 
 
-const Content = ({ children, ...props }) => (
-	<div
-		{...props}
-		css={css`
-			display: flex;
-			flex-flow: column nowrap;
-			flex: 1;
-			align-items: center;
-			justify-content: center;
-			margin: 2.5rem 1rem;
-		`}
-	>
-		{children}
-	</div>
-);
+const ModalContent = styled.div`
+	display: flex;
+	flex-flow: column nowrap;
+	flex: 1;
+	align-items: center;
+	justify-content: center;
+	margin: 2.5rem 1rem;
+`;
 
-const Title = () => (
-	<ModalTitle>{i18n.__('dialog.update.announcement')}</ModalTitle>
-);
+const Message = styled.p`
+	margin: 0 0 1rem;
+	line-height: normal;
+`;
 
-const Message = () => (
-	<p
-		css={css`
-			margin: 0 0 1rem;
-			line-height: normal;
-		`}
-	>
-		{i18n.__('dialog.update.message')}
-	</p>
-);
+const UpdateInfoSection = styled.section`
+	display: flex;
+	align-items: center;
+`;
+
+const AppVersionOuter = styled.div`
+	flex: 1;
+	margin: 1rem;
+	text-align: center;
+	white-space: nowrap;
+	line-height: normal;
+`;
+
+const AppVersionInner = styled.div`
+	font-size: 1.5rem;
+	font-weight: bold;
+	${ ({ current }) => current && css`
+		color: var(--color-dark-30);
+	` }
+`;
+
+const AppVersionUpdateArrow = styled.div`
+	flex: 1;
+	margin: 1rem;
+	font-size: 2rem;
+`;
 
 const AppVersion = ({ label, version, current = false }) => (
-	<div
-		css={css`
-			flex: 1;
-			margin: 1rem;
-			text-align: center;
-			white-space: nowrap;
-			line-height: normal;
-		`}
-	>
+	<AppVersionOuter>
 		<div>{label}</div>
-		<div
-			css={css`
-				font-size: 1.5rem;
-				font-weight: bold;
-				${ current && 'color: var(--color-dark-30);' }
-			`}
-		>
+		<AppVersionInner current={current}>
 			{version || 'x.y.z'}
-		</div>
-	</div>
-);
-
-const UpdateInfo = ({ currentVersion, newVersion }) => (
-	<div
-		css={css`
-			display: flex;
-			align-items: center;
-		`}
-	>
-		<AppVersion
-			label={i18n.__('dialog.update.currentVersion')}
-			version={currentVersion || app.getVersion()}
-			current
-		/>
-
-		<div
-			css={css`
-				flex: 1;
-				margin: 1rem;
-				font-size: 2rem;
-			`}
-		>
-			→
-		</div>
-
-		<AppVersion
-			label={i18n.__('dialog.update.newVersion')}
-			version={newVersion}
-		/>
-	</div>
+		</AppVersionInner>
+	</AppVersionOuter>
 );
 
 const mapStateToProps = ({
@@ -141,11 +108,28 @@ export const UpdateModal = connect(mapStateToProps, mapDispatchToProps)(
 	function UpdateModal({ open, currentVersion, newVersion, onClickSkip, onClickRemindLater, onClickInstall }) {
 		return open && (
 			<Modal open>
-				<Content>
-					<Title />
-					<Message />
-					<UpdateInfo currentVersion={currentVersion} newVersion={newVersion} />
-				</Content>
+				<ModalContent>
+					<ModalTitle>{i18n.__('dialog.update.announcement')}</ModalTitle>
+
+					<Message>{i18n.__('dialog.update.message')}</Message>
+
+					<UpdateInfoSection>
+						<AppVersion
+							label={i18n.__('dialog.update.currentVersion')}
+							version={currentVersion || app.getVersion()}
+							current
+						/>
+
+						<AppVersionUpdateArrow>
+							→
+						</AppVersionUpdateArrow>
+
+						<AppVersion
+							label={i18n.__('dialog.update.newVersion')}
+							version={newVersion}
+						/>
+					</UpdateInfoSection>
+				</ModalContent>
 
 				<ModalActions>
 					<Button secondary onClick={onClickSkip}>{i18n.__('dialog.update.skip')}</Button>

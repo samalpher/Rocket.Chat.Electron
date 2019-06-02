@@ -28,9 +28,7 @@
   },
   "dependencies": {
     "@emotion/core": "^10.0.10",
-    "@fortawesome/fontawesome-svg-core": "^1.2.18",
-    "@fortawesome/free-solid-svg-icons": "^5.8.2",
-    "@fortawesome/react-fontawesome": "^0.1.4",
+    "@emotion/styled": "^10.0.11",
     "@paulcbetts/system-idle-time": "^1.0.4",
     "electron-fetch": "^1.3.0",
     "electron-redux": "^1.4.0",
@@ -60,6 +58,7 @@
     "@rocket.chat/eslint-config": "^0.2.0",
     "@svgr/rollup": "^4.3.0",
     "babel-eslint": "^10.0.1",
+    "babel-plugin-emotion": "^10.0.9",
     "builtin-modules": "^3.0.0",
     "chai": "^4.2.0",
     "conventional-changelog-cli": "^2.0.11",

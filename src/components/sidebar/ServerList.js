@@ -1,6 +1,5 @@
-/** @jsx jsx */
-import { css, jsx } from '@emotion/core';
-import { useEffect, useState } from 'react';
+import styled from '@emotion/styled';
+import React, { useEffect, useState } from 'react';
 import { connect } from 'react-redux';
 import { Server } from './Server';
 import {
@@ -11,6 +10,17 @@ import {
 	sortServers,
 } from '../../store/actions';
 
+
+const Wrapper = styled.ol`
+	flex: 1 1 0;
+	margin: 8px 0;
+	padding: 0;
+	display: flex;
+	flex-flow: column nowrap;
+	align-items: stretch;
+	list-style: none;
+	-webkit-app-region: no-drag;
+`;
 
 const mapStateToProps = ({
 	servers,
@@ -90,18 +100,7 @@ export const ServerList = connect(mapStateToProps, mapDispatchToProps)(
 		};
 
 		return (
-			<ol
-				css={css`
-					flex: 1 1 0;
-					margin: 8px 0;
-					padding: 0;
-					display: flex;
-					flex-flow: column nowrap;
-					align-items: stretch;
-					list-style: none;
-					-webkit-app-region: no-drag;
-				`}
-			>
+			<Wrapper>
 				{servers.map((server, order) => (
 					<Server
 						key={order}
@@ -123,7 +122,7 @@ export const ServerList = connect(mapStateToProps, mapDispatchToProps)(
 						onDrop={handleDrop}
 					/>
 				))}
-			</ol>
+			</Wrapper>
 		);
 	}
 );

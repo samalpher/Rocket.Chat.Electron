@@ -1,8 +1,7 @@
-/** @jsx jsx */
-import { css, jsx } from '@emotion/core';
+import styled from '@emotion/styled';
+import React from 'react';
 import { connect } from 'react-redux';
-import { DragRegion } from './DragRegion';
-import { LoadingScreen } from './LoadingScreen';
+import { LoadingSplash } from './LoadingSplash';
 import { Sidebar } from './Sidebar';
 import { AboutModal } from './modals/AboutModal';
 import { ScreenshareModal } from './modals/ScreenshareModal';
@@ -13,53 +12,61 @@ import { PreferencesView } from './views/PreferencesView';
 import { WebviewsView } from './views/WebviewsView';
 
 
+const Wrapper = styled.div`
+	width: 100vw;
+	height: 100vh;
+	display: flex;
+	flex-flow: row nowrap;
+	cursor: default;
+	user-select: none;
+	background-color: var(--color-dark);
+`;
+
+const DragRegion = styled.div`
+	position: fixed;
+	width: 100vw;
+	height: 22px;
+	-webkit-app-region: drag;
+	z-index: 3;
+`;
+
+const MainArea = styled.main`
+	flex: 1;
+	display: ${ ({ loading }) => (loading ? 'none' : 'flex') };
+	flex-flow: row nowrap;
+	align-items: stretch;
+`;
+
+const Views = styled.section`
+	flex: 1;
+	position: relative;
+`;
+
 const mapStateToProps = ({ loading }) => ({ loading });
 
 export const Shell = connect(mapStateToProps)(
 	function Shell({ loading }) {
 		return (
-			<div
-				css={css`
-					width: 100vw;
-					height: 100vh;
-					display: flex;
-					flex-flow: row nowrap;
-					cursor: default;
-					user-select: none;
-					background-color: var(--color-dark);
-				`}
-			>
+			<Wrapper>
 				<DragRegion />
 
-				{loading && <LoadingScreen />}
+				<LoadingSplash />
 
-				<div
-					css={css`
-						flex: 1;
-						display: ${ loading ? 'none' : 'flex' };
-						flex-flow: row nowrap;
-						align-items: stretch;
-					`}
-				>
+				<MainArea loading={loading}>
 					<Sidebar />
 
-					<div
-						css={css`
-							flex: 1;
-							position: relative;
-						`}
-					>
+					<Views>
 						<LandingView />
 						<WebviewsView />
 						<DownloadsView />
 						<PreferencesView />
-					</div>
-				</div>
+					</Views>
+				</MainArea>
 
 				<AboutModal />
 				<UpdateModal />
 				<ScreenshareModal />
-			</div>
+			</Wrapper>
 		);
 	}
 );

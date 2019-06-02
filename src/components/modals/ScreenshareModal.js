@@ -1,62 +1,47 @@
-/** @jsx jsx */
-import { css, jsx } from '@emotion/core';
+import styled from '@emotion/styled';
 import { desktopCapturer } from 'electron';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { connect } from 'react-redux';
 import i18n from '../../i18n';
 import { screensharingSourceSelected } from '../../store/actions';
 import { Modal, ModalTitle } from '../ui/Modal';
 
 
-const ScreenshareSources = ({ children }) => (
-	<div
-		css={css`
-			display: flex;
-			overflow-y: auto;
-			width: 100%;
-			align-items: stretch;
-			flex-wrap: wrap;
-			justify-content: center;
-		`}
-	>
-		{children}
-	</div>
-);
+const ModalContent = styled.div`
+	max-width: 776px;
+	align-items: center;
+	justify-content: center;
+`;
 
-const ScreenshareSource = ({ name, thumbnail, onClick }) => (
-	<div
-		css={css`
-			display: flex;
-			flex-direction: column;
-			padding: 1rem;
-			cursor: pointer;
-			&:hover {
-				background-color: var(--color-dark-10);
-			}
-		`}
-		onClick={onClick}
-	>
-		<div
-			css={css`
-				width: 150px;
-			`}
-		>
-			<img src={thumbnail} alt={name} />
-		</div>
-		<div
-			css={css`
-				width: 150px;
-				text-align: center;
-			`}
-		>
-			{name}
-		</div>
-	</div>
-);
+const ScreenshareSources = styled.div`
+	display: flex;
+	overflow-y: auto;
+	width: 100%;
+	align-items: stretch;
+	flex-wrap: wrap;
+	justify-content: center;
+`;
 
-const mapStateToProps = ({ modal }) => ({
-	open: modal === 'screenshare',
-});
+const ScreenshareSource = styled.div`
+	display: flex;
+	flex-flow: column nowrap;
+	padding: 1rem;
+	cursor: pointer;
+	&:hover {
+		background-color: var(--color-dark-10);
+	}
+`;
+
+const ScreenshareSourceThumbnail = styled.img`
+	width: 150px;
+`;
+
+const ScreenshareSourceName = styled.span`
+	width: 150px;
+	text-align: center;
+`;
+
+const mapStateToProps = ({ modal }) => ({ open: modal === 'screenshare' });
 
 const mapDispatchToProps = (dispatch) => ({
 	onSelectSource: (id) => dispatch(screensharingSourceSelected(id)),
@@ -73,6 +58,7 @@ export const ScreenshareModal = connect(mapStateToProps, mapDispatchToProps)(
 					if (error) {
 						throw error;
 					}
+
 					setSources(sources);
 				});
 			}
@@ -80,29 +66,29 @@ export const ScreenshareModal = connect(mapStateToProps, mapDispatchToProps)(
 			if (!open && sources.length > 0) {
 				setSources([]);
 			}
-		});
+		}, [open]);
 
 		return !!(open && sources.length > 0) && (
 			<Modal open>
-				<div
-					css={css`
-						max-width: 776px;
-						align-items: center;
-						justify-content: center;
-					`}
-				>
+				<ModalContent>
 					<ModalTitle>{i18n.__('dialog.screenshare.announcement')}</ModalTitle>
 					<ScreenshareSources>
 						{sources.map(({ id, name, thumbnail }) => (
 							<ScreenshareSource
 								key={id}
-								name={name}
-								thumbnail={thumbnail.toDataURL()}
 								onClick={() => onSelectSource(id)}
-							/>
+							>
+								<ScreenshareSourceThumbnail
+									src={thumbnail.toDataURL()}
+									alt={name}
+								/>
+								<ScreenshareSourceName>
+									{name}
+								</ScreenshareSourceName>
+							</ScreenshareSource>
 						))}
 					</ScreenshareSources>
-				</div>
+				</ModalContent>
 			</Modal>
 		);
 	}

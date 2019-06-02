@@ -1,8 +1,8 @@
-/** @jsx jsx */
-import { css, jsx } from '@emotion/core';
+import { css } from '@emotion/core';
+import styled from '@emotion/styled';
 
 
-const buttonStyle = css`
+export const Button = styled.button`
 	position: relative;
 	display: flex;
 	padding: 0 1.5rem;
@@ -56,46 +56,31 @@ const buttonStyle = css`
 		border-color: var(--color-gray-light);
 		background-color: var(--color-gray-light);
 	}
-`;
 
-const primaryStyle = css`
-	color: var(--color-white);
-	border: 0;
-	background-color: var(--color-blue);
-`;
+	${ ({ primary }) => primary && css`
+		color: var(--color-white);
+		border: 0;
+		background-color: var(--color-blue);
+	` }
 
-const secondaryStyle = css`
-	color: var(--color-dark-medium);
-	border: 0;
-	border-color: var(--color-gray-medium);
-	background-color: var(--color-gray-medium);
-`;
+	${ ({ secondary }) => secondary && css`
+		color: var(--color-dark-medium);
+		border: 0;
+		border-color: var(--color-gray-medium);
+		background-color: var(--color-gray-medium);
+	` }
 
-const dangerStyle = css`
-	color: var(--color-white);
-	border: 0;
-	background-color: var(--color-red);
-`;
+	${ ({ danger }) => danger && css`
+		color: var(--color-white);
+		border: 0;
+		background-color: var(--color-red);
+	` }
 
-const smallStyle = css`
-	min-height: 0;
-	padding: 0;
-	width: 2rem;
-	height: 2rem;
-	line-height: 1;
+	${ ({ small }) => small && css`
+		min-height: 0;
+		padding: 0;
+		width: 2rem;
+		height: 2rem;
+		line-height: 1;
+	` }
 `;
-
-export const Button = ({ children, primary, secondary, danger, small, ...props }) => (
-	<button
-		css={[
-			buttonStyle,
-			primary && primaryStyle,
-			secondary && secondaryStyle,
-			danger && dangerStyle,
-			small && smallStyle,
-		]}
-		{...props}
-	>
-		{children}
-	</button>
-);

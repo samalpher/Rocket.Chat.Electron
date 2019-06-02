@@ -1,5 +1,6 @@
-/** @jsx jsx */
-import { css, jsx } from '@emotion/core';
+import { css } from '@emotion/core';
+import styled from '@emotion/styled';
+import React from 'react';
 import { connect } from 'react-redux';
 import i18n from '../i18n';
 import { showDownloads, showLanding, showPreferences } from '../store/actions';
@@ -9,6 +10,36 @@ import PlusIcon from './sidebar/plus.svg';
 import DownloadIcon from './sidebar/download.svg';
 import CogIcon from './sidebar/cog.svg';
 
+
+const Outer = styled.aside`
+	flex: 0 0 64px;
+	padding: ${ process.platform === 'darwin' ? '20px 0 0' : '0' };
+	${ ({ visible }) => !visible && css`
+		margin-left: -64px;
+	` }
+	display: flex;
+	flex-flow: column nowrap;
+	align-items: stretch;
+	user-select: none;
+	color: var(--color, #ffffff);
+	background:
+		linear-gradient(rgba(0, 0, 0, .1), rgba(0, 0, 0, .1)),
+		var(--background, var(--color-dark));
+	z-index: 10;
+	transition: margin var(--transitions-duration);
+	-webkit-app-region: drag;
+	--background: ${ ({ background }) => background };
+	--color: ${ ({ color }) => color };
+`;
+
+const Actions = styled.div`
+	flex: 0 0 auto;
+	padding: 8px;
+`;
+
+const StyledPlusIcon = styled(PlusIcon)`width: 20px;`;
+const StyledDownloadIcon = styled(DownloadIcon)`width: 20px;`;
+const StyledCogIcon = styled(CogIcon)`width: 20px;`;
 
 const mapStateToProps = ({
 	loading,
@@ -36,63 +67,30 @@ const mapDispatchToProps = (dispatch) => ({
 	onShowPreferences: () => dispatch(showPreferences()),
 });
 
-const baseStyle = css`
-	padding: ${ process.platform === 'darwin' ? '20px 0 0' : '0' };
-	flex: 0 0 64px;
-	display: flex;
-	flex-flow: column nowrap;
-	align-items: stretch;
-	user-select: none;
-	color: var(--color, #ffffff);
-	background:
-		linear-gradient(rgba(0, 0, 0, .1), rgba(0, 0, 0, .1)),
-		var(--background, var(--color-dark));
-	z-index: 10;
-	transition: margin var(--transitions-duration);
-	-webkit-app-region: drag;
-`;
-
-const invisibleStyle = css`
-	margin-left: -64px;
-`;
-
 export const Sidebar = connect(mapStateToProps, mapDispatchToProps)(
 	function Sidebar({ background, color, visible, onShowLanding, onShowDownloads, onShowPreferences }) {
 		return (
-			<div
-				css={css`
-					${ baseStyle };
-					${ !visible && invisibleStyle };
-					--background: ${ background };
-					--color: ${ color };
-				`}
-				className="sidebar"
-			>
+			<Outer background={background} color={color} visible={visible}>
 				<ServerList />
 
-				<div
-					css={css`
-						flex: 0 0 auto;
-						padding: 8px;
-					`}
-				>
+				<Actions>
 					<SidebarButton
-						icon={<PlusIcon width={20} />}
+						icon={<StyledPlusIcon />}
 						label={i18n.__('sidebar.addNewServer')}
 						onClick={onShowLanding}
 					/>
 					<SidebarButton
-						icon={<DownloadIcon width={20} />}
-						label={i18n.__('sidebar.showDownloadManager')}
+						icon={<StyledDownloadIcon />}
+						label={i18n.__('sidebar.downloads')}
 						onClick={onShowDownloads}
 					/>
 					<SidebarButton
-						icon={<CogIcon width={20} />}
-						label={i18n.__('sidebar.showPreferences')}
+						icon={<StyledCogIcon />}
+						label={i18n.__('sidebar.preferences')}
 						onClick={onShowPreferences}
 					/>
-				</div>
-			</div>
+				</Actions>
+			</Outer>
 		);
 	}
 );

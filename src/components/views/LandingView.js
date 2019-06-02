@@ -1,132 +1,120 @@
 /** @jsx jsx */
 import { css, jsx, keyframes } from '@emotion/core';
+import styled from '@emotion/styled';
 import { useEffect, useState } from 'react';
 import { connect } from 'react-redux';
 import i18n from '../../i18n';
 import { normalizeServerUrl } from '../../utils';
+import { View } from '../View';
 import { Button } from '../ui/Button';
 import { RocketChatLogo } from '../ui/RocketChatLogo';
 import { showServer, addServerFromUrl } from '../../store/actions';
 
 
-const OfflineCard = () => (
-	<div
-		css={css`
-			display: flex;
-			flex-flow: column nowrap;
-			align-items: center;
-			justify-content: center;
-			width: 100%;
-			height: 14rem;
-			margin: 1rem 0;
-			padding: 1rem;
-			border-radius: 2px;
-			color: var(--color-red);
-			background-color: var(--color-white);
-			box-shadow:
-				0 0 2px 0 rgba(47, 52, 61,.08),
-				0 0 12px 0 rgba(47, 52, 61,.12);
-		`}
-	>
-		{i18n.__('error.offline')}
-	</div>
-);
+const Outer = styled(View)`
+	background-color: var(--color-dark);
+	align-items: center;
+	justify-content: center;
+	overflow-y: auto;
+	-webkit-app-region: drag;
+`;
 
-const ConnectToServerCard = ({ defaultServerUrl, serverUrl, error, validating, onSubmit, onServerUrlChange }) => (
-	<form
-		method="/"
-		css={css`
-			display: flex;
-			flex-flow: column nowrap;
-			align-items: center;
-			justify-content: center;
-			width: 100%;
-			margin: 1rem 0;
-			padding: 1rem;
-			border-radius: 2px;
-			background-color: var(--color-white);
-			box-shadow:
-				0 0 2px 0 rgba(47, 52, 61,.08),
-				0 0 12px 0 rgba(47, 52, 61,.12);
-		`}
-		onSubmit={onSubmit}
-	>
-		<h2
-			css={css`
-				margin: 1rem 0;
-				font-size: 1.25rem;
-				font-weight: normal;
-				text-transform: uppercase;
-				color: var(--color-dark-70);
-				line-height: 1.5;
-			`}
-		>
-			{i18n.__('landing.inputUrl')}
-		</h2>
+const Inner = styled.div`
+	display: flex;
+	flex-flow: column nowrap;
+	align-items: center;
+	justify-content: center;
+	width: 100vw;
+	max-width: 30rem;
+	padding: 0 1rem;
+	-webkit-app-region: no-drag;
+`;
 
-		<input
-			type="text"
-			placeholder={defaultServerUrl}
-			dir="auto"
-			value={serverUrl}
-			css={css`
-				width: 100%;
-				padding: 0.5rem;
-				margin: 1rem 0;
-				border-width: 0;
-				border-bottom: 1px solid var(--color-dark-20);
-				background-color: transparent;
-				box-shadow: 0 0 0;
-				font-family: var(--font-family);
-				font-size: 1.75rem;
-				font-weight: normal;
-				${ error && css`
-					animation: ${ keyframes`
-						0%,
-						100% {
-							transform: translate3d(0, 0, 0);
-						}
-						10%,
-						30%,
-						50%,
-						70%,
-						90% {
-							transform: translate3d(-10px, 0, 0);
-						}
-						20%,
-						40%,
-						60%,
-						80% {
-							transform: translate3d(10px, 0, 0);
-						}
-					` } 1s;
-				` }
+const OfflineCard = styled.div`
+	display: flex;
+	flex-flow: column nowrap;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	height: 14rem;
+	margin: 1rem 0;
+	padding: 1rem;
+	border-radius: 2px;
+	color: var(--color-red);
+	background-color: var(--color-white);
+	box-shadow:
+		0 0 2px 0 rgba(47, 52, 61,.08),
+		0 0 12px 0 rgba(47, 52, 61,.12);
+`;
 
-				&:-webkit-autofill {
-					color: var(--color-white);
-					background-color: transparent;
-					box-shadow: 0 0 0 1000px var(--color-dark-05) inset;
-				}
-			`}
-			onChange={onServerUrlChange}
-		/>
+const ConnectToServerForm = styled.form`
+	display: flex;
+	flex-flow: column nowrap;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	margin: 1rem 0;
+	padding: 1rem;
+	border-radius: 2px;
+	background-color: var(--color-white);
+	box-shadow:
+		0 0 2px 0 rgba(47, 52, 61,.08),
+		0 0 12px 0 rgba(47, 52, 61,.12);
+`;
 
-		<Button type="submit" primary disabled={validating}>
-			{validating ? i18n.__('landing.validating') : i18n.__('landing.connect')}
-		</Button>
+const ConnectToServerLabel = styled.h2`
+	margin: 1rem 0;
+	font-size: 1.25rem;
+	font-weight: normal;
+	text-transform: uppercase;
+	color: var(--color-dark-70);
+	line-height: 1.5;
+`;
 
-		{error && (
-			<div
-				css={css`
-					margin: 1rem 0;
-					color: var(--color-red);
-				`}
-			>
-				{error}
-			</div>
-		)}
-	</form>
-);
+const ConnectToServerInput = styled.input`
+	width: 100%;
+	padding: 0.5rem;
+	margin: 1rem 0;
+	border-width: 0;
+	border-bottom: 1px solid var(--color-dark-20);
+	background-color: transparent;
+	box-shadow: 0 0 0;
+	font-family: var(--font-family);
+	font-size: 1.75rem;
+	font-weight: normal;
+	${ ({ error }) => error && css`
+		animation: ${ keyframes`
+			0%,
+			100% {
+				transform: translate3d(0, 0, 0);
+			}
+			10%,
+			30%,
+			50%,
+			70%,
+			90% {
+				transform: translate3d(-10px, 0, 0);
+			}
+			20%,
+			40%,
+			60%,
+			80% {
+				transform: translate3d(10px, 0, 0);
+			}
+		` } 1s;
+	` }
+
+	&:-webkit-autofill {
+		color: var(--color-white);
+		background-color: transparent;
+		box-shadow: 0 0 0 1000px var(--color-dark-05) inset;
+	}
+`;
+
+const ConnectToServerError = styled.div`
+	margin: 1rem 0;
+	color: var(--color-red);
+`;
 
 const defaultServerUrl = 'https://open.rocket.chat';
 
@@ -274,51 +262,43 @@ export const LandingView = connect(mapStateToProps, mapDispatchToProps, mergePro
 		};
 
 		return (
-			<section
-				css={css`
-					position: absolute;
-					left: 0;
-					top: 0;
-					right: 0;
-					bottom: 0;
-					display: flex;
-					flex-flow: column nowrap;
-					transition: opacity linear 100ms;
-					opacity: ${ visible ? 1 : 0 };
-					${ visible && css`z-index: 1;` };
-					background-color: var(--color-dark);
-					align-items: center;
-					justify-content: center;
-					overflow-y: auto;
-					-webkit-app-region: drag;
-				`}
-			>
-				<div
-					css={css`
-						display: flex;
-						flex-flow: column nowrap;
-						align-items: center;
-						justify-content: center;
-						width: 100vw;
-						max-width: 30rem;
-						padding: 0 1rem;
-						-webkit-app-region: no-drag;
-					`}
-				>
+			<Outer visible={visible}>
+				<Inner>
 					<RocketChatLogo dark />
-					{offline && <OfflineCard />}
-					{!offline && (
-						<ConnectToServerCard
-							defaultServerUrl={defaultServerUrl}
-							serverUrl={serverUrl}
-							error={error}
-							validating={validating}
-							onSubmit={handleSubmit}
-							onServerUrlChange={handleServerUrlChange}
-						/>
-					)}
-				</div>
-			</section>
+					{offline ?
+						(
+							<OfflineCard>
+								{i18n.__('error.offline')}
+							</OfflineCard>
+						) :
+						(
+							<ConnectToServerForm method="/" onSubmit={handleSubmit}>
+								<ConnectToServerLabel>
+									{i18n.__('landing.inputUrl')}
+								</ConnectToServerLabel>
+
+								<ConnectToServerInput
+									type="text"
+									placeholder={defaultServerUrl}
+									dir="auto"
+									value={serverUrl}
+									error={error}
+									onChange={handleServerUrlChange}
+								/>
+
+								<Button type="submit" primary disabled={validating}>
+									{validating ? i18n.__('landing.validating') : i18n.__('landing.connect')}
+								</Button>
+
+								{error && (
+									<ConnectToServerError>
+										{error}
+									</ConnectToServerError>
+								)}
+							</ConnectToServerForm>
+						)}
+				</Inner>
+			</Outer>
 		);
 	}
 );

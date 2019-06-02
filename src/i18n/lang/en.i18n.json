@@ -90,6 +90,11 @@
             "ok": "OK"
         }
     },
+    "downloads": {
+        "title": "Downloads",
+        "clear": "Clear all items",
+        "progress": "{{- transferred }} of {{- total }}"
+    },
     "error": {
         "authNeeded": "Auth needed, try <strong>{{- auth}}</strong>",
         "connectTimeout": "Timeout trying to connect",
@@ -145,18 +150,18 @@
         "announcement": "Houston, we have a problem",
         "reload": "Reload"
     },
+    "preferences": {
+        "title": "Preferences"
+    },
     "sidebar": {
         "addNewServer": "Add new server",
-        "showDownloadManager": "Show Download manager",
-        "downloadManager": {
-            "title": "Downloads",
-            "clear": "Clear all items"
-        },
+        "downloads": "Downloads",
         "item": {
             "reload": "Reload server",
             "remove": "Remove server",
             "openDevTools": "Open DevTools"
-        }
+        },
+        "preferences": "Preferences"
     },
     "touchBar": {
         "formatting": "Formatting",

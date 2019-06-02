@@ -1,13 +1,104 @@
-/** @jsx jsx */
-import { css, jsx } from '@emotion/core';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFolderOpen, faTimes } from '@fortawesome/free-solid-svg-icons';
+import styled from '@emotion/styled';
 import { shell } from 'electron';
+import React from 'react';
 import { connect } from 'react-redux';
 import i18n from '../../i18n';
-import { Button } from '../ui/Button';
 import { clearDownload, clearAllDownloads } from '../../store/actions';
+import { Button } from '../ui/Button';
+import { View } from '../View';
+import ClearIcon from './clear.svg';
+import OpenFolderIcon from './openFolder.svg';
 
+
+const Wrapper = styled(View)`
+	background-color: var(--color-dark-05);
+`;
+
+const Header = styled.header`
+	flex: 0 0 auto;
+	display: flex;
+	flex-flow: row nowrap;
+	align-items: center;
+	padding: 1rem;
+	border-bottom: 1px solid var(--color-dark-10);
+`;
+
+const Title = styled.h2`
+	flex: 1;
+	color: var(--color-dark-70);
+	margin: 0;
+`;
+
+const List = styled.ul`
+	flex: 1;
+	margin: 0;
+	padding: 1rem;
+	list-style: none;
+	overflow-y: auto;
+`;
+
+const Item = styled.li`
+	display: flex;
+	flex-flow: row nowrap;
+	margin: -0.25rem;
+	padding: 0.5rem 0;
+	cursor: pointer;
+`;
+
+const Info = styled.div`
+	margin: 0.25rem;
+	flex: 1;
+	overflow: hidden;
+	display: flex;
+	flex-flow: column nowrap;
+	align-items: stretch;
+`;
+
+const Name = styled.div`
+	color: var(--color-dark-70);
+	line-height: 1.5;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+`;
+
+const Progress = styled.div`
+	color: var(--color-dark-30);
+	font-size: 0.75rem;
+	line-height: 1.5;
+`;
+
+const ProgressBar = styled.progress`
+	& {
+		-webkit-appearance: none;
+   	appearance: none;
+		width: 100%;
+		height: 8px;
+		border-radius: 2px;
+		overflow: hidden;
+	}
+
+	&[value]::-webkit-progress-bar {
+		background-color: var(--color-dark-30);
+	}
+
+	&[value]::-webkit-progress-value {
+		background-color: var(--color-blue);
+	}
+`;
+
+const Actions = styled.div`
+	flex: 0 0 auto;
+	display: flex;
+	flex-flow: row nowrap;
+	align-items: center;
+	${ Button } {
+		margin: 0.25rem;
+	}
+`;
+
+const StyledOpenFolderIcon = styled(OpenFolderIcon)`width: 20px;`;
+const StyledClearIcon = styled(ClearIcon)`width: 20px;`;
 
 const formatMemorySize = (fileBytes) => {
 	const formats = ['Bytes', 'KB', 'MB', 'GB'];
@@ -46,114 +137,48 @@ const mapDispatchToProps = (dispatch) => ({
 export const DownloadsView = connect(mapStateToProps, mapDispatchToProps)(
 	function DownloadsView({ visible, items, onClearAllDownloads, onClearDownload, onShowFile, onShowFileInFolder }) {
 		return (
-			<section
-				css={css`
-					position: absolute;
-					left: 0;
-					top: 0;
-					right: 0;
-					bottom: 0;
-					display: flex;
-					flex-flow: column nowrap;
-					transition: opacity linear 100ms;
-					opacity: ${ visible ? 1 : 0 };
-					${ visible && css`z-index: 1;` };
-					background-color: var(--color-dark);
-					overflow-y: auto;
-					-webkit-app-region: drag;
-				`}
-			>
-				<header
-					css={css`
-						flex: 0 0 auto;
-						display: flex;
-						flex-flow: row nowrap;
-						align-items: center;
-						padding: 1rem;
-						border-bottom: 1px solid var(--color-dark-70);
-					`}
-				>
-					<h2
-						css={css`
-							flex: 1;
-							color: var(--color-dark-30);
-							margin: 0;
-						`}
-					>
-						{i18n.__('sidebar.downloadManager.title')}
-					</h2>
+			<Wrapper visible={visible}>
+				<Header>
+					<Title>
+						{i18n.__('downloads.title')}
+					</Title>
 
 					<Button primary onClick={onClearAllDownloads}>
-						{i18n.__('sidebar.downloadManager.clear')}
+						{i18n.__('downloads.clear')}
 					</Button>
-				</header>
+				</Header>
 
-				<ul
-					css={css`
-						flex: 1;
-						margin: 0;
-						padding: 1rem;
-						list-style: none;
-						overflow-y: auto;
-					`}
-				>
+				<List>
 					{items.map((item) => (
-						<li
-							key={item.id}
-							css={css`
-								display: flex;
-								flex-flow: row nowrap;
-								padding: 0.5rem 0;
-								cursor: pointer;
-							`}
-							onClick={onShowFile.bind(null, item)}
-						>
-							<div
-								css={css`
-									flex: 1;
-									overflow: hidden;
-								`}
-							>
-								<div
-									css={css`
-										color: var(--color-dark-30);
-										line-height: 1.5;
-									`}
-								>
+						<Item key={item.id} onClick={onShowFile.bind(null, item)}>
+							<Info>
+								<Name>
 									{item.fileName}
-								</div>
-								<div
-									css={css`
-										color: var(--color-dark-70);
-										font-size: 0.75rem;
-										line-height: 1.5;
-									`}
-								>
-									{ formatMemorySize(item.transferred) } of { formatMemorySize(item.total) }
-								</div>
-							</div>
-							<div
-								css={css`
-									flex: 0 0 auto;
-									display: flex;
-									flex-flow: row nowrap;
-									margin: -0.25rem;
-									* {
-										margin: 0.25rem;
-									}
-								`}
-							>
+								</Name>
+								<Progress>
+									{i18n.__('downloads.progress', {
+										transferred: formatMemorySize(item.transferred),
+										total: formatMemorySize(item.total),
+									})}
+								</Progress>
+								<ProgressBar
+									value={item.transferred}
+									min={0}
+									max={item.total}
+								/>
+							</Info>
+							<Actions>
 								<Button secondary small onClick={onShowFileInFolder.bind(null, item)}>
-									<FontAwesomeIcon icon={faFolderOpen} />
+									<StyledOpenFolderIcon />
 								</Button>
 								<Button danger small onClick={onClearDownload.bind(null, item)}>
-									<FontAwesomeIcon icon={faTimes} />
+									<StyledClearIcon />
 								</Button>
-							</div>
-						</li>
+							</Actions>
+						</Item>
 					))}
-				</ul>
-			</section>
+				</List>
+			</Wrapper>
 		);
 	}
 );

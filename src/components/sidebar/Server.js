@@ -1,12 +1,113 @@
-/** @jsx jsx */
-import { css, jsx } from '@emotion/core';
+import { css } from '@emotion/core';
+import styled from '@emotion/styled';
 import { remote } from 'electron';
-import { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { parse } from 'url';
 import i18n from '../../i18n';
 import { SidebarTooltip } from './SidebarTooltip';
 const { getCurrentWindow, Menu } = remote;
 
+
+const Indicator = styled.div`
+	flex: 0 0 4px;
+	height: ${ ({ active, unread }) => (active && '100%') || (unread && '8px') || 0 };
+	transition: height var(--transitions-duration);
+	border-radius: 0 4px 4px 0;
+	background-color: var(--color-gray-lightest);
+`;
+
+const Inner = styled.div`
+	position: relative;
+	flex: 1;
+	display: flex;
+	flex-flow: column nowrap;
+	align-items: center;
+	transition: transform var(--transitions-duration);
+`;
+
+const Outer = styled.li`
+	position: relative;
+	margin: 4px 0;
+	padding-right: 4px;
+	display: flex;
+	flex-flow: row nowrap;
+	align-items: center;
+	cursor: pointer;
+
+	&:active ${ Inner } {
+		transform: scale(0.9);
+	}
+
+	&:hover ${ SidebarTooltip } {
+		visibility: visible;
+		transform: translateX(0);
+		opacity: 1;
+	}
+`;
+
+const Initials = styled.span`
+	width: 40px;
+	height: 40px;
+	border-radius: 4px;
+	background-color: var(--color-gray-lightest);
+	color: var(--color-darkest);
+	text-align: center;
+	font-size: 1.5rem;
+	line-height: 40px;
+	opacity: ${ ({ active, faviconLoaded, shortcut }) =>
+		(faviconLoaded && '0') || (shortcut && '0') || (active && '1') || '0.5' };
+	transition: opacity var(--transitions-duration);
+	${ ({ active, faviconLoaded }) => !faviconLoaded && css`
+		${ Outer }:hover & {
+				opacity: ${ (active && '1') || '0.75' };
+		}
+	` }
+`;
+
+const Favicon = styled.img`
+	width: 40px;
+	height: 40px;
+	margin-top: -40px;
+	opacity: ${ ({ active, faviconLoaded, shortcut }) =>
+		(!faviconLoaded && '0') || (shortcut && '0') || (active && '1') || '0.5' };
+	transition: opacity var(--transitions-duration);
+	${ ({ active, faviconLoaded }) => faviconLoaded && css`
+		${ Outer }:hover & {
+			opacity: ${ (active && '1') || '0.75' };
+		}
+	` }
+`;
+
+const Badge = styled.span`
+	position: absolute;
+	right: 0;
+	top: 0;
+	min-width: 18px;
+	height: 18px;
+	padding: 0 4px;
+	text-align: center;
+	color: var(--color-white);
+	border-radius: 20px;
+	background-color: var(--color-dark-red);
+	font-size: 12px;
+	font-weight: 700;
+	line-height: 18px;
+	z-index: 1;
+`;
+
+const Shortcut = styled.span`
+	width: 40px;
+	height: 40px;
+	margin-top: -40px;
+	border-radius: 4px;
+	background-color: var(--color-gray-lightest);
+	color: var(--color-darkest);
+	text-align: center;
+	font-size: 1.5rem;
+	line-height: 40px;
+	opacity: ${ ({ visible }) => (visible && 1) || 0 };
+	transition: opacity var(--transitions-duration);
+`;
 
 export const Server = (
 	function Server({
@@ -67,125 +168,52 @@ export const Server = (
 		};
 
 		return (
-			<li
+			<Outer
 				draggable="true"
-				css={css`
-					position: relative;
-					margin: 4px 0;
-					padding-right: 4px;
-					display: flex;
-					flex-flow: row nowrap;
-					align-items: center;
-					cursor: pointer;
-				`}
 				onClick={onSelect}
 				onContextMenu={handleContextMenu}
 				{...props}
 			>
-				<div
-					css={css`
-						flex: 0 0 4px;
-						height: ${ (active && '100%') || (hasUnreadMessages && '8px') || 0 };
-						transition: height var(--transitions-duration);
-						border-radius: 0 4px 4px 0;
-						background-color: var(--color-gray-lightest);
-					`}
+				<Indicator
+					active={active}
+					unread={hasUnreadMessages}
 				/>
-				<div
-					css={css`
-						flex: 1;
-						display: flex;
-						flex-flow: column nowrap;
-						align-items: center;
-					`}
-				>
-					<span
-						css={css`
-							width: 40px;
-							height: 40px;
-							border-radius: 4px;
-							background-color: var(--color-gray-lightest);
-							color: var(--color-darkest);
-							text-align: center;
-							font-size: 1.5rem;
-							line-height: 40px;
-							opacity: ${ (faviconLoaded && '0') || (shortcut && '0') || (active && '1') || '0.5' };
-							transition: opacity var(--transitions-duration);
-							${ !faviconLoaded && css`
-								*:hover > * > & {
-									opacity: ${ (active && '1') || '0.75' };
-								}
-							` }
-						`}
+				<Inner>
+					<Initials
+						active={active}
+						faviconLoaded={faviconLoaded}
+						shortcut={shortcut}
 					>
 						{initials}
-					</span>
+					</Initials>
 
-					<img
+					<Favicon
+						active={active}
 						draggable="false"
+						faviconLoaded={faviconLoaded}
+						shortcut={shortcut}
 						src={faviconUrl}
-						css={css`
-							width: 40px;
-							height: 40px;
-							margin-top: -40px;
-							opacity: ${ (!faviconLoaded && '0') || (shortcut && '0') || (active && '1') || '0.5' };
-							transition: opacity var(--transitions-duration);
-							${ faviconLoaded && css`
-								*:hover > * > & {
-									opacity: ${ (active && '1') || '0.75' };
-								}
-							` }
-						`}
 						onLoad={() => setFaviconLoaded(true)}
 						onError={() => setFaviconLoaded(false)}
 					/>
 
 					{mentionCount && (
-						<div
-							css={css`
-								position: absolute;
-								right: 4px;
-								top: 0;
-								min-width: 18px;
-								height: 18px;
-								padding: 0 4px;
-								text-align: center;
-								color: var(--color-white);
-								border-radius: 20px;
-								background-color: var(--color-dark-red);
-								font-size: 12px;
-								font-weight: 700;
-								line-height: 18px;
-								z-index: 1;
-							`}
-						>
+						<Badge>
 							{mentionCount}
-						</div>
+						</Badge>
 					)}
 
 					{order <= 9 && (
-						<span
-							css={css`
-								width: 40px;
-								height: 40px;
-								margin-top: -40px;
-								border-radius: 4px;
-								background-color: var(--color-gray-lightest);
-								color: var(--color-darkest);
-								text-align: center;
-								font-size: 1.5rem;
-								line-height: 40px;
-								opacity: ${ (shortcut && 1) || 0 };
-								transition: opacity var(--transitions-duration);
-							`}
-						>
+						<Shortcut visible={shortcut}>
 							{`${ process.platform === 'darwin' ? '⌘' : '^' }${ order + 1 }`}
-						</span>
+						</Shortcut>
 					)}
-				</div>
+				</Inner>
 
-				<SidebarTooltip text={title} />
-			</li>
+				<SidebarTooltip>
+					{title}
+				</SidebarTooltip>
+			</Outer>
 		);
 	}
 );
