@@ -1,18 +1,27 @@
 /** @jsx jsx */
 import { css, jsx } from '@emotion/core';
+import LightLogo from './logo-light.svg';
+import DarkLogo from './logo-dark.svg';
 
-
-const lightLogo = './images/logo.svg';
-const darkLogo = './images/logo-dark.svg';
 
 export const RocketChatLogo = ({ dark = false }) => (
 	<div>
-		<img
-			css={css`
-				flex: 1;
-				width: 100%;
-			`}
-			src={dark ? darkLogo : lightLogo}
-		/>
+		{dark ? (
+			<DarkLogo
+				css={css`
+					flex: 1;
+					width: 100%;
+					height: auto;
+				`}
+			/>
+		) : (
+			<LightLogo
+				css={css`
+					flex: 1;
+					width: 100%;
+					height: auto;
+				`}
+			/>
+		)}
 	</div>
 );

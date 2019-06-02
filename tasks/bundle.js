@@ -31,7 +31,13 @@ const bundle = async (src, dest, { coverage = false, env = 'development' } = {})
 					sourcemap: true,
 				}),
 			] : []),
-			svgr(),
+			svgr({
+				svgoConfig: {
+					plugins: {
+						removeViewBox: false,
+					},
+				},
+			}),
 			json(),
 			replace({
 				'process.env.NODE_ENV': JSON.stringify(env),
