@@ -22,13 +22,7 @@ const Wrapper = styled.ol`
 	-webkit-app-region: no-drag;
 `;
 
-const mapStateToProps = ({
-	servers,
-	view,
-}) => ({
-	servers,
-	view,
-});
+const mapStateToProps = ({ servers, view }) => ({ servers, view });
 
 const mapDispatchToProps = (dispatch) => ({
 	onSelect: (url) => dispatch(showServer(url)),
@@ -57,7 +51,6 @@ export const ServerList = connect(mapStateToProps, mapDispatchToProps)(
 
 			window.addEventListener('keydown', onShortcutKeyDown);
 			window.addEventListener('keyup', onShortcutKeyUp);
-
 			return () => {
 				window.removeEventListener('keydown', onShortcutKeyDown);
 				window.removeEventListener('keyup', onShortcutKeyUp);
@@ -66,7 +59,7 @@ export const ServerList = connect(mapStateToProps, mapDispatchToProps)(
 
 		useEffect(() => {
 			setServers(propServers);
-		}, propServers.map(({ url }) => url));
+		}, [propServers.map(({ url }) => url).join('')]);
 
 		const handleDragStart = (url, event) => {
 			setDragged(url);

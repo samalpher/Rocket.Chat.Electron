@@ -16,7 +16,6 @@ import {
 	setPreferences,
 	toggleSpellcheckingDictionary,
 	addServerFromUrl,
-	setServerProperties,
 	historyFlagsUpdated,
 	editFlagsUpdated,
 	showAboutModal,
@@ -27,9 +26,9 @@ import {
 	quitAndInstallUpdate,
 	resetAppData,
 	updateSpellCheckingCorrections,
-	triggerContextMenu,
 	reloadWebview,
 	showMainWindow,
+	openDevToolsForWebview,
 } from '../store/actions';
 import { queryEditFlags } from '../utils';
 import { migrateDataFromLocalStorage } from './data';
@@ -331,7 +330,7 @@ sagaMiddleware.run(function *menusSaga() {
 			}
 
 			case 'reload-server': {
-				const [{ ignoringCache = false, clearCertificates: clearCerts = false }] = args;
+				const [{ ignoringCache = false, clearCertificates: clearCerts = false } = {}] = args;
 				const { view } = yield select();
 				if (!view.url) {
 					break;
@@ -346,7 +345,11 @@ sagaMiddleware.run(function *menusSaga() {
 			}
 
 			case 'open-devtools-for-server':
-				webviews.openDevTools({ active: true });
+				const { view } = yield select();
+				if (!view.url) {
+					break;
+				}
+				yield put(openDevToolsForWebview(view.url));
 				break;
 
 			case 'go-back':
@@ -433,18 +436,6 @@ export default async () => {
 	contextMenu.on('copy', () => getFocusedWebContents().copy());
 	contextMenu.on('paste', () => getFocusedWebContents().paste());
 	contextMenu.on('select-all', () => getFocusedWebContents().selectAll());
-
-	webviews.on('context-menu', (url, params) => {
-		store.dispatch(triggerContextMenu(params));
-	});
-
-	webviews.on('did-navigate', (url, lastPath) => {
-		store.dispatch(setServerProperties({ url, lastPath }));
-		store.dispatch(historyFlagsUpdated({
-			canGoBack: webviews.getWebContents({ url }).canGoBack(),
-			canGoForward: webviews.getWebContents({ url }).canGoForward(),
-		}));
-	});
 
 	webviews.on('ready', () => {
 		store.dispatch(loadingDone());
