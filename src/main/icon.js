@@ -54,15 +54,15 @@ export function getTrayIconPath({ badge, platform, dark } = {}) {
 }
 
 export function getAppIconImage() {
-	return nativeImage.createFromPath(`${ app.getAppPath() }/app${ getAppIconPath() }`);
+	return nativeImage.createFromPath(`${ app.getAppPath() }/app/${ getAppIconPath() }`);
 }
 
 export function getTrayIconImage({ badge, platform, dark } = {}) {
-	return nativeImage.createFromPath(`${ app.getAppPath() }/app${ getTrayIconPath({ badge, platform, dark }) }`);
+	return nativeImage.createFromPath(`${ app.getAppPath() }/app/${ getTrayIconPath({ badge, platform, dark }) }`);
 }
 
 export function getIconImage({ badge }) {
-	const iconsetsPath = `${ app.getAppPath() }/apppublic/images/tray`;
+	const iconsetsPath = `${ app.getAppPath() }/app/public/images/tray`;
 	const { platform } = process;
 	const dark = systemPreferences.isDarkMode();
 	const params = { badge, platform, dark };

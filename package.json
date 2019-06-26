@@ -38,7 +38,6 @@
     "i18next": "^15.0.4",
     "i18next-node-fs-backend": "^2.1.1",
     "i18next-sync-fs-backend": "^1.1.0",
-    "ink": "^2.1.1",
     "mem": "^4.1.0",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
