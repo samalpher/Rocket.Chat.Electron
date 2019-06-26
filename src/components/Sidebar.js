@@ -1,7 +1,7 @@
 import { css } from '@emotion/core';
 import styled from '@emotion/styled';
 import React from 'react';
-import { connect } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import i18n from '../i18n';
 import { showDownloads, showLanding, showPreferences } from '../store/actions';
 import { ServerList } from './sidebar/ServerList';
@@ -41,56 +41,58 @@ const StyledPlusIcon = styled(PlusIcon)`width: 20px;`;
 const StyledDownloadIcon = styled(DownloadIcon)`width: 20px;`;
 const StyledCogIcon = styled(CogIcon)`width: 20px;`;
 
-const mapStateToProps = ({
-	loading,
-	preferences: {
-		hasSidebar,
-	},
-	servers,
-	view,
-}) => {
+export function Sidebar() {
 	const {
 		background,
 		color,
-	} = (view.url && servers.filter(({ url }) => view.url === url).map(({ style }) => style)[0]) || {};
+		visible,
+	} = useSelector(({
+		loading,
+		preferences: {
+			hasSidebar,
+		},
+		servers,
+		view,
+	}) => {
+		const {
+			background,
+			color,
+		} = (view.url && servers.filter(({ url }) => view.url === url).map(({ style }) => style)[0]) || {};
 
-	return {
-		visible: !loading && hasSidebar,
-		background,
-		color,
-	};
-};
+		return {
+			visible: !loading && hasSidebar,
+			background,
+			color,
+		};
+	});
 
-const mapDispatchToProps = (dispatch) => ({
-	onShowLanding: () => dispatch(showLanding()),
-	onShowDownloads: () => dispatch(showDownloads()),
-	onShowPreferences: () => dispatch(showPreferences()),
-});
+	const dispatch = useDispatch();
 
-export const Sidebar = connect(mapStateToProps, mapDispatchToProps)(
-	function Sidebar({ background, color, visible, onShowLanding, onShowDownloads, onShowPreferences }) {
-		return (
-			<Outer background={background} color={color} visible={visible}>
-				<ServerList />
+	const handleShowLanding = () => dispatch(showLanding());
+	const handleShowDownloads = () => dispatch(showDownloads());
+	const handleShowPreferences = () => dispatch(showPreferences());
 
-				<Actions>
-					<SidebarButton
-						icon={<StyledPlusIcon />}
-						label={i18n.__('sidebar.addNewServer')}
-						onClick={onShowLanding}
-					/>
-					<SidebarButton
-						icon={<StyledDownloadIcon />}
-						label={i18n.__('sidebar.downloads')}
-						onClick={onShowDownloads}
-					/>
-					<SidebarButton
-						icon={<StyledCogIcon />}
-						label={i18n.__('sidebar.preferences')}
-						onClick={onShowPreferences}
-					/>
-				</Actions>
-			</Outer>
-		);
-	}
-);
+	return (
+		<Outer background={background} color={color} visible={visible}>
+			<ServerList />
+
+			<Actions>
+				<SidebarButton
+					icon={<StyledPlusIcon />}
+					label={i18n.__('sidebar.addNewServer')}
+					onClick={handleShowLanding}
+				/>
+				<SidebarButton
+					icon={<StyledDownloadIcon />}
+					label={i18n.__('sidebar.downloads')}
+					onClick={handleShowDownloads}
+				/>
+				<SidebarButton
+					icon={<StyledCogIcon />}
+					label={i18n.__('sidebar.preferences')}
+					onClick={handleShowPreferences}
+				/>
+			</Actions>
+		</Outer>
+	);
+}

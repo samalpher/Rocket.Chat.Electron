@@ -1,6 +1,6 @@
 import styled from '@emotion/styled';
 import React from 'react';
-import { connect } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { LoadingSplash } from './LoadingSplash';
 import { Sidebar } from './Sidebar';
 import { AboutModal } from './modals/AboutModal';
@@ -32,7 +32,7 @@ const DragRegion = styled.div`
 
 const MainArea = styled.main`
 	flex: 1;
-	display: ${ ({ loading }) => (loading ? 'none' : 'flex') };
+	display: ${ ({ visible }) => (visible ? 'flex' : 'none') };
 	flex-flow: row nowrap;
 	align-items: stretch;
 `;
@@ -42,31 +42,29 @@ const Views = styled.section`
 	position: relative;
 `;
 
-const mapStateToProps = ({ loading }) => ({ loading });
+export function Shell() {
+	const loading = useSelector(({ loading }) => loading);
 
-export const Shell = connect(mapStateToProps)(
-	function Shell({ loading }) {
-		return (
-			<Wrapper>
-				<DragRegion />
+	return (
+		<Wrapper>
+			<DragRegion />
 
-				<LoadingSplash />
+			<LoadingSplash visible={loading} />
 
-				<MainArea loading={loading}>
-					<Sidebar />
+			<MainArea visible={!loading}>
+				<Sidebar />
 
-					<Views>
-						<LandingView />
-						<WebviewsView />
-						<DownloadsView />
-						<PreferencesView />
-					</Views>
-				</MainArea>
+				<Views>
+					<LandingView />
+					<WebviewsView />
+					<DownloadsView />
+					<PreferencesView />
+				</Views>
+			</MainArea>
 
-				<AboutModal />
-				<UpdateModal />
-				<ScreenshareModal />
-			</Wrapper>
-		);
-	}
-);
+			<AboutModal />
+			<UpdateModal />
+			<ScreenshareModal />
+		</Wrapper>
+	);
+}

@@ -1,12 +1,11 @@
 import styled from '@emotion/styled';
 import React from 'react';
-import { connect } from 'react-redux';
 import { LoadingIndicator } from './ui/LoadingIndicator';
 import { RocketChatLogo } from './ui/RocketChatLogo';
 
 
 const Outer = styled.div`
-	display: ${ ({ loading }) => (loading ? 'flex' : 'none') };
+	display: ${ ({ visible }) => (visible ? 'flex' : 'none') };
 	flex-flow: column nowrap;
 	width: 100vw;
 	height: 100vh;
@@ -27,17 +26,13 @@ const Inner = styled.div`
 	padding: 0 1rem;
 `;
 
-const mapStateToProps = ({ loading }) => ({ loading });
-
-export const LoadingSplash = connect(mapStateToProps)(
-	function LoadingSplash({ loading }) {
-		return (
-			<Outer loading={loading}>
-				<Inner>
-					<RocketChatLogo dark />
-					<LoadingIndicator />
-				</Inner>
-			</Outer>
-		);
-	}
-);
+export function LoadingSplash({ visible }) {
+	return (
+		<Outer visible={visible}>
+			<Inner>
+				<RocketChatLogo dark />
+				<LoadingIndicator />
+			</Inner>
+		</Outer>
+	);
+}

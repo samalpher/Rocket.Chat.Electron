@@ -323,7 +323,7 @@ sagaMiddleware.run(function *menusSaga() {
 				break;
 
 			case 'select-server': {
-				const [url] = args;
+				const [{ url }] = args;
 				yield put(showMainWindow());
 				yield put(showServer(url));
 				break;
