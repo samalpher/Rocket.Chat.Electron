@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { connect } from 'react-redux';
+import { connect, useDispatch } from 'react-redux';
 import { View } from '../View';
 import { Webview } from '../Webview';
-import { loadingDone } from '../../store/actions';
+import { loadingDone, webviewCreated, webviewDestroyed, triggerContextMenu, setServerProperties, historyFlagsUpdated } from '../../store/actions';
 
 
 const mapStateToProps = ({ view, servers }) => ({ view, servers });
@@ -38,8 +38,30 @@ export const WebviewsView = connect(mapStateToProps, mapDispatchToProps)(
 			}
 		}, [readyState]);
 
-		const handleReady = (server) => () => {
-			setReadyState({ ...readyState, [server.url]: true });
+		const dispatch = useDispatch();
+
+		const handleCreate = (url, webContents) => {
+			dispatch(webviewCreated(url, webContents.id));
+		};
+
+		const handleDestroy = (url, webContents) => {
+			dispatch(webviewDestroyed(url, webContents.id));
+		};
+
+		const handleContextMenu = (url, webContents, params) => {
+			dispatch(triggerContextMenu(params));
+		};
+
+		const handleDidNavigate = (url, webContents, lastPath) => {
+			dispatch(setServerProperties({ url, lastPath }));
+			dispatch(historyFlagsUpdated({
+				canGoBack: webContents.canGoBack(),
+				canGoForward: webContents.canGoForward(),
+			}));
+		};
+
+		const handleReady = (url) => {
+			setReadyState({ ...readyState, [url]: true });
 		};
 
 		return (
@@ -50,7 +72,11 @@ export const WebviewsView = connect(mapStateToProps, mapDispatchToProps)(
 						active={server.url === view.url}
 						lastPath={server.lastPath}
 						url={server.url}
-						onReady={handleReady(server)}
+						onCreate={handleCreate}
+						onDestroy={handleDestroy}
+						onContextMenu={handleContextMenu}
+						onDidNavigate={handleDidNavigate}
+						onReady={handleReady}
 					/>
 				))}
 			</View>
