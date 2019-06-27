@@ -42,12 +42,8 @@ export const WebviewsView = connect(mapStateToProps, mapDispatchToProps)(
 			setReadyState({ ...readyState, [server.url]: true });
 		};
 
-		return (<>
-			<View
-				className="Webviews"
-				visible={false}
-			/>
-			<View visible={!!view.url} data-oopsie="">
+		return (
+			<View visible={!!view.url}>
 				{servers.map((server, i) => (
 					<Webview
 						key={i}
@@ -58,6 +54,6 @@ export const WebviewsView = connect(mapStateToProps, mapDispatchToProps)(
 					/>
 				))}
 			</View>
-		</>);
+		);
 	}
 );

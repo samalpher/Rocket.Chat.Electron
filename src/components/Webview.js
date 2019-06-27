@@ -13,6 +13,7 @@ import {
 	setServerProperties,
 	historyFlagsUpdated,
 } from '../store/actions';
+import { ServerLoadingError } from './ServerLoadingError';
 
 
 const WebviewComponent = styled('webview')`
@@ -88,7 +89,6 @@ export const Webview = connect(mapStateToProps, mapDispatchToProps)(
 
 			const handleDomReady = () => {
 				webview.send('set-server-url', url);
-				setLoadingError(false);
 				onReady && onReady();
 			};
 
@@ -100,10 +100,13 @@ export const Webview = connect(mapStateToProps, mapDispatchToProps)(
 				onDidNavigate && onDidNavigate(url, webview.getWebContents(), lastPath);
 			};
 
+			const handleDidStartLoading = () => {
+				setLoadingError(false);
+			};
+
 			const handleDidFailLoad = ({ isMainFrame }) => {
 				if (isMainFrame) {
 					setLoadingError(true);
-					onReady && onReady();
 				}
 			};
 
@@ -126,6 +129,7 @@ export const Webview = connect(mapStateToProps, mapDispatchToProps)(
 
 			webview.addEventListener('dom-ready', handleDomReady);
 			webview.addEventListener('did-navigate-in-page', handleDidNavigateInPage);
+			webview.addEventListener('did-start-loading', handleDidStartLoading);
 			webview.addEventListener('did-fail-load', handleDidFailLoad);
 			webview.addEventListener('did-get-response-details', handleDidGetResponseDetails);
 			webview.addEventListener('console-message', handleConsoleMessage);
@@ -176,6 +180,11 @@ export const Webview = connect(mapStateToProps, mapDispatchToProps)(
 			);
 		});
 
+		const handleReloadFromError = () => {
+			const webview = webviewRef.current;
+			webview.loadURL(url);
+		};
+
 		return (
 			<>
 				<WebviewComponent
@@ -185,6 +194,10 @@ export const Webview = connect(mapStateToProps, mapDispatchToProps)(
 					disablewebsecurity="true"
 					src={lastPath || url}
 					active={active && !loadingError}
+				/>
+				<ServerLoadingError
+					visible={active && loadingError}
+					onReload={handleReloadFromError}
 				/>
 			</>
 		);
