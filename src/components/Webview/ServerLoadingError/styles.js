@@ -1,15 +1,8 @@
-import { css } from '@emotion/core';
 import styled from '@emotion/styled';
 
 
 export const Container = styled.div`
-	${ ({ visible }) => css`opacity: ${ visible ? 1 : 0 };` }
-	position: absolute;
-	left: 0;
-	top: 0;
-	right: 0;
-	bottom: 0;
-	transition: opacity var(--transitions-duration);
+	flex: 1;
 	display: flex;
 	flex-direction: column;
 	cursor: default;
@@ -24,7 +17,6 @@ export const Container = styled.div`
 `;
 
 export const Title = styled.h2`
-	display: block;
 	text-align: center;
 	color: rgba(255, 255, 255, 0.85);
 	font-size: 2em;
@@ -34,7 +26,6 @@ export const Title = styled.h2`
 `;
 
 export const Subtitle = styled.h3`
-	display: block;
 	text-align: center;
 	color: rgba(255, 255, 255, 0.85);
 	font-size: 1.5em;

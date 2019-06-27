@@ -78,6 +78,7 @@ export const useWebviewConsole = (url, webviewRef) => {
 };
 
 export const useWebviewLoadState = (url, webviewRef, onReady, onDidNavigate) => {
+	const [loading, setLoading] = useState(false);
 	const [loadingError, setLoadingError] = useState(false);
 
 	useEffect(() => {
@@ -98,7 +99,11 @@ export const useWebviewLoadState = (url, webviewRef, onReady, onDidNavigate) => 
 		};
 
 		const handleDidStartLoading = () => {
-			setLoadingError(false);
+			setLoading(true);
+		};
+
+		const handleDidStopLoading = () => {
+			setLoading(false);
 		};
 
 		const handleDidFailLoad = ({ isMainFrame }) => {
@@ -110,13 +115,14 @@ export const useWebviewLoadState = (url, webviewRef, onReady, onDidNavigate) => 
 		const handleDidGetResponseDetails = ({ resourceType, httpResponseCode }) => {
 			if (resourceType === 'mainFrame' && httpResponseCode >= 500) {
 				setLoadingError(true);
-				onReady && onReady(url, webview.getWebContents());
+				onReady && onReady(url, webContents);
 			}
 		};
 
 		webview.addEventListener('dom-ready', handleReady);
 		webview.addEventListener('did-navigate-in-page', handleDidNavigateInPage);
 		webview.addEventListener('did-start-loading', handleDidStartLoading);
+		webview.addEventListener('did-stop-loading', handleDidStopLoading);
 		webview.addEventListener('did-fail-load', handleDidFailLoad);
 		webview.addEventListener('did-get-response-details', handleDidGetResponseDetails);
 
@@ -124,12 +130,13 @@ export const useWebviewLoadState = (url, webviewRef, onReady, onDidNavigate) => 
 			webview.removeEventListener('dom-ready', handleReady);
 			webview.removeEventListener('did-navigate-in-page', handleDidNavigateInPage);
 			webview.removeEventListener('did-start-loading', handleDidStartLoading);
+			webview.removeEventListener('did-stop-loading', handleDidStopLoading);
 			webview.removeEventListener('did-fail-load', handleDidFailLoad);
 			webview.removeEventListener('did-get-response-details', handleDidGetResponseDetails);
 		};
 	}, []);
 
-	return loadingError;
+	return [loading, loadingError];
 };
 
 export const useWebviewActions = (url, webviewRef) => {
@@ -184,7 +191,7 @@ export const useWebviewActions = (url, webviewRef) => {
 	});
 };
 
-export const useWebviewReloadFromError = (webviewRef, { url }) => {
+export const useWebviewReloadFromError = (url, webviewRef) => {
 	const handleReloadFromError = () => {
 		const webview = webviewRef.current;
 
