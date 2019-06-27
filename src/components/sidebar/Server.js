@@ -2,8 +2,8 @@ import { css } from '@emotion/core';
 import styled from '@emotion/styled';
 import { remote } from 'electron';
 import React, { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { parse } from 'url';
-import i18n from '../../i18n';
 import { SidebarTooltip } from './SidebarTooltip';
 const { getCurrentWindow, Menu } = remote;
 
@@ -109,111 +109,110 @@ const Shortcut = styled.span`
 	transition: opacity var(--transitions-duration);
 `;
 
-export const Server = (
-	function Server({
-		url,
-		title = url,
-		badge,
-		order,
-		active,
-		dragged,
-		shortcut,
-		onSelect,
-		onReload,
-		onRemove,
-		onOpenDevTools,
-		...props
-	}) {
-		const hasUnreadMessages = useMemo(() => !!badge, [badge]);
+export function Server({
+	url,
+	title = url,
+	badge,
+	order,
+	active,
+	dragged,
+	shortcut,
+	onSelect,
+	onReload,
+	onRemove,
+	onOpenDevTools,
+	...props
+}) {
+	const hasUnreadMessages = useMemo(() => !!badge, [badge]);
 
-		const mentionCount = useMemo(() => (
-			[badge].filter((badge) => parseInt(badge, 10)).filter(Number.isInteger)[0]
-		), [badge]);
+	const mentionCount = useMemo(() => (
+		[badge].filter((badge) => parseInt(badge, 10)).filter(Number.isInteger)[0]
+	), [badge]);
 
-		const initials = useMemo(() => (
-			title
-				.replace(url, parse(url).hostname)
-				.split(/[^A-Za-z0-9]+/g)
-				.slice(0, 2)
-				.map((text) => text.slice(0, 1).toUpperCase())
-				.join('')
-		), [url, title]);
+	const initials = useMemo(() => (
+		title
+			.replace(url, parse(url).hostname)
+			.split(/[^A-Za-z0-9]+/g)
+			.slice(0, 2)
+			.map((text) => text.slice(0, 1).toUpperCase())
+			.join('')
+	), [url, title]);
 
-		const faviconUrl = useMemo(() => {
-			const faviconCacheBustingTime = 15 * 60 * 1000;
-			const bustingParam = Math.round(Date.now() / faviconCacheBustingTime);
-			return `${ url.replace(/\/$/, '') }/assets/favicon.svg?_=${ bustingParam }`;
-		}, [url]);
+	const faviconUrl = useMemo(() => {
+		const faviconCacheBustingTime = 15 * 60 * 1000;
+		const bustingParam = Math.round(Date.now() / faviconCacheBustingTime);
+		return `${ url.replace(/\/$/, '') }/assets/favicon.svg?_=${ bustingParam }`;
+	}, [url]);
 
-		const [faviconLoaded, setFaviconLoaded] = useState(false);
+	const [faviconLoaded, setFaviconLoaded] = useState(false);
+	const { t } = useTranslation();
 
-		const handleContextMenu = (event) => {
-			event.preventDefault();
+	const handleContextMenu = (event) => {
+		event.preventDefault();
 
-			const menu = Menu.buildFromTemplate([
-				{
-					label: i18n.__('sidebar.item.reload'),
-					click: onReload,
-				},
-				{
-					label: i18n.__('sidebar.item.remove'),
-					click: onRemove,
-				},
-				{
-					label: i18n.__('sidebar.item.openDevTools'),
-					click: onOpenDevTools,
-				},
-			]);
-			menu.popup(getCurrentWindow());
-		};
+		const menu = Menu.buildFromTemplate([
+			{
+				label: t('sidebar.item.reload'),
+				click: onReload,
+			},
+			{
+				label: t('sidebar.item.remove'),
+				click: onRemove,
+			},
+			{
+				label: t('sidebar.item.openDevTools'),
+				click: onOpenDevTools,
+			},
+		]);
+		menu.popup(getCurrentWindow());
+	};
 
-		return (
-			<Outer
-				draggable="true"
-				onClick={onSelect}
-				onContextMenu={handleContextMenu}
-				{...props}
-			>
-				<Indicator
+	return (
+		<Outer
+			draggable="true"
+			onClick={onSelect}
+			onContextMenu={handleContextMenu}
+			{...props}
+		>
+			<Indicator
+				active={active}
+				unread={hasUnreadMessages}
+			/>
+			<Inner>
+				<Initials
 					active={active}
-					unread={hasUnreadMessages}
+					faviconLoaded={faviconLoaded}
+					shortcut={shortcut}
+				>
+					{initials}
+				</Initials>
+
+				<Favicon
+					active={active}
+					draggable="false"
+					faviconLoaded={faviconLoaded}
+					shortcut={shortcut}
+					src={faviconUrl}
+					onLoad={() => setFaviconLoaded(true)}
+					onError={() => setFaviconLoaded(false)}
 				/>
-				<Inner>
-					<Initials
-						active={active}
-						faviconLoaded={faviconLoaded}
-						shortcut={shortcut}
-					>
-						{initials}
-					</Initials>
 
-					<Favicon
-						active={active}
-						draggable="false"
-						faviconLoaded={faviconLoaded}
-						shortcut={shortcut}
-						src={faviconUrl}
-						onLoad={() => setFaviconLoaded(true)}
-						onError={() => setFaviconLoaded(false)}
-					/>
+				{mentionCount && (
+					<Badge>
+						{mentionCount}
+					</Badge>
+				)}
 
-					{mentionCount && (
-						<Badge>
-							{mentionCount}
-						</Badge>
-					)}
+				{order <= 9 && (
+					<Shortcut visible={shortcut}>
+						{`${ process.platform === 'darwin' ? '⌘' : '^' }${ order + 1 }`}
+					</Shortcut>
+				)}
+			</Inner>
 
-					{order <= 9 && (
-						<Shortcut visible={shortcut}>
-							{`${ process.platform === 'darwin' ? '⌘' : '^' }${ order + 1 }`}
-						</Shortcut>
-					)}
-				</Inner>
-
-				<SidebarTooltip>
-					{title}
-				</SidebarTooltip>
-			</Outer>
-		);
-	}
-);
+			<SidebarTooltip>
+				{title}
+			</SidebarTooltip>
+		</Outer>
+	);
+}

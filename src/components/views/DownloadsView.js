@@ -1,8 +1,8 @@
 import styled from '@emotion/styled';
 import { shell } from 'electron';
 import React from 'react';
-import { connect } from 'react-redux';
-import i18n from '../../i18n';
+import { useTranslation } from 'react-i18next';
+import { useDispatch, useSelector } from 'react-redux';
 import { clearDownload, clearAllDownloads } from '../../store/actions';
 import { Button } from '../ui/Button';
 import { View } from '../View';
@@ -106,79 +106,100 @@ const formatMemorySize = (fileBytes) => {
 	return `${ parseFloat((fileBytes / Math.pow(1024, calcFormat)).toFixed(2)) } ${ formats[calcFormat] }`;
 };
 
-const mapStateToProps = ({
-	view,
-	downloads,
-	// update: {
-	// 	download,
-	// },
-}) => ({
-	visible: view === 'downloads',
-	items: downloads,
-});
+const useRedux = () => {
+	const state = useSelector(({
+		view,
+		downloads,
+		// update: {
+		// 	download,
+		// },
+	}) => ({
+		visible: view === 'downloads',
+		items: downloads,
+	}));
 
-const mapDispatchToProps = (dispatch) => ({
-	onClearAllDownloads: () => {
+	const dispatch = useDispatch();
+
+	const handleClearAllDownloads = () => {
 		dispatch(clearAllDownloads());
-	},
-	onClearDownload: ({ id }, event) => {
+	};
+
+	const handleClearDownload = ({ id }, event) => {
 		dispatch(clearDownload(id));
 		event.stopPropagation();
-	},
-	onShowFile: (item) => {
+	};
+
+	const handleShowFile = (item) => {
 		shell.openItem(item.filePath);
-	},
-	onShowFileInFolder: (item, event) => {
+	};
+
+	const handleShowFileInFolder = (item, event) => {
 		shell.showItemInFolder(item.filePath);
 		event.stopPropagation();
-	},
-});
+	};
 
-export const DownloadsView = connect(mapStateToProps, mapDispatchToProps)(
-	function DownloadsView({ visible, items, onClearAllDownloads, onClearDownload, onShowFile, onShowFileInFolder }) {
-		return (
-			<Wrapper visible={visible}>
-				<Header>
-					<Title>
-						{i18n.__('downloads.title')}
-					</Title>
+	return {
+		...state,
+		handleClearAllDownloads,
+		handleClearDownload,
+		handleShowFile,
+		handleShowFileInFolder,
+	};
+};
 
-					<Button primary onClick={onClearAllDownloads}>
-						{i18n.__('downloads.clear')}
-					</Button>
-				</Header>
+export function DownloadsView() {
+	const {
+		visible,
+		items,
+		handleClearAllDownloads,
+		handleClearDownload,
+		handleShowFile,
+		handleShowFileInFolder,
+	} = useRedux();
+	const { t } = useTranslation();
 
-				<List>
-					{items.map((item) => (
-						<Item key={item.id} onClick={onShowFile.bind(null, item)}>
-							<Info>
-								<Name>
-									{item.fileName}
-								</Name>
-								<Progress>
-									{i18n.__('downloads.progress', {
-										transferred: formatMemorySize(item.transferred),
-										total: formatMemorySize(item.total),
-									})}
-								</Progress>
-								<ProgressBar
-									value={item.transferred}
-									min={0}
-									max={item.total}
-								/>
-							</Info>
-							<Actions>
-								<Button secondary small onClick={onShowFileInFolder.bind(null, item)}>
-									<StyledOpenFolderIcon />
-								</Button>
-								<Button danger small onClick={onClearDownload.bind(null, item)}>
-									<StyledClearIcon />
-								</Button>
-							</Actions>
-						</Item>
-					))}
-				</List>
-			</Wrapper>
-		);
-	}
-);
+	return (
+		<Wrapper visible={visible}>
+			<Header>
+				<Title>
+					{t('downloads.title')}
+				</Title>
+
+				<Button primary onClick={handleClearAllDownloads}>
+					{t('downloads.clear')}
+				</Button>
+			</Header>
+
+			<List>
+				{items.map((item) => (
+					<Item key={item.id} onClick={handleShowFile.bind(null, item)}>
+						<Info>
+							<Name>
+								{item.fileName}
+							</Name>
+							<Progress>
+								{t('downloads.progress', {
+									transferred: formatMemorySize(item.transferred),
+									total: formatMemorySize(item.total),
+								})}
+							</Progress>
+							<ProgressBar
+								value={item.transferred}
+								min={0}
+								max={item.total}
+							/>
+						</Info>
+						<Actions>
+							<Button secondary small onClick={handleShowFileInFolder.bind(null, item)}>
+								<StyledOpenFolderIcon />
+							</Button>
+							<Button danger small onClick={handleClearDownload.bind(null, item)}>
+								<StyledClearIcon />
+							</Button>
+						</Actions>
+					</Item>
+				))}
+			</List>
+		</Wrapper>
+	);
+}

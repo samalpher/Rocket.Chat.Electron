@@ -1,8 +1,8 @@
 import styled from '@emotion/styled';
 import React from 'react';
-import { connect } from 'react-redux';
-import i18n from '../../i18n';
+import { useSelector } from 'react-redux';
 import { View } from '../View';
+import { useTranslation } from 'react-i18next';
 
 
 const Wrapper = styled(View)`
@@ -24,18 +24,23 @@ const Title = styled.h2`
 	margin: 0;
 `;
 
-const mapStateToProps = ({ view }) => ({ visible: view === 'preferences' });
+const useRedux = () => {
+	const state = useSelector(({ view }) => ({ visible: view === 'preferences' }));
 
-export const PreferencesView = connect(mapStateToProps)(
-	function PreferencesView({ visible }) {
-		return (
-			<Wrapper visible={visible}>
-				<Header>
-					<Title>
-						{i18n.__('preferences.title')}
-					</Title>
-				</Header>
-			</Wrapper>
-		);
-	}
-);
+	return state;
+};
+
+export function PreferencesView() {
+	const { visible } = useRedux();
+	const { t } = useTranslation();
+
+	return (
+		<Wrapper visible={visible}>
+			<Header>
+				<Title>
+					{t('preferences.title')}
+				</Title>
+			</Header>
+		</Wrapper>
+	);
+}

@@ -1,8 +1,8 @@
 import { css } from '@emotion/core';
 import styled from '@emotion/styled';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { useSelector, useDispatch } from 'react-redux';
-import i18n from '../i18n';
 import { showDownloads, showLanding, showPreferences } from '../store/actions';
 import { ServerList } from './sidebar/ServerList';
 import { SidebarButton } from './sidebar/SidebarButton';
@@ -41,12 +41,8 @@ const StyledPlusIcon = styled(PlusIcon)`width: 20px;`;
 const StyledDownloadIcon = styled(DownloadIcon)`width: 20px;`;
 const StyledCogIcon = styled(CogIcon)`width: 20px;`;
 
-export function Sidebar() {
-	const {
-		background,
-		color,
-		visible,
-	} = useSelector(({
+const useRedux = () => {
+	const state = useSelector(({
 		loading,
 		preferences: {
 			hasSidebar,
@@ -68,9 +64,37 @@ export function Sidebar() {
 
 	const dispatch = useDispatch();
 
-	const handleShowLanding = () => dispatch(showLanding());
-	const handleShowDownloads = () => dispatch(showDownloads());
-	const handleShowPreferences = () => dispatch(showPreferences());
+	const handleShowLanding = () => {
+		dispatch(showLanding());
+	};
+
+	const handleShowDownloads = () => {
+		dispatch(showDownloads());
+	};
+
+	const handleShowPreferences = () => {
+		dispatch(showPreferences());
+	};
+
+	return {
+		...state,
+		handleShowLanding,
+		handleShowDownloads,
+		handleShowPreferences,
+	};
+};
+
+export function Sidebar() {
+	const {
+		background,
+		color,
+		visible,
+		handleShowLanding,
+		handleShowDownloads,
+		handleShowPreferences,
+	} = useRedux();
+
+	const { t } = useTranslation();
 
 	return (
 		<Outer background={background} color={color} visible={visible}>
@@ -79,17 +103,17 @@ export function Sidebar() {
 			<Actions>
 				<SidebarButton
 					icon={<StyledPlusIcon />}
-					label={i18n.__('sidebar.addNewServer')}
+					label={t('sidebar.addNewServer')}
 					onClick={handleShowLanding}
 				/>
 				<SidebarButton
 					icon={<StyledDownloadIcon />}
-					label={i18n.__('sidebar.downloads')}
+					label={t('sidebar.downloads')}
 					onClick={handleShowDownloads}
 				/>
 				<SidebarButton
 					icon={<StyledCogIcon />}
-					label={i18n.__('sidebar.preferences')}
+					label={t('sidebar.preferences')}
 					onClick={handleShowPreferences}
 				/>
 			</Actions>

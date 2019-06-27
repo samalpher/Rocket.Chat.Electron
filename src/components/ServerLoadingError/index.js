@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import i18n from '../../i18n';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../ui/Button';
 import { LoadingIndicator } from '../ui/LoadingIndicator';
 import { Container, ReloadButtonContainer, Subtitle, Title } from './styles';
@@ -47,6 +47,7 @@ const useReload = (active, onReload) => {
 
 export function ServerLoadingError({ visible, onReload }) {
 	const [reload, reloading, reloadCounter] = useReload(visible, onReload);
+	const { t } = useTranslation();
 
 	const handleReloadClick = () => {
 		reload();
@@ -54,13 +55,13 @@ export function ServerLoadingError({ visible, onReload }) {
 
 	return (
 		<Container visible={visible}>
-			<Title>{i18n.__('loadingError.announcement')}</Title>
-			<Subtitle>{i18n.__('loadingError.title')}</Subtitle>
+			<Title>{t('loadingError.announcement')}</Title>
+			<Subtitle>{t('loadingError.title')}</Subtitle>
 			<ReloadButtonContainer>
 				{reloading && <LoadingIndicator />}
 				{!reloading && (
 					<Button primary onClick={handleReloadClick}>
-						{i18n.__('loadingError.reload')}
+						{t('loadingError.reload')}
 						{reloadCounter > 0 && ` (${ reloadCounter })`}
 					</Button>
 				)}

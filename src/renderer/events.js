@@ -1,6 +1,6 @@
 import { remote, clipboard } from 'electron';
+import { t } from 'i18next';
 import { put, select, take, takeEvery } from 'redux-saga/effects';
-import i18n from '../i18n';
 import { store, sagaMiddleware } from '../store';
 import {
 	ASK_FOR_CERTIFICATE_TRUST,
@@ -41,11 +41,11 @@ const { contextMenu } = remote.require('./main');
 const askWhenToInstallUpdate = () => new Promise((resolve) => {
 	dialog.showMessageBox(getCurrentWindow(), {
 		type: 'question',
-		title: i18n.__('dialog.updateReady.title'),
-		message: i18n.__('dialog.updateReady.message'),
+		title: t('dialog.updateReady.title'),
+		message: t('dialog.updateReady.message'),
 		buttons: [
-			i18n.__('dialog.updateReady.installLater'),
-			i18n.__('dialog.updateReady.installNow'),
+			t('dialog.updateReady.installLater'),
+			t('dialog.updateReady.installNow'),
 		],
 		defaultId: 1,
 		cancelId: 0,
@@ -55,9 +55,9 @@ const askWhenToInstallUpdate = () => new Promise((resolve) => {
 const warnDelayedUpdateInstall = () => new Promise ((resolve) => {
 	dialog.showMessageBox(getCurrentWindow(), {
 		type: 'info',
-		title: i18n.__('dialog.updateInstallLater.title'),
-		message: i18n.__('dialog.updateInstallLater.message'),
-		buttons: [i18n.__('dialog.updateInstallLater.ok')],
+		title: t('dialog.updateInstallLater.title'),
+		message: t('dialog.updateInstallLater.message'),
+		buttons: [t('dialog.updateInstallLater.ok')],
 		defaultId: 0,
 	}, () => resolve());
 });
@@ -66,13 +66,13 @@ const warnCertificateError = ({ requestUrl, error, certificate: { issuerName }, 
 	const detail = `URL: ${ requestUrl }\nError: ${ error }`;
 
 	dialog.showMessageBox(getCurrentWindow(), {
-		title: i18n.__('dialog.certificateError.title'),
-		message: i18n.__('dialog.certificateError.message', { issuerName }),
-		detail: replacing ? i18n.__('error.differentCertificate', { detail }) : detail,
+		title: t('dialog.certificateError.title'),
+		message: t('dialog.certificateError.message', { issuerName }),
+		detail: replacing ? t('error.differentCertificate', { detail }) : detail,
 		type: 'warning',
 		buttons: [
-			i18n.__('dialog.certificateError.yes'),
-			i18n.__('dialog.certificateError.no'),
+			t('dialog.certificateError.yes'),
+			t('dialog.certificateError.no'),
 		],
 		defaultId: 1,
 		cancelId: 1,
@@ -81,12 +81,12 @@ const warnCertificateError = ({ requestUrl, error, certificate: { issuerName }, 
 
 const confirmServerAddition = ({ serverUrl }) => new Promise((resolve) => {
 	dialog.showMessageBox(getCurrentWindow(), {
-		title: i18n.__('dialog.addServer.title'),
-		message: i18n.__('dialog.addServer.message', { host: serverUrl }),
+		title: t('dialog.addServer.title'),
+		message: t('dialog.addServer.message', { host: serverUrl }),
 		type: 'question',
 		buttons: [
-			i18n.__('dialog.addServer.add'),
-			i18n.__('dialog.addServer.cancel'),
+			t('dialog.addServer.add'),
+			t('dialog.addServer.cancel'),
 		],
 		defaultId: 0,
 		cancelId: 1,
@@ -95,12 +95,12 @@ const confirmServerAddition = ({ serverUrl }) => new Promise((resolve) => {
 
 const confirmAppDataReset = () => new Promise((resolve) => {
 	dialog.showMessageBox({
-		title: i18n.__('dialog.resetAppData.title'),
-		message: i18n.__('dialog.resetAppData.message'),
+		title: t('dialog.resetAppData.title'),
+		message: t('dialog.resetAppData.message'),
 		type: 'question',
 		buttons: [
-			i18n.__('dialog.resetAppData.yes'),
-			i18n.__('dialog.resetAppData.cancel'),
+			t('dialog.resetAppData.yes'),
+			t('dialog.resetAppData.cancel'),
 		],
 		defaultId: 1,
 		cancelId: 1,
@@ -113,11 +113,11 @@ const browseForDictionary = () => {
 	const { spellchecking: { dictionaryInstallationDirectory } } = store.getState();
 
 	dialog.showOpenDialog(getCurrentWindow(), {
-		title: i18n.__('dialog.loadDictionary.title'),
+		title: t('dialog.loadDictionary.title'),
 		defaultPath: dictionaryInstallationDirectory,
 		filters: [
-			{ name: i18n.__('dialog.loadDictionary.dictionaries'), extensions: ['aff', 'dic'] },
-			{ name: i18n.__('dialog.loadDictionary.allFiles'), extensions: ['*'] },
+			{ name: t('dialog.loadDictionary.dictionaries'), extensions: ['aff', 'dic'] },
+			{ name: t('dialog.loadDictionary.allFiles'), extensions: ['*'] },
 		],
 		properties: ['openFile', 'multiSelections'],
 	}, (filePaths = []) => {
@@ -128,8 +128,8 @@ const browseForDictionary = () => {
 const spellCheckingDictionaryInstallFailed = ({ payload: error }) => {
 	console.error(error);
 	dialog.showErrorBox(
-		i18n.__('dialog.loadDictionaryError.title'),
-		i18n.__('dialog.loadDictionaryError.message', { message: error.message })
+		t('dialog.loadDictionaryError.title'),
+		t('dialog.loadDictionaryError.message', { message: error.message })
 	);
 };
 
@@ -192,8 +192,8 @@ const addServer = async (serverUrl, askForConfirmation = false) => {
 		store.dispatch(showServer(serverUrl));
 	} else {
 		dialog.showErrorBox(
-			i18n.__('dialog.addServerError.title'),
-			i18n.__('dialog.addServerError.message', { host: serverUrl })
+			t('dialog.addServerError.title'),
+			t('dialog.addServerError.message', { host: serverUrl })
 		);
 	}
 

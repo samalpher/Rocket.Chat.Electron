@@ -1,7 +1,6 @@
 import styled from '@emotion/styled';
 import React, { useEffect, useState } from 'react';
-import { connect } from 'react-redux';
-import { Server } from './Server';
+import { useDispatch, useSelector } from 'react-redux';
 import {
 	openDevToolsForWebview,
 	reloadWebview,
@@ -9,6 +8,7 @@ import {
 	showServer,
 	sortServers,
 } from '../../store/actions';
+import { Server } from './Server';
 
 
 const Wrapper = styled.ol`
@@ -22,100 +22,165 @@ const Wrapper = styled.ol`
 	-webkit-app-region: no-drag;
 `;
 
-const mapStateToProps = ({ servers, view }) => ({ servers, view });
+const useRedux = () => {
+	const state = useSelector(({ servers, view }) => ({ servers, view }));
 
-const mapDispatchToProps = (dispatch) => ({
-	onSelect: (url) => dispatch(showServer(url)),
-	onReload: (url) => dispatch(reloadWebview({ url })),
-	onRemove: (url) => dispatch(removeServerFromUrl(url)),
-	onOpenDevTools: (url) => dispatch(openDevToolsForWebview(url)),
-	onSort: (urls) => dispatch(sortServers(urls)),
-});
+	const dispatch = useDispatch();
 
-export const ServerList = connect(mapStateToProps, mapDispatchToProps)(
-	function ServerList({ servers: propServers, view, onSelect, onReload, onRemove, onOpenDevTools, onSort }) {
-		const [dragged, setDragged] = useState(null);
-		const [servers, setServers] = useState(propServers);
-		const [shortcutsVisible, setShortcutsVisible] = useState(false);
+	const handleSelect = (url) => {
+		dispatch(showServer(url));
+	};
 
-		useEffect(() => {
-			const shortcutKey = process.platform === 'darwin' ? 'Meta' : 'Control';
+	const handleReload = (url) => {
+		dispatch(reloadWebview({ url }));
+	};
 
-			const onShortcutKeyDown = ({ key }) => {
-				key === shortcutKey && setShortcutsVisible(true);
-			};
+	const handleRemove = (url) => {
+		dispatch(removeServerFromUrl(url));
+	};
 
-			const onShortcutKeyUp = ({ key }) => {
-				key === shortcutKey && setShortcutsVisible(false);
-			};
+	const handleOpenDevTools = (url) => {
+		dispatch(openDevToolsForWebview(url));
+	};
 
-			window.addEventListener('keydown', onShortcutKeyDown);
-			window.addEventListener('keyup', onShortcutKeyUp);
-			return () => {
-				window.removeEventListener('keydown', onShortcutKeyDown);
-				window.removeEventListener('keyup', onShortcutKeyUp);
-			};
-		}, []);
+	const handleSort = (urls) => {
+		dispatch(sortServers(urls));
+	};
 
-		useEffect(() => {
-			setServers(propServers);
-		}, [propServers.map(({ url }) => url).join('')]);
+	return {
+		...state,
+		handleSelect,
+		handleReload,
+		handleRemove,
+		handleOpenDevTools,
+		handleSort,
+	};
+};
 
-		const handleDragStart = (url, event) => {
-			setDragged(url);
+const useShortcuts = () => {
+	const [shortcutsVisible, setShortcutsVisible] = useState(false);
 
-			event.dataTransfer.dropEffect = 'move';
-			event.dataTransfer.effectAllowed = 'move';
+	useEffect(() => {
+		const shortcutKey = process.platform === 'darwin' ? 'Meta' : 'Control';
+
+		const onShortcutKeyDown = ({ key }) => {
+			key === shortcutKey && setShortcutsVisible(true);
 		};
 
-		const handleDragEnd = () => {
-			setDragged(null);
+		const onShortcutKeyUp = ({ key }) => {
+			key === shortcutKey && setShortcutsVisible(false);
 		};
 
-		const handleDragEnter = (targetUrl) => {
-			const draggedServerIndex = servers.findIndex(({ url }) => url === dragged);
-			const targetServerIndex = servers.findIndex(({ url }) => url === targetUrl);
-
-			setServers(servers.map((server, i) => (
-				(i === draggedServerIndex && servers[targetServerIndex]) ||
-				(i === targetServerIndex && servers[draggedServerIndex]) ||
-				server
-			)));
+		window.addEventListener('keydown', onShortcutKeyDown);
+		window.addEventListener('keyup', onShortcutKeyUp);
+		return () => {
+			window.removeEventListener('keydown', onShortcutKeyDown);
+			window.removeEventListener('keyup', onShortcutKeyUp);
 		};
+	}, []);
 
-		const handleDragOver = (event) => {
-			event.preventDefault();
-		};
+	return shortcutsVisible;
+};
 
-		const handleDrop = (event) => {
-			event.preventDefault();
-			onSort(servers.map(({ url }) => url));
-		};
+const useServers = () => {
+	const {
+		servers: propServers,
+		handleSort,
+	} = useRedux();
 
-		return (
-			<Wrapper>
-				{servers.map((server, order) => (
-					<Server
-						key={order}
-						url={server.url}
-						title={server.title}
-						badge={server.badge}
-						order={order}
-						active={server.url === view.url}
-						dragged={server.url === dragged}
-						shortcut={shortcutsVisible}
-						onSelect={() => onSelect(server.url)}
-						onReload={() => onReload(server.url)}
-						onRemove={() => onRemove(server.url)}
-						onOpenDevTools={() => onOpenDevTools(server.url)}
-						onDragStart={handleDragStart.bind(null, server.url)}
-						onDragEnd={handleDragEnd}
-						onDragEnter={handleDragEnter.bind(null, server.url)}
-						onDragOver={handleDragOver}
-						onDrop={handleDrop}
-					/>
-				))}
-			</Wrapper>
-		);
-	}
-);
+	const [dragged, setDragged] = useState(null);
+	const [servers, setServers] = useState(propServers);
+
+	useEffect(() => {
+		setServers(propServers);
+	}, [propServers.map(({ url }) => url).join('')]);
+
+	const handleDragStart = (url, event) => {
+		setDragged(url);
+
+		event.dataTransfer.dropEffect = 'move';
+		event.dataTransfer.effectAllowed = 'move';
+	};
+
+	const handleDragEnd = () => {
+		setDragged(null);
+	};
+
+	const handleDragEnter = (targetUrl) => {
+		const draggedServerIndex = servers.findIndex(({ url }) => url === dragged);
+		const targetServerIndex = servers.findIndex(({ url }) => url === targetUrl);
+
+		setServers(servers.map((server, i) => (
+			(i === draggedServerIndex && servers[targetServerIndex]) ||
+			(i === targetServerIndex && servers[draggedServerIndex]) ||
+			server
+		)));
+	};
+
+	const handleDragOver = (event) => {
+		event.preventDefault();
+	};
+
+	const handleDrop = (event) => {
+		event.preventDefault();
+		handleSort(servers.map(({ url }) => url));
+	};
+
+	return {
+		servers,
+		dragged,
+		handleDragStart,
+		handleDragEnd,
+		handleDragEnter,
+		handleDragOver,
+		handleDrop,
+	};
+};
+
+export function ServerList() {
+	const {
+		view,
+		handleSelect,
+		handleReload,
+		handleRemove,
+		handleOpenDevTools,
+	} = useRedux();
+
+	const shortcutsVisible = useShortcuts();
+
+	const {
+		servers,
+		dragged,
+		handleDragStart,
+		handleDragEnd,
+		handleDragEnter,
+		handleDragOver,
+		handleDrop,
+	} = useServers();
+
+	return (
+		<Wrapper>
+			{servers.map((server, order) => (
+				<Server
+					key={order}
+					url={server.url}
+					title={server.title}
+					badge={server.badge}
+					order={order}
+					active={server.url === view.url}
+					dragged={server.url === dragged}
+					shortcut={shortcutsVisible}
+					onSelect={() => handleSelect(server.url)}
+					onReload={() => handleReload(server.url)}
+					onRemove={() => handleRemove(server.url)}
+					onOpenDevTools={() => handleOpenDevTools(server.url)}
+					onDragStart={handleDragStart.bind(null, server.url)}
+					onDragEnd={handleDragEnd}
+					onDragEnter={handleDragEnter.bind(null, server.url)}
+					onDragOver={handleDragOver}
+					onDrop={handleDrop}
+				/>
+			))}
+		</Wrapper>
+	);
+}

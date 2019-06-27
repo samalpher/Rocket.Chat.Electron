@@ -3,28 +3,13 @@ import jetpack from 'fs-jetpack';
 import i18next from 'i18next';
 import i18nextNodeFileSystemBackend from 'i18next-node-fs-backend';
 import i18nextSyncFileSystemBackend from 'i18next-sync-fs-backend';
+import { normalizeLocale } from '../utils';
 
 
 const app = mainApp || remote.app;
 const languagesDirPath = `${ app.getAppPath() }/app/i18n/lang`;
 const defaultLocale = 'en';
 let globalLocale = defaultLocale;
-
-const normalizeLocale = (locale) => {
-	let [languageCode, countryCode] = locale.split ? locale.split(/[-_]/) : [];
-	if (!languageCode || languageCode.length !== 2) {
-		return 'en';
-	}
-	languageCode = languageCode.toLowerCase();
-
-	if (!countryCode || countryCode.length !== 2) {
-		countryCode = null;
-	} else {
-		countryCode = countryCode.toUpperCase();
-	}
-
-	return countryCode ? `${ languageCode }-${ countryCode }` : languageCode;
-};
 
 // TODO: remove synchronous initialization
 async function initialize({ synchronous = false } = {}) {

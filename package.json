@@ -41,6 +41,7 @@
     "mem": "^4.1.0",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
+    "react-i18next": "^10.11.2",
     "react-redux": "^7.0.3",
     "redux": "^4.0.1",
     "redux-saga": "^1.0.2",

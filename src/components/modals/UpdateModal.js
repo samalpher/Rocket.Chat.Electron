@@ -2,8 +2,8 @@ import { css } from '@emotion/core';
 import styled from '@emotion/styled';
 import { remote } from 'electron';
 import React from 'react';
-import { connect } from 'react-redux';
-import i18n from '../../i18n';
+import { useTranslation } from 'react-i18next';
+import { useDispatch, useSelector } from 'react-redux';
 import { Button } from '../ui/Button';
 import { Modal, ModalActions, ModalTitle } from '../ui/Modal';
 import { skipUpdate, hideModal, downloadUpdate } from '../../store/actions';
@@ -60,83 +60,103 @@ const AppVersion = ({ label, version, current = false }) => (
 	</AppVersionOuter>
 );
 
-const mapStateToProps = ({
-	modal,
-	update: {
-		version,
-	},
-}) => ({
-	open: modal === 'update',
-	newVersion: version,
-});
+const useRedux = () => {
+	const dispatch = useDispatch();
+	const { t } = useTranslation();
 
-const warnItWillSkipVersion = () => new Promise((resolve) => {
-	dialog.showMessageBox(getCurrentWindow(), {
-		title: i18n.__('dialog.updateSkip.title'),
-		message: i18n.__('dialog.updateSkip.message'),
-		type: 'warning',
-		buttons: [i18n.__('dialog.updateSkip.ok')],
-		defaultId: 0,
-	}, () => resolve());
-});
+	const state = useSelector(({
+		modal,
+		update: {
+			version,
+		},
+	}) => ({
+		open: modal === 'update',
+		newVersion: version,
+	}));
 
-const informItWillDownloadUpdate = () => new Promise((resolve) => {
-	dialog.showMessageBox(getCurrentWindow(), {
-		title: i18n.__('dialog.updateDownloading.title'),
-		message: i18n.__('dialog.updateDownloading.message'),
-		type: 'info',
-		buttons: [i18n.__('dialog.updateDownloading.ok')],
-		defaultId: 0,
-	}, () => resolve());
-});
+	const warnItWillSkipVersion = () => new Promise((resolve) => {
+		dialog.showMessageBox(getCurrentWindow(), {
+			title: t('dialog.updateSkip.title'),
+			message: t('dialog.updateSkip.message'),
+			type: 'warning',
+			buttons: [t('dialog.updateSkip.ok')],
+			defaultId: 0,
+		}, () => resolve());
+	});
 
-const mapDispatchToProps = (dispatch) => ({
-	onClickSkip: async () => {
+	const informItWillDownloadUpdate = () => new Promise((resolve) => {
+		dialog.showMessageBox(getCurrentWindow(), {
+			title: t('dialog.updateDownloading.title'),
+			message: t('dialog.updateDownloading.message'),
+			type: 'info',
+			buttons: [t('dialog.updateDownloading.ok')],
+			defaultId: 0,
+		}, () => resolve());
+	});
+
+	const handleClickSkip = async () => {
 		await warnItWillSkipVersion();
 		dispatch(skipUpdate());
-	},
-	onClickRemindLater: () => {
+	};
+
+	const handleClickRemindLater = async () => {
 		dispatch(hideModal());
-	},
-	onClickInstall: async () => {
+	};
+
+	const handleClickInstall = async () => {
 		await informItWillDownloadUpdate();
 		dispatch(downloadUpdate());
-	},
-});
+	};
 
-export const UpdateModal = connect(mapStateToProps, mapDispatchToProps)(
-	function UpdateModal({ open, currentVersion, newVersion, onClickSkip, onClickRemindLater, onClickInstall }) {
-		return open && (
-			<Modal open>
-				<ModalContent>
-					<ModalTitle>{i18n.__('dialog.update.announcement')}</ModalTitle>
+	return {
+		...state,
+		handleClickSkip,
+		handleClickRemindLater,
+		handleClickInstall,
+	};
+};
 
-					<Message>{i18n.__('dialog.update.message')}</Message>
+export function UpdateModal() {
+	const {
+		open,
+		currentVersion,
+		newVersion,
+		handleClickSkip,
+		handleClickRemindLater,
+		handleClickInstall,
+	} = useRedux();
+	const { t } = useTranslation();
 
-					<UpdateInfoSection>
-						<AppVersion
-							label={i18n.__('dialog.update.currentVersion')}
-							version={currentVersion || app.getVersion()}
-							current
-						/>
+	return open && (
+		<Modal open>
+			<ModalContent>
+				<ModalTitle>{t('dialog.update.announcement')}</ModalTitle>
 
-						<AppVersionUpdateArrow>
-							→
-						</AppVersionUpdateArrow>
+				<Message>{t('dialog.update.message')}</Message>
 
-						<AppVersion
-							label={i18n.__('dialog.update.newVersion')}
-							version={newVersion}
-						/>
-					</UpdateInfoSection>
-				</ModalContent>
+				<UpdateInfoSection>
+					<AppVersion
+						label={t('dialog.update.currentVersion')}
+						version={currentVersion || app.getVersion()}
+						current
+					/>
 
-				<ModalActions>
-					<Button secondary onClick={onClickSkip}>{i18n.__('dialog.update.skip')}</Button>
-					<Button secondary onClick={onClickRemindLater}>{i18n.__('dialog.update.remindLater')}</Button>
-					<Button primary onClick={onClickInstall}>{i18n.__('dialog.update.install')}</Button>
-				</ModalActions>
-			</Modal>
-		);
-	}
-);
+					<AppVersionUpdateArrow>
+						→
+					</AppVersionUpdateArrow>
+
+					<AppVersion
+						label={t('dialog.update.newVersion')}
+						version={newVersion}
+					/>
+				</UpdateInfoSection>
+			</ModalContent>
+
+			<ModalActions>
+				<Button secondary onClick={handleClickSkip}>{t('dialog.update.skip')}</Button>
+				<Button secondary onClick={handleClickRemindLater}>{t('dialog.update.remindLater')}</Button>
+				<Button primary onClick={handleClickInstall}>{t('dialog.update.install')}</Button>
+			</ModalActions>
+		</Modal>
+	);
+}

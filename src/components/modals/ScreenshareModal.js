@@ -1,8 +1,8 @@
 import styled from '@emotion/styled';
 import { desktopCapturer } from 'electron';
 import React, { useEffect, useState } from 'react';
-import { connect } from 'react-redux';
-import i18n from '../../i18n';
+import { useTranslation } from 'react-i18next';
+import { useDispatch, useSelector } from 'react-redux';
 import { screensharingSourceSelected } from '../../store/actions';
 import { Modal, ModalTitle } from '../ui/Modal';
 
@@ -41,55 +41,73 @@ const ScreenshareSourceName = styled.span`
 	text-align: center;
 `;
 
-const mapStateToProps = ({ modal }) => ({ open: modal === 'screenshare' });
+const useRedux = () => {
+	const state = useSelector(({ modal }) => ({ open: modal === 'screenshare' }));
 
-const mapDispatchToProps = (dispatch) => ({
-	onSelectSource: (id) => dispatch(screensharingSourceSelected(id)),
-});
+	const dispatch = useDispatch();
 
-export const ScreenshareModal = connect(mapStateToProps, mapDispatchToProps)(
-	function ScreenshareModal({ open, onSelectSource }) {
+	const handleSelectSource = (id) => {
+		dispatch(screensharingSourceSelected(id));
+	};
 
-		const [sources, setSources] = useState([]);
+	return {
+		...state,
+		handleSelectSource,
+	};
+};
 
-		useEffect(() => {
-			if (open && sources.length === 0) {
-				desktopCapturer.getSources({ types: ['window', 'screen'] }, (error, sources) => {
-					if (error) {
-						throw error;
-					}
+const useScreensharingSources = () => {
+	const { open } = useRedux();
+	const [sources, setSources] = useState([]);
 
-					setSources(sources);
-				});
-			}
+	useEffect(() => {
+		if (open && sources.length === 0) {
+			desktopCapturer.getSources({ types: ['window', 'screen'] }, (error, sources) => {
+				if (error) {
+					throw error;
+				}
 
-			if (!open && sources.length > 0) {
-				setSources([]);
-			}
-		}, [open]);
+				setSources(sources);
+			});
+		}
 
-		return !!(open && sources.length > 0) && (
-			<Modal open>
-				<ModalContent>
-					<ModalTitle>{i18n.__('dialog.screenshare.announcement')}</ModalTitle>
-					<ScreenshareSources>
-						{sources.map(({ id, name, thumbnail }) => (
-							<ScreenshareSource
-								key={id}
-								onClick={() => onSelectSource(id)}
-							>
-								<ScreenshareSourceThumbnail
-									src={thumbnail.toDataURL()}
-									alt={name}
-								/>
-								<ScreenshareSourceName>
-									{name}
-								</ScreenshareSourceName>
-							</ScreenshareSource>
-						))}
-					</ScreenshareSources>
-				</ModalContent>
-			</Modal>
-		);
-	}
-);
+		if (!open && sources.length > 0) {
+			setSources([]);
+		}
+	}, [open]);
+
+	return sources;
+};
+
+export function ScreenshareModal() {
+	const {
+		open,
+		handleSelectSource,
+	} = useRedux();
+	const sources = useScreensharingSources();
+	const { t } = useTranslation();
+
+	return !!(open && sources.length > 0) && (
+		<Modal open>
+			<ModalContent>
+				<ModalTitle>{t('dialog.screenshare.announcement')}</ModalTitle>
+				<ScreenshareSources>
+					{sources.map(({ id, name, thumbnail }) => (
+						<ScreenshareSource
+							key={id}
+							onClick={() => handleSelectSource(id)}
+						>
+							<ScreenshareSourceThumbnail
+								src={thumbnail.toDataURL()}
+								alt={name}
+							/>
+							<ScreenshareSourceName>
+								{name}
+							</ScreenshareSourceName>
+						</ScreenshareSource>
+					))}
+				</ScreenshareSources>
+			</ModalContent>
+		</Modal>
+	);
+}

@@ -1,9 +1,9 @@
 import styled from '@emotion/styled';
 import { remote } from 'electron';
 import React, { useState } from 'react';
-import { connect } from 'react-redux';
+import { useTranslation } from 'react-i18next';
+import { useDispatch, useSelector } from 'react-redux';
 import { delay, takeLeading } from 'redux-saga/effects';
-import i18n from '../../i18n';
 import { copyright } from '../../../package.json';
 import {
 	CHECKING_FOR_UPDATE_ERRORED,
@@ -80,111 +80,128 @@ const CopyrightWrapper = styled.div`
 	text-align: center;
 `;
 
-const mapStateToProps = (({
-	modal,
-	update: {
-		configuration: {
-			canUpdate,
-			canAutoUpdate,
-			canSetAutoUpdate,
+const useRedux = () => {
+	const state = useSelector((({
+		modal,
+		update: {
+			configuration: {
+				canUpdate,
+				canAutoUpdate,
+				canSetAutoUpdate,
+			},
+			checking,
 		},
-		checking,
-	},
-}) => ({
-	canUpdate,
-	canAutoUpdate,
-	canSetAutoUpdate,
-	checkingUpdate: !!checking,
-	open: modal === 'about',
-}));
+	}) => ({
+		canUpdate,
+		canAutoUpdate,
+		canSetAutoUpdate,
+		checkingUpdate: !!checking,
+		open: modal === 'about',
+	})));
 
-const mapDispatchToProps = (dispatch) => ({
-	onClickCheckForUpdate: () => dispatch(checkForUpdate()),
-	onChangeAutoUpdate: ({ target: { checked } }) => dispatch(setAutoUpdate(checked)),
-	onClickOk: () => dispatch(hideModal()),
-});
+	const dispatch = useDispatch();
 
-export const AboutModal = connect(mapStateToProps, mapDispatchToProps)(
-	function AboutModal({
+	const handleClickCheckForUpdate = () => {
+		dispatch(checkForUpdate());
+	};
+
+	const handleChangeAutoUpdate = ({ target: { checked } }) => {
+		dispatch(setAutoUpdate(checked));
+	};
+
+	const handleClickOk = () => {
+		dispatch(hideModal());
+	};
+
+	return {
+		...state,
+		handleClickCheckForUpdate,
+		handleChangeAutoUpdate,
+		handleClickOk,
+	};
+};
+
+export function AboutModal() {
+	const {
 		canUpdate,
 		canAutoUpdate,
 		canSetAutoUpdate,
 		checkingUpdate,
 		open,
-		onClickOk,
-		onClickCheckForUpdate,
-		onChangeAutoUpdate,
-	}) {
-		const [checkingMessage, setCheckingMessage] = useState(null);
+		handleClickOk,
+		handleClickCheckForUpdate,
+		handleChangeAutoUpdate,
+	} = useRedux();
+	const [checkingMessage, setCheckingMessage] = useState(null);
+	const { t } = useTranslation();
 
-		useSaga(function *watchUpdatesActions() {
-			yield takeLeading(CHECKING_FOR_UPDATE_ERRORED, function *checkingForUpdateErrored() {
-				setCheckingMessage(i18n.__('dialog.about.errorWhileLookingForUpdates'));
-				yield delay(5000);
-				setCheckingMessage(null);
-			});
+	useSaga(function *watchUpdatesActions() {
+		yield takeLeading(CHECKING_FOR_UPDATE_ERRORED, function *checkingForUpdateErrored() {
+			setCheckingMessage(t('dialog.about.errorWhileLookingForUpdates'));
+			yield delay(5000);
+			setCheckingMessage(null);
+		});
 
-			yield takeLeading(UPDATE_NOT_AVAILABLE, function *updateNotAvailable() {
-				setCheckingMessage(i18n.__('dialog.about.noUpdatesAvailable'));
-				yield delay(5000);
-				setCheckingMessage(null);
-			});
-		}, []);
+		yield takeLeading(UPDATE_NOT_AVAILABLE, function *updateNotAvailable() {
+			setCheckingMessage(t('dialog.about.noUpdatesAvailable'));
+			yield delay(5000);
+			setCheckingMessage(null);
+		});
+	}, []);
 
-		return open && (
-			<Modal open>
-				<ModalContent>
-					<AppInfoSection>
-						<RocketChatLogo />
+	return open && (
+		<Modal open>
+			<ModalContent>
+				<AppInfoSection>
+					<RocketChatLogo />
 
-						<AppVersionOuter>
-							{i18n.__('dialog.about.version')}
-							&nbsp;
-							<AppVersionInner>
-								{app.getVersion()}
-							</AppVersionInner>
-						</AppVersionOuter>
-					</AppInfoSection>
+					<AppVersionOuter>
+						{t('dialog.about.version')}
+						&nbsp;
+						<AppVersionInner>
+							{app.getVersion()}
+						</AppVersionInner>
+					</AppVersionOuter>
+				</AppInfoSection>
 
-					{canUpdate && (
-						<UpdateSection>
-							<UpdateCheckIndicatorWrapper>
-								{!checkingUpdate && !checkingMessage && (
-									<Button primary onClick={onClickCheckForUpdate}>
-										{i18n.__('dialog.about.checkUpdates')}
-									</Button>
-								)}
+				{canUpdate && (
+					<UpdateSection>
+						<UpdateCheckIndicatorWrapper>
+							{!checkingUpdate && !checkingMessage && (
+								<Button primary onClick={handleClickCheckForUpdate}>
+									{t('dialog.about.checkUpdates')}
+								</Button>
+							)}
 
-								{checkingUpdate && !checkingMessage && <LoadingIndicator />}
+							{checkingUpdate && !checkingMessage && <LoadingIndicator />}
 
-								{checkingMessage && (
-									<UpdateCheckIndicatorMessage>
-										{checkingMessage}
-									</UpdateCheckIndicatorMessage>
-								)}
-							</UpdateCheckIndicatorWrapper>
+							{checkingMessage && (
+								<UpdateCheckIndicatorMessage>
+									{checkingMessage}
+								</UpdateCheckIndicatorMessage>
+							)}
+						</UpdateCheckIndicatorWrapper>
 
-							<SetAutoUpdateLabel>
-								<SetAutoUpdateInput
-									type="checkbox"
-									checked={canAutoUpdate}
-									disabled={!canSetAutoUpdate}
-									onChange={onChangeAutoUpdate}
-								/>
-								<span>{i18n.__('dialog.about.checkUpdatesOnStart')}</span>
-							</SetAutoUpdateLabel>
-						</UpdateSection>
-					)}
+						<SetAutoUpdateLabel>
+							<SetAutoUpdateInput
+								type="checkbox"
+								checked={canAutoUpdate}
+								disabled={!canSetAutoUpdate}
+								onChange={handleChangeAutoUpdate}
+							/>
+							<span>{t('dialog.about.checkUpdatesOnStart')}</span>
+						</SetAutoUpdateLabel>
+					</UpdateSection>
+				)}
 
-					<CopyrightWrapper>
-						{i18n.__('dialog.about.copyright', { copyright })}
-					</CopyrightWrapper>
-				</ModalContent>
+				<CopyrightWrapper>
+					{t('dialog.about.copyright', { copyright })}
+				</CopyrightWrapper>
+			</ModalContent>
 
-				<ModalActions>
-					<Button primary onClick={onClickOk}>{i18n.__('dialog.about.ok')}</Button>
-				</ModalActions>
-			</Modal>
-		);
-	}
-);
+			<ModalActions>
+				<Button primary onClick={handleClickOk}>{t('dialog.about.ok')}</Button>
+			</ModalActions>
+		</Modal>
+	);
+}
