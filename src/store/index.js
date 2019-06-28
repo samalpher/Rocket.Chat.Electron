@@ -12,37 +12,8 @@ import createSagaMiddleware from 'redux-saga';
 import { reducer } from './reducers';
 
 
-const debug = createDebugLogger('rc:store');
-const isRendererProcess = process.type === 'renderer';
-const isPreloadProcess = isRendererProcess && remote.getCurrentWebContents().getType() === 'webview';
-
-export const sagaMiddleware = createSagaMiddleware();
-
-const middlewares = [
-	...(isRendererProcess ? [forwardToMain] : []),
-	sagaMiddleware,
-	...(!isRendererProcess ? [forwardToRenderer] : []),
-];
-
-const debugReducer = (reducer) => (state, action) => {
-	if (!isPreloadProcess) {
-		const { type, payload } = action;
-		debug(...[type, payload].filter(Boolean));
-	}
-	return reducer(state, action);
-};
-
-export const store = createStore(
-	process.env.NODE_ENV ? debugReducer(reducer) : reducer,
-	isRendererProcess ? getInitialStateRenderer() : {},
-	applyMiddleware(...middlewares),
-);
-
-isRendererProcess ? replayActionRenderer(store) : replayActionMain(store);
-
-if (process.env.NODE_ENV === 'development' && isRendererProcess) {
-	window.store = store;
-}
+export let store;
+export let sagaMiddleware;
 
 const isEquals = (a, b) => {
 	for (const key in a) {
@@ -73,3 +44,39 @@ export const connect = (mapStateToProps) => (update) => {
 		prevProps = props;
 	});
 };
+
+export const setupStore = () => {
+	const debug = createDebugLogger('rc:store');
+	const isRendererProcess = process.type === 'renderer';
+	const isPreloadProcess = isRendererProcess && remote.getCurrentWebContents().getType() === 'webview';
+
+	sagaMiddleware = createSagaMiddleware();
+
+	const middlewares = [
+		...(isRendererProcess ? [forwardToMain] : []),
+		sagaMiddleware,
+		...(!isRendererProcess ? [forwardToRenderer] : []),
+	];
+
+	const debugReducer = (reducer) => (state, action) => {
+		if (!isPreloadProcess) {
+			const { type, payload } = action;
+			debug(...[type, payload].filter(Boolean));
+		}
+		return reducer(state, action);
+	};
+
+	store = createStore(
+		process.env.NODE_ENV ? debugReducer(reducer) : reducer,
+		isRendererProcess ? getInitialStateRenderer() : {},
+		applyMiddleware(...middlewares),
+	);
+
+	isRendererProcess ? replayActionRenderer(store) : replayActionMain(store);
+
+	if (process.env.NODE_ENV === 'development' && isRendererProcess) {
+		window.store = store;
+	}
+};
+
+setupStore();

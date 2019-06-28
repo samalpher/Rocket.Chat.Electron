@@ -34,7 +34,7 @@ const bundle = async (src, dest, { coverage = false, env = 'development' } = {})
 			] : []),
 			url({
 				limit: 1024 * 1024,
-				include: ['src/components/**/*.jpg', 'src/components/**/*.png'],
+				include: ['src/**/*.jpg', 'src/**/*.png'],
 			}),
 			svgr({
 				svgoConfig: {

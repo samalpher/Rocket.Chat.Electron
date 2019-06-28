@@ -1,7 +1,7 @@
 import { app, Menu, BrowserWindow } from 'electron';
-import i18n from '../i18n';
-import { connect, store } from '../store';
-import { menuItemClicked } from '../store/actions/menus';
+import i18n from '../../../i18n';
+import { connect, store } from '../../../store';
+import { menuItemClicked } from '../../../store/actions/menus';
 
 
 let props = {};

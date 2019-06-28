@@ -1,8 +1,8 @@
 import { Menu, BrowserWindow } from 'electron';
 import { EventEmitter } from 'events';
 import { select } from 'redux-saga/effects';
-import i18n from '../i18n';
-import { sagaMiddleware } from '../store';
+import i18n from '../../../i18n';
+import { sagaMiddleware } from '../../../store';
 
 
 const events = new EventEmitter();

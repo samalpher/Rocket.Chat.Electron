@@ -1,6 +1,6 @@
 import { app, BrowserWindow } from 'electron';
-import { connect } from '../store';
-import { getTrayIconImage, getAppIconImage } from './icon';
+import { connect } from '../../../store';
+import { getTrayIconImage, getAppIconImage } from '../icons';
 
 
 let props = {

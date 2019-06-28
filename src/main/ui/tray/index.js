@@ -1,8 +1,8 @@
 import { app, Menu, systemPreferences, Tray } from 'electron';
-import i18n from '../i18n';
-import { connect, store } from '../store';
-import { getTrayIconImage } from './icon';
-import { showMainWindow, hideMainWindow } from '../store/actions';
+import i18n from '../../../i18n';
+import { connect, store } from '../../../store';
+import { getTrayIconImage } from '../icons';
+import { showMainWindow, hideMainWindow } from '../../../store/actions';
 
 
 let props = {

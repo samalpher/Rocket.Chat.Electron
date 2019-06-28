@@ -1,8 +1,13 @@
 import { nativeImage, TouchBar, BrowserWindow } from 'electron';
 import { EventEmitter } from 'events';
-import i18n from '../i18n';
-import { connect, store } from '../store';
-import { showServer, formatButtonTouched } from '../store/actions';
+import i18n from '../../../i18n';
+import { connect, store } from '../../../store';
+import { showServer, formatButtonTouched } from '../../../store/actions';
+import boldIcon from './bold.png';
+import italicIcon from './italic.png';
+import strikeIcon from './strike.png';
+import inlineCodeIcon from './inlineCode.png';
+import multiLineIcon from './multiLine.png';
 const {
 	TouchBarButton,
 	TouchBarLabel,
@@ -42,8 +47,16 @@ const createScrubber = () => (
 	})
 );
 
-const createTouchBar = (selectServerControl) => (
-	new TouchBar({
+const createTouchBar = (selectServerControl) => {
+	const icons = {
+		bold: nativeImage.createFromDataURL(boldIcon),
+		italic: nativeImage.createFromDataURL(italicIcon),
+		strike: nativeImage.createFromDataURL(strikeIcon),
+		inline_code: nativeImage.createFromDataURL(inlineCodeIcon),
+		multi_line: nativeImage.createFromDataURL(multiLineIcon),
+	};
+
+	return new TouchBar({
 		items: [
 			new TouchBarPopover({
 				label: i18n.__('touchBar.selectServer'),
@@ -58,13 +71,13 @@ const createTouchBar = (selectServerControl) => (
 			...(
 				['bold', 'italic', 'strike', 'inline_code', 'multi_line']
 					.map((buttonId) => new TouchBarButton({
-						icon: nativeImage.createFromPath(`${ __dirname }/public/images/touch-bar/${ buttonId }.png`),
+						icon: icons[buttonId],
 						click: () => props.onTouchFormatButton(buttonId),
 					}))
 			),
 		],
-	})
-);
+	});
+};
 
 const render = () => {
 	if (process.platform !== 'darwin') {

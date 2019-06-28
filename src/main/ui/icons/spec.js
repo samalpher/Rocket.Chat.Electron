@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { getAppIconPath, getTrayIconPath, getAppIconImage, getTrayIconImage } from './icon';
+import { getAppIconPath, getTrayIconPath, getAppIconImage, getTrayIconImage } from './index';
 const { describe, it } = global;
 
 
