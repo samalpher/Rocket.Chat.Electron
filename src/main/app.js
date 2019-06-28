@@ -25,18 +25,6 @@ import {
 } from '../store/actions';
 
 
-const setupErrorHandling = () => {
-	process.on('uncaughtException', (error) => {
-		console.error(error && (error.stack || error));
-		app.quit(1);
-	});
-
-	process.on('unhandledRejection', (reason) => {
-		console.error(reason && (reason.stack || reason));
-		app.quit(1);
-	});
-};
-
 const setupUserDataPath = () => {
 	const appName = app.getName();
 	const dirName = process.env.NODE_ENV === 'production' ? appName : `${ appName } (${ process.env.NODE_ENV })`;
@@ -71,7 +59,6 @@ const attachAppEvents = () => {
 };
 
 const didAppLaunch = function *({ payload: args }) {
-	setupErrorHandling();
 	setupUserDataPath();
 	yield put(initializeConfig());
 	yield take(PREFERENCES_LOADED);

@@ -27,6 +27,7 @@
     "e2e": "gulp e2e"
   },
   "dependencies": {
+    "@bugsnag/js": "^6.3.2",
     "@emotion/core": "^10.0.10",
     "@emotion/styled": "^10.0.11",
     "@paulcbetts/system-idle-time": "^1.0.4",

@@ -271,7 +271,6 @@ let focusedWebContents;
 sagaMiddleware.run(function *() {
 	yield takeEvery(WEBVIEW_FOCUSED, function *({ payload: { webContentsId } }) {
 		focusedWebContents = webContents.fromId(webContentsId);
-		console.log(focusedWebContents.id, focusedWebContents.getURL());
 	});
 });
 

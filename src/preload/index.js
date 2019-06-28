@@ -1,3 +1,4 @@
+import { setupErrorHandling } from '../errorHandling';
 import setupEventsPreload from './events';
 import setupFormatPreload from './format';
 import setupJitsiPreload from './jitsi';
@@ -9,7 +10,7 @@ import setupSpellcheckingPreload from './spellchecking';
 import setupTitleChangePreload from './titleChange';
 import setupUserPresencePreload from './userPresence';
 
-
+setupErrorHandling('preload');
 setupEventsPreload();
 setupFormatPreload();
 setupJitsiPreload();

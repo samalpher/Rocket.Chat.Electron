@@ -1,3 +1,4 @@
+import { setupErrorHandling } from '../errorHandling';
 import { store } from '../store';
 import { appLaunched } from '../store/actions';
 import './app';
@@ -11,6 +12,7 @@ import './spellchecking';
 import './updates';
 
 
+setupErrorHandling('main');
 store.dispatch(appLaunched(process.argv.slice(2)));
 
 export { contextMenu } from './contextMenu';

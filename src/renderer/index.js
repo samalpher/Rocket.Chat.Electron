@@ -1,10 +1,13 @@
 import React from 'react';
 import { render, unmountComponentAtNode } from 'react-dom';
-import start from './events';
+import { setupErrorHandling } from '../errorHandling';
 import '../store';
 import { App } from '../components/App';
+import start from './events';
 import { initializeI18n } from './i18n';
 
+
+setupErrorHandling('renderer');
 
 window.addEventListener('load', async () => {
 	await initializeI18n();
