@@ -1,11 +1,15 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import { Outer, Inner } from './styles';
 
 
-export function View({ visible, ...props }) {
-	return (
-		<Outer visible={visible}>
-			<Inner {...props} />
-		</Outer>
-	);
-}
+export const View = forwardRef(
+	function View({ visible, ...props }, ref) {
+		return (
+			<Outer ref={ref} visible={visible}>
+				<Inner {...props} />
+			</Outer>
+		);
+	}
+);
+
+View.displayName = 'View';

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { takeLeading } from 'redux-saga/effects';
 import { useSaga } from '../hooks';
 import {
@@ -7,7 +7,7 @@ import {
 } from '../../store/actions';
 
 
-export const useWebviewLifeCycle = (url, webviewRef, onCreate, onDestroy) => {
+const useWebviewLifeCycle = (url, webviewRef, onCreate, onDestroy) => {
 	useEffect(() => {
 		const webContents = webviewRef.current.getWebContents();
 
@@ -19,7 +19,7 @@ export const useWebviewLifeCycle = (url, webviewRef, onCreate, onDestroy) => {
 	}, []);
 };
 
-export const useWebviewFocus = (url, webviewRef, onFocus) => {
+const useWebviewFocus = (url, webviewRef, onFocus) => {
 	useEffect(() => {
 		const webview = webviewRef.current;
 		const webContents = webview.getWebContents();
@@ -36,7 +36,7 @@ export const useWebviewFocus = (url, webviewRef, onFocus) => {
 	}, []);
 };
 
-export const useWebviewContextMenu = (url, webviewRef, onContextMenu) => {
+const useWebviewContextMenu = (url, webviewRef, onContextMenu) => {
 	useEffect(() => {
 		const webview = webviewRef.current;
 		const webContents = webview.getWebContents();
@@ -55,7 +55,7 @@ export const useWebviewContextMenu = (url, webviewRef, onContextMenu) => {
 	}, []);
 };
 
-export const useWebviewConsole = (url, webviewRef) => {
+const useWebviewConsole = (url, webviewRef) => {
 	useEffect(() => {
 		const webview = webviewRef.current;
 
@@ -77,7 +77,7 @@ export const useWebviewConsole = (url, webviewRef) => {
 	}, []);
 };
 
-export const useWebviewLoadState = (url, webviewRef, onReady, onDidNavigate) => {
+const useWebviewLoadState = (url, webviewRef, onReady, onDidNavigate) => {
 	const [loading, setLoading] = useState(false);
 	const [loadingError, setLoadingError] = useState(false);
 
@@ -139,7 +139,7 @@ export const useWebviewLoadState = (url, webviewRef, onReady, onDidNavigate) => 
 	return [loading, loadingError];
 };
 
-export const useWebviewActions = (url, webviewRef) => {
+const useWebviewActions = (url, webviewRef) => {
 	const isReloadAction = ({ type, payload }) => {
 		if (type !== RELOAD_WEBVIEW) {
 			return false;
@@ -191,7 +191,7 @@ export const useWebviewActions = (url, webviewRef) => {
 	});
 };
 
-export const useWebviewReloadFromError = (url, webviewRef) => {
+const useWebviewReloadFromError = (url, webviewRef) => {
 	const handleReloadFromError = () => {
 		const webview = webviewRef.current;
 
@@ -199,4 +199,38 @@ export const useWebviewReloadFromError = (url, webviewRef) => {
 	};
 
 	return handleReloadFromError;
+};
+
+export const useWebview = ({
+	url,
+	lastPath,
+	onCreate,
+	onDestroy,
+	onFocus,
+	onContextMenu,
+	onReady,
+	onDidNavigate,
+}) => {
+	const webviewRef = useRef(null);
+
+	useEffect(() => {
+		setImmediate(() => {
+			webviewRef.current.setAttribute('src', lastPath || url);
+		});
+	}, []);
+
+	useWebviewLifeCycle(url, webviewRef, onCreate, onDestroy);
+	useWebviewFocus(url, webviewRef, onFocus);
+	useWebviewContextMenu(url, webviewRef, onContextMenu);
+	useWebviewConsole(url, webviewRef);
+	const [loading, loadingError] = useWebviewLoadState(url, webviewRef, onReady, onDidNavigate);
+	useWebviewActions(url, webviewRef);
+	const handleReloadFromError = useWebviewReloadFromError(url, webviewRef);
+
+	return {
+		webviewRef,
+		loading,
+		loadingError,
+		handleReloadFromError,
+	};
 };

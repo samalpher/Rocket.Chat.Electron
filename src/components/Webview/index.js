@@ -1,51 +1,32 @@
-import React, { useRef } from 'react';
-import { ServerLoadingError } from './ServerLoadingError';
-import {
-	useWebviewLifeCycle,
-	useWebviewFocus,
-	useWebviewContextMenu,
-	useWebviewConsole,
-	useWebviewLoadState,
-	useWebviewActions,
-	useWebviewReloadFromError,
-} from './hooks';
-import { WebviewComponent } from './styles';
+import React from 'react';
 import { View } from '../View';
+import { useWebview } from './hooks';
+import { WebviewComponent } from './styles';
+import { ServerLoadingError } from './ServerLoadingError';
 
 
 export function Webview({
-	lastPath,
-	url,
 	visible,
-	onCreate,
-	onDestroy,
-	onFocus,
-	onContextMenu,
-	onReady,
-	onDidNavigate,
+	...props
 }) {
-	const webviewRef = useRef(null);
-
-	useWebviewLifeCycle(url, webviewRef, onCreate, onDestroy);
-	useWebviewFocus(url, webviewRef, onFocus);
-	useWebviewContextMenu(url, webviewRef, onContextMenu);
-	useWebviewConsole(url, webviewRef);
-	const [loading, loadingError] = useWebviewLoadState(url, webviewRef, onReady, onDidNavigate);
-	useWebviewActions(url, webviewRef);
-	const handleReloadFromError = useWebviewReloadFromError(url, webviewRef);
+	const {
+		webviewRef,
+		loading,
+		loadingError,
+		handleReloadFromError,
+	} = useWebview(props);
 
 	return (
-		<View visible={visible}>
-			<View visible={!loadingError}>
+		<>
+			<View visible={visible && !loadingError}>
 				<WebviewComponent
 					ref={webviewRef}
 					preload="../preload.js"
 					allowpopups="true"
 					disablewebsecurity="true"
-					src={lastPath || url}
 				/>
 			</View>
-			<View visible={loadingError}>
+			<View visible={visible && loadingError}>
 				{loadingError && (
 					<ServerLoadingError
 						loading={loading}
@@ -53,6 +34,6 @@ export function Webview({
 					/>
 				)}
 			</View>
-		</View>
+		</>
 	);
 }
