@@ -76,7 +76,7 @@ export const useContextMenu = (url) => {
 			},
 			{
 				label: t('sidebar.item.openDevTools'),
-				click: () => dispatch(openDevToolsForWebview(url)),
+				click: () => dispatch(openDevToolsForWebview({ url })),
 			},
 		]);
 		menu.popup(getCurrentWindow());

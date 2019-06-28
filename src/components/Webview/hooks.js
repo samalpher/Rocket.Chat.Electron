@@ -1,15 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
-import { takeLeading } from 'redux-saga/effects';
+import { takeEvery, takeLeading } from 'redux-saga/effects';
 import { useSaga } from '../hooks';
 import {
 	RELOAD_WEBVIEW,
 	OPEN_DEVTOOLS_FOR_WEBVIEW,
+	GO_BACK_ON_WEBVIEW,
+	GO_FORWARD_ON_WEBVIEW,
+	RESET_ZOOM,
+	ZOOM_IN,
+	ZOOM_OUT,
 } from '../../store/actions';
 
 
+const get = (webviewRef) => [webviewRef.current, webviewRef.current.getWebContents()];
+
 const useWebviewLifeCycle = (url, webviewRef, onCreate, onDestroy) => {
 	useEffect(() => {
-		const webContents = webviewRef.current.getWebContents();
+		const [, webContents] = get(webviewRef);
 
 		onCreate && onCreate(url, webContents);
 
@@ -21,8 +28,7 @@ const useWebviewLifeCycle = (url, webviewRef, onCreate, onDestroy) => {
 
 const useWebviewFocus = (url, webviewRef, onFocus) => {
 	useEffect(() => {
-		const webview = webviewRef.current;
-		const webContents = webview.getWebContents();
+		const [webview, webContents] = get(webviewRef);
 
 		const handleFocus = () => {
 			onFocus && onFocus(url, webContents);
@@ -38,8 +44,7 @@ const useWebviewFocus = (url, webviewRef, onFocus) => {
 
 const useWebviewContextMenu = (url, webviewRef, onContextMenu) => {
 	useEffect(() => {
-		const webview = webviewRef.current;
-		const webContents = webview.getWebContents();
+		const [webview, webContents] = get(webviewRef);
 
 		const handleContextMenu = (event) => {
 			event.preventDefault();
@@ -82,8 +87,7 @@ const useWebviewLoadState = (url, webviewRef, onReady, onDidNavigate) => {
 	const [loadingError, setLoadingError] = useState(false);
 
 	useEffect(() => {
-		const webview = webviewRef.current;
-		const webContents = webview.getWebContents();
+		const [webview, webContents] = get(webviewRef);
 
 		const handleReady = () => {
 			webview.send('set-server-url', url);
@@ -140,22 +144,24 @@ const useWebviewLoadState = (url, webviewRef, onReady, onDidNavigate) => {
 };
 
 const useWebviewActions = (url, webviewRef) => {
-	const isReloadAction = ({ type, payload }) => {
-		if (type !== RELOAD_WEBVIEW) {
+	const matchAction = (type) => ({ type: _type, payload }) => {
+		if (type !== _type) {
 			return false;
 		}
 
-		const webview = webviewRef.current;
-		const webContentsId = webview.getWebContents().id;
+		const [, webContents] = get(webviewRef);
+		const webContentsId = webContents.id;
 
 		const { url: _url, webContentsId: _webContentsId } = payload || {};
-
 		return _url === url || _webContentsId === webContentsId;
 	};
 
-	function *reload({ payload: { ignoringCache = false, fromUrl = false } }) {
+	const doAction = (saga) => function *({ url, webContentsId, ...payload }) {
 		const webview = webviewRef.current;
+		yield saga(webview, { ...payload });
+	};
 
+	function *reload(webview, { ignoringCache = false, fromUrl = false }) {
 		if (ignoringCache) {
 			webview.reloadIgnoringCache();
 			return;
@@ -169,25 +175,38 @@ const useWebviewActions = (url, webviewRef) => {
 		webview.reload();
 	}
 
-	const isOpenDevToolsForAction = ({ type, payload }) => {
-		if (type !== OPEN_DEVTOOLS_FOR_WEBVIEW) {
-			return false;
-		}
-
-		const _url = payload;
-
-		return _url === url;
-	};
-
-	function *openDevToolsFor() {
-		const webview = webviewRef.current;
-
+	function *openDevToolsFor(webview) {
 		webview.openDevTools();
 	}
 
+	function *goBack(webview) {
+		webview.goBack();
+	}
+
+	function *goForward(webview) {
+		webview.goForward();
+	}
+
+	function *resetZoom(webview) {
+		webview.setZoomLevel(0);
+	}
+
+	function *zoomIn(webview) {
+		webview.setZoomLevel(webview.getZoomLevel() + 1);
+	}
+
+	function *zoomOut(webview) {
+		webview.setZoomLevel(webview.getZoomLevel() - 1);
+	}
+
 	useSaga(function *watchWebviewsActions() {
-		yield takeLeading(isReloadAction, reload);
-		yield takeLeading(isOpenDevToolsForAction, openDevToolsFor);
+		yield takeLeading(matchAction(RELOAD_WEBVIEW), doAction(reload));
+		yield takeLeading(matchAction(OPEN_DEVTOOLS_FOR_WEBVIEW), doAction(openDevToolsFor));
+		yield takeLeading(matchAction(GO_BACK_ON_WEBVIEW), doAction(goBack));
+		yield takeLeading(matchAction(GO_FORWARD_ON_WEBVIEW), doAction(goForward));
+		yield takeEvery(RESET_ZOOM, doAction(resetZoom));
+		yield takeEvery(ZOOM_IN, doAction(zoomIn));
+		yield takeEvery(ZOOM_OUT, doAction(zoomOut));
 	});
 };
 

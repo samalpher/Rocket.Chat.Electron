@@ -18,3 +18,4 @@ export * from './touchBar';
 export * from './update';
 export * from './view';
 export * from './webviews';
+export * from './zoom';

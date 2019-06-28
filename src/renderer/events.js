@@ -10,7 +10,6 @@ import {
 	TRIGGER_CONTEXT_MENU,
 	SPELLCHECKING_CORRECTIONS_UPDATED,
 	SET_SERVER_PROPERTIES,
-	loadingDone,
 	showLanding,
 	showServer,
 	setPreferences,
@@ -29,12 +28,17 @@ import {
 	reloadWebview,
 	showMainWindow,
 	openDevToolsForWebview,
+	resetZoom,
+	zoomIn,
+	zoomOut,
+	goBackOnWebview,
+	goForwardOnWebview,
+	WEBVIEW_FOCUSED,
 } from '../store/actions';
 import { queryEditFlags } from '../utils';
 import { migrateDataFromLocalStorage } from './data';
-import { webviews } from './webviews';
 import { MENU_ITEM_CLICKED } from '../store/actions/menus';
-const { app, dialog, getCurrentWindow, shell } = remote;
+const { app, dialog, getCurrentWindow, shell, webContents } = remote;
 const { contextMenu } = remote.require('./main');
 
 
@@ -106,8 +110,6 @@ const confirmAppDataReset = () => new Promise((resolve) => {
 		cancelId: 1,
 	}, (response) => resolve(response === 0));
 });
-
-const getFocusedWebContents = () => webviews.getWebContents({ focused: true }) || getCurrentWindow().webContents;
 
 const browseForDictionary = () => {
 	const { spellchecking: { dictionaryInstallationDirectory } } = store.getState();
@@ -264,6 +266,17 @@ sagaMiddleware.run(function *mainWindowSaga() {
 	});
 });
 
+let focusedWebContents;
+
+sagaMiddleware.run(function *() {
+	yield takeEvery(WEBVIEW_FOCUSED, function *({ payload: { webContentsId } }) {
+		focusedWebContents = webContents.fromId(webContentsId);
+		console.log(focusedWebContents.id, focusedWebContents.getURL());
+	});
+});
+
+const getFocusedWebContents = () => focusedWebContents || getCurrentWindow().webContents;
+
 sagaMiddleware.run(function *menusSaga() {
 	yield takeEvery(MENU_ITEM_CLICKED, function *({ payload: { action, args } }) {
 		switch (action) {
@@ -306,15 +319,15 @@ sagaMiddleware.run(function *menusSaga() {
 				break;
 
 			case 'reset-zoom':
-				webviews.resetZoom({ active: true });
+				yield put(resetZoom());
 				break;
 
 			case 'zoom-in':
-				webviews.zoomIn({ active: true });
+				yield put(zoomIn());
 				break;
 
 			case 'zoom-out':
-				webviews.zoomOut({ active: true });
+				yield put(zoomOut());
 				break;
 
 			case 'add-new-server':
@@ -331,8 +344,8 @@ sagaMiddleware.run(function *menusSaga() {
 
 			case 'reload-server': {
 				const [{ ignoringCache = false, clearCertificates: clearCerts = false } = {}] = args;
-				const { view } = yield select();
-				if (!view.url) {
+				const { view: { url } = {} } = yield select();
+				if (!url) {
 					break;
 				}
 
@@ -340,25 +353,33 @@ sagaMiddleware.run(function *menusSaga() {
 					yield put(clearCertificates());
 				}
 
-				yield put(reloadWebview({ url: view.url, ignoringCache }));
+				yield put(reloadWebview({ url, ignoringCache }));
 				break;
 			}
 
-			case 'open-devtools-for-server':
-				const { view } = yield select();
-				if (!view.url) {
-					break;
+			case 'open-devtools-for-server': {
+				const { view: { url } = {} } = yield select();
+				if (url) {
+					yield put(openDevToolsForWebview({ url }));
 				}
-				yield put(openDevToolsForWebview(view.url));
 				break;
+			}
 
-			case 'go-back':
-				webviews.goBack({ active: true });
+			case 'go-back': {
+				const { view: { url } = {} } = yield select();
+				if (url) {
+					yield put(goBackOnWebview({ url }));
+				}
 				break;
+			}
 
-			case 'go-forward':
-				webviews.goForward({ active: true });
+			case 'go-forward': {
+				const { view: { url } = {} } = yield select();
+				if (url) {
+					yield put(goForwardOnWebview({ url }));
+				}
 				break;
+			}
 
 			case 'reload-app':
 				getCurrentWindow().reload();
@@ -408,7 +429,6 @@ sagaMiddleware.run(function *menusSaga() {
 export default async () => {
 	window.addEventListener('beforeunload', () => {
 		try {
-			webviews.unmount();
 			getCurrentWindow().removeAllListeners();
 		} catch (error) {
 			remote.getGlobal('console').error(error.stack || error);
@@ -436,12 +456,6 @@ export default async () => {
 	contextMenu.on('copy', () => getFocusedWebContents().copy());
 	contextMenu.on('paste', () => getFocusedWebContents().paste());
 	contextMenu.on('select-all', () => getFocusedWebContents().selectAll());
-
-	webviews.on('ready', () => {
-		store.dispatch(loadingDone());
-	});
-
-	webviews.mount();
 
 	await migrateDataFromLocalStorage();
 };
