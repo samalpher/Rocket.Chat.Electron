@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button } from '../../ui/Button';
-import { LoadingIndicator } from '../../ui/LoadingIndicator';
+import { Button } from '../../Button';
+import { LoadingIndicator } from '../../LoadingIndicator';
 import { useReload } from './hooks';
 import { Container, ReloadButtonContainer, Subtitle, Title } from './styles';
 
