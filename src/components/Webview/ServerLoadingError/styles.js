@@ -1,14 +1,11 @@
 import styled from '@emotion/styled';
+import { View } from '../../View';
+import notFoundImage from './notFound.jpg';
 
 
-export const Container = styled.div`
-	flex: 1;
-	display: flex;
-	flex-direction: column;
-	cursor: default;
-	user-select: none;
+export const Container = styled(View)`
 	background-color: #2f343d;
-	background-image: url('../public/images/not-found.jpg');
+	background-image: url(${ notFoundImage });
 	background-repeat: no-repeat;
 	background-position: center bottom;
 	background-size: cover;

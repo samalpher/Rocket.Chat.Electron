@@ -103,4 +103,6 @@ export const normalizeLocale = (locale) => {
 	return countryCode ? `${ languageCode }-${ countryCode }` : languageCode;
 };
 
-export const getLanguagesDirectoryPath = () => `${ app.getAppPath() }/app/i18n/lang`;
+export const getPathFromApp = (path) => `${ app.getAppPath() }/app/${ path }`;
+
+export const getLanguagesDirectoryPath = () => getPathFromApp('i18n/lang');

@@ -1,7 +1,7 @@
 import styled from '@emotion/styled';
-import PlusIcon from './icons/plus.svg';
-import DownloadIcon from './icons/download.svg';
-import CogIcon from './icons/cog.svg';
+import PlusIcon from './plus.svg';
+import DownloadIcon from './download.svg';
+import CogIcon from './cog.svg';
 
 
 export const Container = styled.div`

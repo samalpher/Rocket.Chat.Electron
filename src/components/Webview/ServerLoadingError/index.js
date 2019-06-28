@@ -6,7 +6,7 @@ import { useReload } from './hooks';
 import { Container, ReloadButtonContainer, Subtitle, Title } from './styles';
 
 
-export function ServerLoadingError({ loading, onReload }) {
+export function ServerLoadingError({ visible, loading, onReload }) {
 	const [reload, reloadCounter] = useReload(loading, onReload);
 	const { t } = useTranslation();
 
@@ -15,7 +15,7 @@ export function ServerLoadingError({ loading, onReload }) {
 	};
 
 	return (
-		<Container>
+		<Container visible={visible}>
 			<Title>{t('loadingError.announcement')}</Title>
 			<Subtitle>{t('loadingError.title')}</Subtitle>
 			<ReloadButtonContainer>

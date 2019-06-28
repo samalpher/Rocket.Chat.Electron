@@ -9,6 +9,7 @@ const istanbul = require('rollup-plugin-istanbul');
 const json = require('rollup-plugin-json');
 const nodeResolve = require('rollup-plugin-node-resolve');
 const replace = require('rollup-plugin-replace');
+const url = require('rollup-plugin-url');
 const svgr = require('@svgr/rollup').default;
 const appManifest = require('../package.json');
 
@@ -31,6 +32,10 @@ const bundle = async (src, dest, { coverage = false, env = 'development' } = {})
 					sourcemap: true,
 				}),
 			] : []),
+			url({
+				limit: 1024 * 1024,
+				include: ['src/components/**/*.jpg', 'src/components/**/*.png'],
+			}),
 			svgr({
 				svgoConfig: {
 					plugins: {
