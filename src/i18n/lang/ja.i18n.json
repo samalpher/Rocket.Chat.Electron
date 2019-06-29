@@ -48,7 +48,7 @@
             "title": "エラー",
             "message": "辞書ファイルのコピーでエラー: {{- message}}"
         },
-        "resetAppData": {
+        "resetUserData": {
             "title": "アプリのデータをリセット",
             "message": "すべてのチームからログアウトしアプリを元の設定に戻すことができます。 これは元に戻すことはできません。",
             "yes": "はい",
@@ -123,7 +123,7 @@
         "reload": "再読み込み(&R)",
         "reloadIgnoringCache": "キャッシュを無視して再読み込み",
         "reportIssue": "問題を報告する",
-        "resetAppData": "アプリデータをリセット",
+        "resetUserData": "アプリデータをリセット",
         "resetZoom": "ズームをリセット",
         "selectAll": "全て選択 (&A)",
         "showFullScreen": "全画面",

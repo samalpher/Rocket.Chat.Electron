@@ -1,7 +1,6 @@
 export * from './app';
 export * from './basicAuth';
 export * from './certificates';
-export * from './config';
 export * from './contextMenu';
 export * from './deepLinks';
 export * from './downloads';
@@ -16,6 +15,7 @@ export * from './servers';
 export * from './spellchecking';
 export * from './touchBar';
 export * from './update';
+export * from './userData';
 export * from './view';
 export * from './webviews';
 export * from './zoom';

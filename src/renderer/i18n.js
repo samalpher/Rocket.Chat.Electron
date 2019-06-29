@@ -1,37 +1,38 @@
 import { remote } from 'electron';
-import i18n from 'i18next';
+import i18next from 'i18next';
 import i18nextNodeFileSystemBackend from 'i18next-node-fs-backend';
 import jetpack from 'fs-jetpack';
 import { initReactI18next } from 'react-i18next';
-import { getLanguagesDirectoryPath, normalizeLocale } from '../utils';
+import { getLanguagesDirectoryPath, normalizeLocale } from '../utils/i18n';
 const { app } = remote;
 
 
-export const initializeI18n = async () => {
-	const languagesDirPath = getLanguagesDirectoryPath();
-	const defaultLocale = 'en';
-	const globalLocale = normalizeLocale(app.getLocale());
+const getI18nextOptions = async () => {
+	const lngsDirectory = await jetpack.dirAsync(getLanguagesDirectoryPath());
+	const lngFiles = await lngsDirectory.listAsync();
+	const lngs = await lngFiles
+		.filter((filename) => /^([a-z]{2}(\-[A-Z]{2})?)\.i18n\.json$/.test(filename))
+		.map((filename) => filename.split('.')[0]);
+	const lng = normalizeLocale(app.getLocale());
+	const fallbackLng = 'en';
+	const loadPath = `${ lngsDirectory.cwd() }/{{lng}}.i18n.json`;
 
-	const lngFiles = await jetpack.listAsync(getLanguagesDirectoryPath());
-	const lngs = (
-		lngFiles
-			.filter((filename) => /^([a-z]{2}(\-[A-Z]{2})?)\.i18n\.json$/.test(filename))
-			.map((filename) => filename.split('.')[0])
-	);
+	return {
+		lngs,
+		lng,
+		fallbackLng,
+		backend: {
+			loadPath,
+		},
+		interpolation: {
+			escapeValue: false,
+		},
+	};
+};
 
-	await i18n
+export const useI18n = async () => {
+	await i18next
 		.use(initReactI18next)
 		.use(i18nextNodeFileSystemBackend)
-		.init({
-			lng: globalLocale,
-			fallbackLng: defaultLocale,
-			lngs,
-			backend: {
-				loadPath: `${ languagesDirPath }/{{lng}}.i18n.json`,
-			},
-			initImmediate: true,
-			interpolation: {
-				escapeValue: false,
-			},
-		});
+		.init(await getI18nextOptions());
 };

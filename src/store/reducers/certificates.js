@@ -1,7 +1,7 @@
 import {
 	CERTIFICATES_LOADED,
 	CLEAR_CERTIFICATES,
-	ADD_CERTIFICATE,
+	CERTIFICATE_TRUSTED,
 } from '../actions';
 
 
@@ -13,7 +13,7 @@ export const reducer = (state = {}, { type, payload }) => {
 		case CLEAR_CERTIFICATES:
 			return {};
 
-		case ADD_CERTIFICATE:
+		case CERTIFICATE_TRUSTED:
 			return {
 				...state,
 				[payload.host]: payload.certificate,

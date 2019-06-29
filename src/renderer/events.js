@@ -1,7 +1,7 @@
 import { remote, clipboard } from 'electron';
 import { t } from 'i18next';
-import { put, select, take, takeEvery } from 'redux-saga/effects';
-import { store, sagaMiddleware } from '../store';
+import { call, put, select, take, takeEvery } from 'redux-saga/effects';
+import { getStore, getSaga } from './store';
 import {
 	ASK_FOR_CERTIFICATE_TRUST,
 	PROCESS_AUTH_DEEP_LINK,
@@ -23,7 +23,7 @@ import {
 	replyCertificateTrustRequest,
 	installSpellCheckingDictionaries,
 	quitAndInstallUpdate,
-	resetAppData,
+	resetUserData,
 	updateSpellCheckingCorrections,
 	reloadWebview,
 	showMainWindow,
@@ -99,20 +99,20 @@ const confirmServerAddition = ({ serverUrl }) => new Promise((resolve) => {
 
 const confirmAppDataReset = () => new Promise((resolve) => {
 	dialog.showMessageBox({
-		title: t('dialog.resetAppData.title'),
-		message: t('dialog.resetAppData.message'),
+		title: t('dialog.resetUserData.title'),
+		message: t('dialog.resetUserData.message'),
 		type: 'question',
 		buttons: [
-			t('dialog.resetAppData.yes'),
-			t('dialog.resetAppData.cancel'),
+			t('dialog.resetUserData.yes'),
+			t('dialog.resetUserData.cancel'),
 		],
 		defaultId: 1,
 		cancelId: 1,
 	}, (response) => resolve(response === 0));
 });
 
-const browseForDictionary = () => {
-	const { spellchecking: { dictionaryInstallationDirectory } } = store.getState();
+function* browseForDictionary() {
+	const { spellchecking: { dictionaryInstallationDirectory } } = yield select();
 
 	dialog.showOpenDialog(getCurrentWindow(), {
 		title: t('dialog.loadDictionary.title'),
@@ -122,22 +122,18 @@ const browseForDictionary = () => {
 			{ name: t('dialog.loadDictionary.allFiles'), extensions: ['*'] },
 		],
 		properties: ['openFile', 'multiSelections'],
-	}, (filePaths = []) => {
-		store.dispatch(installSpellCheckingDictionaries(filePaths));
+	}, async (filePaths = []) => {
+		(await getStore()).dispatch(installSpellCheckingDictionaries(filePaths));
 	});
-};
+}
 
-const spellCheckingDictionaryInstallFailed = ({ payload: error }) => {
+const spellCheckingDictionaryInstallFailed = ({ payload: { error } }) => {
 	console.error(error);
 	dialog.showErrorBox(
 		t('dialog.loadDictionaryError.title'),
 		t('dialog.loadDictionaryError.message', { message: error.message })
 	);
 };
-
-sagaMiddleware.run(function *spellCheckingSaga() {
-	yield takeEvery(SPELLCHECKING_DICTIONARY_INSTALL_FAILED, spellCheckingDictionaryInstallFailed);
-});
 
 const validateServer = async (serverUrl, timeout = 5000) => {
 	try {
@@ -172,26 +168,26 @@ const validateServer = async (serverUrl, timeout = 5000) => {
 	}
 };
 
-const addServer = async (serverUrl, askForConfirmation = false) => {
-	const { servers } = store.getState();
+function* addServer(serverUrl, askForConfirmation = false) {
+	const { servers } = yield select();
 	const index = servers.findIndex(({ url }) => url === serverUrl);
 
 	if (index > -1) {
-		store.dispatch(showServer(serverUrl));
+		yield put(showServer(serverUrl));
 		return;
 	}
 
 	if (askForConfirmation) {
-		const shouldAdd = await confirmServerAddition({ serverUrl });
+		const shouldAdd = yield call(confirmServerAddition, { serverUrl });
 		if (!shouldAdd) {
 			return;
 		}
 	}
 
-	const result = await validateServer(serverUrl);
+	const result = yield call(validateServer, serverUrl);
 	if (result === 'valid') {
-		store.dispatch(addServerFromUrl(serverUrl));
-		store.dispatch(showServer(serverUrl));
+		yield put(addServerFromUrl(serverUrl));
+		yield put(showServer(serverUrl));
 	} else {
 		dialog.showErrorBox(
 			t('dialog.addServerError.title'),
@@ -200,28 +196,47 @@ const addServer = async (serverUrl, askForConfirmation = false) => {
 	}
 
 	return result;
-};
+}
 
-const askForCertificateTrust = function *({ payload: { requestUrl, error, certificate, replacing } }) {
+const askForCertificateTrust = function* ({ payload: { requestUrl, error, certificate, replacing } }) {
 	const isTrusted = yield warnCertificateError({ requestUrl, error, certificate, replacing });
-	store.dispatch(replyCertificateTrustRequest(isTrusted));
+	yield put(replyCertificateTrustRequest(isTrusted));
 };
 
-sagaMiddleware.run(function *certificatesSaga() {
-	yield takeEvery(ASK_FOR_CERTIFICATE_TRUST, askForCertificateTrust);
-});
-
-const processAuthDeepLink = function *({ payload: { serverUrl } }) {
+const processAuthDeepLink = function* ({ payload: { serverUrl } }) {
 	yield put(focusMainWindow());
 	yield addServer(serverUrl, true);
 };
 
-sagaMiddleware.run(function *deepLinksSaga() {
-	yield takeEvery(PROCESS_AUTH_DEEP_LINK, processAuthDeepLink);
-});
+const updateDownloadCompleted = function* () {
+	const whenInstall = yield askWhenToInstallUpdate();
 
-sagaMiddleware.run(function *contextMenuSaga() {
-	yield takeEvery(TRIGGER_CONTEXT_MENU, function *({ payload: params }) {
+	if (whenInstall === 'later') {
+		yield warnDelayedUpdateInstall();
+		return;
+	}
+
+	yield put(quitAndInstallUpdate());
+};
+
+let focusedWebContents;
+
+const getFocusedWebContents = () => focusedWebContents || getCurrentWindow().webContents;
+
+function* spellCheckingSaga() {
+	yield takeEvery(SPELLCHECKING_DICTIONARY_INSTALL_FAILED, spellCheckingDictionaryInstallFailed);
+}
+
+function* certificatesSaga() {
+	yield takeEvery(ASK_FOR_CERTIFICATE_TRUST, askForCertificateTrust);
+}
+
+function* deepLinksSaga() {
+	yield takeEvery(PROCESS_AUTH_DEEP_LINK, processAuthDeepLink);
+}
+
+function* contextMenuSaga() {
+	yield takeEvery(TRIGGER_CONTEXT_MENU, function* ({ payload: params }) {
 		const {
 			preferences: {
 				enabledDictionaries,
@@ -240,44 +255,29 @@ sagaMiddleware.run(function *contextMenuSaga() {
 
 		contextMenu.trigger({ ...params, corrections, dictionaries });
 	});
-});
+}
 
-const updateDownloadCompleted = function *() {
-	const whenInstall = yield askWhenToInstallUpdate();
-
-	if (whenInstall === 'later') {
-		yield warnDelayedUpdateInstall();
-		return;
-	}
-
-	yield put(quitAndInstallUpdate());
-};
-
-sagaMiddleware.run(function *updatesSaga() {
+function* updatesSaga() {
 	yield takeEvery(UPDATE_DOWNLOAD_COMPLETED, updateDownloadCompleted);
-});
+}
 
-sagaMiddleware.run(function *mainWindowSaga() {
-	yield takeEvery(SET_SERVER_PROPERTIES, function *({ payload: { badge } }) {
+function* mainWindowSaga() {
+	yield takeEvery(SET_SERVER_PROPERTIES, function* ({ payload: { badge } }) {
 		const { preferences: { showWindowOnUnreadChanged } } = yield select();
 		if (typeof badge === 'number' && showWindowOnUnreadChanged) {
 			getCurrentWindow().showInactive();
 		}
 	});
-});
+}
 
-let focusedWebContents;
-
-sagaMiddleware.run(function *() {
-	yield takeEvery(WEBVIEW_FOCUSED, function *({ payload: { webContentsId } }) {
+function* webviewFocusSaga() {
+	yield takeEvery(WEBVIEW_FOCUSED, function* ({ payload: { webContentsId } }) {
 		focusedWebContents = webContents.fromId(webContentsId);
 	});
-});
+}
 
-const getFocusedWebContents = () => focusedWebContents || getCurrentWindow().webContents;
-
-sagaMiddleware.run(function *menusSaga() {
-	yield takeEvery(MENU_ITEM_CLICKED, function *({ payload: { action, args } }) {
+function* menusSaga() {
+	yield takeEvery(MENU_ITEM_CLICKED, function* ({ payload: { action, args } }) {
 		switch (action) {
 			case 'quit':
 				app.quit();
@@ -391,7 +391,7 @@ sagaMiddleware.run(function *menusSaga() {
 			case 'reset-app-data': {
 				const shouldReset = yield confirmAppDataReset();
 				if (shouldReset) {
-					yield put(resetAppData());
+					yield put(resetUserData());
 				}
 				break;
 			}
@@ -423,6 +423,18 @@ sagaMiddleware.run(function *menusSaga() {
 			}
 		}
 	});
+}
+
+const runSagas = async () => (await getSaga()).run(function* () {
+	yield* spellCheckingSaga();
+	yield* certificatesSaga();
+	yield* deepLinksSaga();
+	yield* contextMenuSaga();
+	yield* updatesSaga();
+	yield* mainWindowSaga();
+	yield* webviewFocusSaga();
+	yield* menusSaga();
+	yield* migrateDataFromLocalStorage();
 });
 
 export default async () => {
@@ -434,17 +446,17 @@ export default async () => {
 		}
 	});
 
-	document.addEventListener('selectionchange', () => {
-		store.dispatch(editFlagsUpdated(queryEditFlags()));
-		store.dispatch(historyFlagsUpdated({
+	document.addEventListener('selectionchange', async () => {
+		(await getStore()).dispatch(editFlagsUpdated(queryEditFlags()));
+		(await getStore()).dispatch(historyFlagsUpdated({
 			canGoBack: false,
 			canGoForward: false,
 		}));
 	});
 
 	contextMenu.on('replace-misspelling', (correction) => getFocusedWebContents().replaceMisspelling(correction));
-	contextMenu.on('toggle-dictionary', (dictionary, enabled) => store.dispatch(toggleSpellcheckingDictionary(dictionary, enabled)));
-	contextMenu.on('browse-for-dictionary', () => browseForDictionary());
+	contextMenu.on('toggle-dictionary', async (dictionary, enabled) => (await getStore()).dispatch(toggleSpellcheckingDictionary(dictionary, enabled)));
+	contextMenu.on('browse-for-dictionary', async () => (await getSaga()).run(browseForDictionary));
 	contextMenu.on('save-image-as', (url) => getFocusedWebContents().downloadURL(url)),
 	contextMenu.on('open-link', (url) => shell.openExternal(url));
 	contextMenu.on('copy-link-text', ({ text }) => clipboard.write({ text, bookmark: text }));
@@ -456,5 +468,5 @@ export default async () => {
 	contextMenu.on('paste', () => getFocusedWebContents().paste());
 	contextMenu.on('select-all', () => getFocusedWebContents().selectAll());
 
-	await migrateDataFromLocalStorage();
+	runSagas();
 };

@@ -1,7 +1,8 @@
 import { app, Menu, BrowserWindow } from 'electron';
-import i18n from '../../../i18n';
-import { connect, store } from '../../../store';
+import { t } from 'i18next';
+import { getStore } from '../../store';
 import { menuItemClicked } from '../../../store/actions/menus';
+import { connect } from '../../../utils/store';
 
 
 let props = {};
@@ -25,11 +26,11 @@ const createTemplate = ({
 	onAction = () => {},
 }) => ([
 	{
-		label: process.platform === 'darwin' ? appName : i18n.__('menus.fileMenu'),
+		label: process.platform === 'darwin' ? appName : t('menus.fileMenu'),
 		submenu: [
 			...(process.platform === 'darwin' ? [
 				{
-					label: i18n.__('menus.about', { appName }),
+					label: t('menus.about', { appName }),
 					click: () => onAction('about'),
 				},
 				{
@@ -59,7 +60,7 @@ const createTemplate = ({
 			] : []),
 			...(process.platform !== 'darwin' ? [
 				{
-					label: i18n.__('menus.addNewServer'),
+					label: t('menus.addNewServer'),
 					accelerator: 'CommandOrControl+N',
 					click: () => onAction('add-new-server'),
 				},
@@ -68,23 +69,23 @@ const createTemplate = ({
 				type: 'separator',
 			},
 			{
-				label: i18n.__('menus.quit', { appName }),
+				label: t('menus.quit', { appName }),
 				accelerator: 'CommandOrControl+Q',
 				click: () => onAction('quit'),
 			},
 		],
 	},
 	{
-		label: i18n.__('menus.editMenu'),
+		label: t('menus.editMenu'),
 		submenu: [
 			{
-				label: i18n.__('menus.undo'),
+				label: t('menus.undo'),
 				accelerator: 'CommandOrControl+Z',
 				enabled: canUndo,
 				click: () => onAction('undo'),
 			},
 			{
-				label: i18n.__('menus.redo'),
+				label: t('menus.redo'),
 				accelerator: process.platform === 'win32' ? 'Control+Y' : 'CommandOrControl+Shift+Z',
 				enabled: canRedo,
 				click: () => onAction('redo'),
@@ -93,25 +94,25 @@ const createTemplate = ({
 				type: 'separator',
 			},
 			{
-				label: i18n.__('menus.cut'),
+				label: t('menus.cut'),
 				accelerator: 'CommandOrControl+X',
 				enabled: canCut,
 				click: () => onAction('cut'),
 			},
 			{
-				label: i18n.__('menus.copy'),
+				label: t('menus.copy'),
 				accelerator: 'CommandOrControl+C',
 				enabled: canCopy,
 				click: () => onAction('copy'),
 			},
 			{
-				label: i18n.__('menus.paste'),
+				label: t('menus.paste'),
 				accelerator: 'CommandOrControl+V',
 				enabled: canPaste,
 				click: () => onAction('paste'),
 			},
 			{
-				label: i18n.__('menus.selectAll'),
+				label: t('menus.selectAll'),
 				accelerator: 'CommandOrControl+A',
 				enabled: canSelectAll,
 				click: () => onAction('select-all'),
@@ -119,23 +120,23 @@ const createTemplate = ({
 		],
 	},
 	{
-		label: i18n.__('menus.viewMenu'),
+		label: t('menus.viewMenu'),
 		submenu: [
 			{
-				label: i18n.__('menus.reload'),
+				label: t('menus.reload'),
 				accelerator: 'CommandOrControl+R',
 				click: () => onAction('reload-server'),
 			},
 			{
-				label: i18n.__('menus.reloadIgnoringCache'),
+				label: t('menus.reloadIgnoringCache'),
 				click: () => onAction('reload-server', { ignoringCache: true }),
 			},
 			{
-				label: i18n.__('menus.clearTrustedCertificates'),
+				label: t('menus.clearTrustedCertificates'),
 				click: () => onAction('reload-server', { ignoringCache: true, clearCertificates: true }),
 			},
 			{
-				label: i18n.__('menus.openDevTools'),
+				label: t('menus.openDevTools'),
 				accelerator: process.platform === 'darwin' ? 'Command+Alt+I' : 'Ctrl+Shift+I',
 				click: () => onAction('open-devtools-for-server'),
 			},
@@ -143,13 +144,13 @@ const createTemplate = ({
 				type: 'separator',
 			},
 			{
-				label: i18n.__('menus.back'),
+				label: t('menus.back'),
 				accelerator: process.platform === 'darwin' ? 'Command+[' : 'Alt+Left',
 				enabled: canGoBack,
 				click: () => onAction('go-back'),
 			},
 			{
-				label: i18n.__('menus.forward'),
+				label: t('menus.forward'),
 				accelerator: process.platform === 'darwin' ? 'Command+]' : 'Alt+Right',
 				enabled: canGoForward,
 				click: () => onAction('go-forward'),
@@ -158,21 +159,21 @@ const createTemplate = ({
 				type: 'separator',
 			},
 			{
-				label: i18n.__('menus.showTrayIcon'),
+				label: t('menus.showTrayIcon'),
 				type: 'checkbox',
 				checked: hasTray,
 				click: ({ checked }) => onAction('toggle', 'hasTray', checked),
 			},
 			...(process.platform !== 'darwin' ? [
 				{
-					label: i18n.__('menus.showMenuBar'),
+					label: t('menus.showMenuBar'),
 					type: 'checkbox',
 					checked: hasMenus,
 					click: ({ checked }) => onAction('toggle', 'hasMenus', checked),
 				},
 			] : []),
 			{
-				label: i18n.__('menus.showServerList'),
+				label: t('menus.showServerList'),
 				type: 'checkbox',
 				checked: hasSidebar,
 				click: ({ checked }) => onAction('toggle', 'hasSidebar', checked),
@@ -181,29 +182,29 @@ const createTemplate = ({
 				type: 'separator',
 			},
 			{
-				label: i18n.__('menus.resetZoom'),
+				label: t('menus.resetZoom'),
 				accelerator: 'CommandOrControl+0',
 				click: () => onAction('reset-zoom'),
 			},
 			{
-				label: i18n.__('menus.zoomIn'),
+				label: t('menus.zoomIn'),
 				accelerator: 'CommandOrControl+Plus',
 				click: () => onAction('zoom-in'),
 			},
 			{
-				label: i18n.__('menus.zoomOut'),
+				label: t('menus.zoomOut'),
 				accelerator: 'CommandOrControl+-',
 				click: () => onAction('zoom-out'),
 			},
 		],
 	},
 	{
-		label: i18n.__('menus.windowMenu'),
+		label: t('menus.windowMenu'),
 		role: 'window',
 		submenu: [
 			...(process.platform === 'darwin' ? [
 				{
-					label: i18n.__('menus.addNewServer'),
+					label: t('menus.addNewServer'),
 					accelerator: 'CommandOrControl+N',
 					click: () => onAction('add-new-server'),
 				},
@@ -222,19 +223,19 @@ const createTemplate = ({
 				type: 'separator',
 			},
 			{
-				label: i18n.__('menus.reload'),
+				label: t('menus.reload'),
 				accelerator: 'CommandOrControl+Shift+R',
 				click: () => onAction('reload-app'),
 			},
 			{
-				label: i18n.__('menus.toggleDevTools'),
+				label: t('menus.toggleDevTools'),
 				click: () => onAction('toggle-devtools'),
 			},
 			{
 				type: 'separator',
 			},
 			{
-				label: i18n.__('menus.showOnUnreadMessage'),
+				label: t('menus.showOnUnreadMessage'),
 				type: 'checkbox',
 				checked: showWindowOnUnreadChanged,
 				click: ({ checked }) => onAction('toggle', 'showWindowOnUnreadChanged', checked),
@@ -243,53 +244,53 @@ const createTemplate = ({
 				type: 'separator',
 			},
 			{
-				label: i18n.__('menus.minimize'),
+				label: t('menus.minimize'),
 				accelerator: 'CommandOrControl+M',
 				role: 'minimize',
 			},
 			...(process.platform === 'darwin' ? [
 				{
-					label: i18n.__('menus.showFullScreen'),
+					label: t('menus.showFullScreen'),
 					accelerator: 'Control+Command+F',
 					role: 'toggleFullScreen',
 				},
 			] : []),
 			{
-				label: i18n.__('menus.close'),
+				label: t('menus.close'),
 				accelerator: 'CommandOrControl+W',
 				role: 'close',
 			},
 		],
 	},
 	{
-		label: i18n.__('menus.helpMenu'),
+		label: t('menus.helpMenu'),
 		role: 'help',
 		submenu: [
 			{
-				label: i18n.__('menus.documentation'),
+				label: t('menus.documentation'),
 				click: () => onAction('open-url', 'https://rocket.chat/docs'),
 			},
 			{
 				type: 'separator',
 			},
 			{
-				label: i18n.__('menus.reportIssue'),
+				label: t('menus.reportIssue'),
 				click: () => onAction('open-url', 'https://github.com/RocketChat/Rocket.Chat.Electron/issues/new'),
 			},
 			{
-				label: i18n.__('menus.resetAppData'),
+				label: t('menus.resetUserData'),
 				click: () => onAction('reset-app-data'),
 			},
 			{
 				type: 'separator',
 			},
 			{
-				label: i18n.__('menus.learnMore'),
+				label: t('menus.learnMore'),
 				click: () => onAction('open-url', 'https://rocket.chat'),
 			},
 			...(process.platform !== 'darwin' ? [
 				{
-					label: i18n.__('menus.about', { appName }),
+					label: t('menus.about', { appName }),
 					click: () => onAction('about'),
 				},
 			] : []),
@@ -356,11 +357,14 @@ const mapStateToProps = ({
 	canSelectAll,
 	canGoBack,
 	canGoForward,
-	onAction: (action, ...args) => store.dispatch(menuItemClicked(action, ...args)),
+	onAction: (action, ...args) => {
+		Promise.resolve(getStore())
+			.then((store) => store.dispatch(menuItemClicked(action, ...args)));
+	},
 });
 
 const mount = () => {
-	disconnect = connect(mapStateToProps)(setProps);
+	disconnect = connect(getStore(), mapStateToProps)(setProps);
 };
 
 const unmount = () => {
@@ -375,7 +379,7 @@ const unmount = () => {
 		label: app.getName(),
 		submenu: [
 			{
-				label: i18n.__('menus.quit', { appName: app.getName() }),
+				label: t('menus.quit', { appName: app.getName() }),
 				accelerator: 'CommandOrControl+Q',
 				click: () => app.quit(),
 			},

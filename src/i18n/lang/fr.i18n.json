@@ -39,7 +39,7 @@
         "loadDictionary": {
             "title": "Ouvrir le dictionnaire"
         },
-        "resetAppData": {
+        "resetUserData": {
             "yes": "Oui",
             "cancel": "Annuler"
         },
@@ -108,7 +108,7 @@
         "redo": "&Rétablir",
         "reload": "Recharger",
         "reportIssue": "Signaler un problème",
-        "resetAppData": "Effacer les données de l'application",
+        "resetUserData": "Effacer les données de l'application",
         "resetZoom": "Restaurer zoom",
         "selectAll": "Sélectionner tout",
         "showFullScreen": "En plein écran",

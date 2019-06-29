@@ -2,9 +2,9 @@ import jetpack from 'fs-jetpack';
 import path from 'path';
 import { put, select, takeEvery } from 'redux-saga/effects';
 import spellchecker from 'spellchecker';
-import { sagaMiddleware } from '../store';
+import { getSaga } from './store';
 import {
-	LOAD_CONFIG,
+	USER_DATA_LOADED,
 	INSTALL_SPELLCHECKING_DICTIONARIES,
 	TOGGLE_SPELLCHECKING_DICTIONARY,
 	UPDATE_SPELLCHECKING_CORRECTIONS,
@@ -14,14 +14,14 @@ import {
 	spellCheckingDictionariesEnabled,
 	spellCheckingCorrectionsUpdated,
 } from '../store/actions';
-import { getDirectory } from '../utils';
+import { getDirectory } from './userData/fileSystem';
 
 
-const doLoadConfig = function *() {
+const doLoadConfig = function* () {
 	const embeddedDictionaries = spellchecker.getAvailableDictionaries();
 	const supportsMultipleDictionaries = embeddedDictionaries.length > 0 && process.platform !== 'win32';
 
-	const directory = getDirectory('dictionaries', 'app');
+	const directory = getDirectory('app', 'dictionaries');
 	const dictionaryInstallationDirectory = directory.path();
 
 	const installedDictionaries = (yield directory.findAsync({ matching: '*.{aff,dic}' }))
@@ -36,18 +36,18 @@ const doLoadConfig = function *() {
 	}));
 };
 
-const doInstallSpellCheckingDictionaries = function *({ payload: { filePaths } }) {
+const doInstallSpellCheckingDictionaries = function* ({ payload: filePaths }) {
 	const { spellchecking: { dictionaryInstallationDirectory } } = yield select();
 
 	for (const filePath of filePaths) {
-		const dictionary = filePath.basename(filePath, filePath.extname(filePath));
-		const basename = filePath.basename(filePath);
-		const newPath = filePath.join(dictionaryInstallationDirectory, basename);
+		const dictionary = path.basename(filePath, path.extname(filePath));
+		const basename = path.basename(filePath);
+		const newPath = path.join(dictionaryInstallationDirectory, basename);
 		try {
 			yield jetpack.copyAsync(filePath, newPath);
 			yield put(spellCheckingDictionaryInstalled(dictionary));
 		} catch (error) {
-			yield put(spellCheckingDictionaryInstallFailed(dictionary));
+			yield put(spellCheckingDictionaryInstallFailed(dictionary, error));
 		}
 	}
 };
@@ -68,7 +68,7 @@ const filterDictionaries = (availableDictionaries, supportsMultipleDictionaries,
 		.slice(...supportsMultipleDictionaries ? [] : [0, 1])
 );
 
-const doToggleSpellCheckingDictionary = function *({ payload: { dictionary, enabled } }) {
+const doToggleSpellCheckingDictionary = function* ({ payload: { dictionary, enabled } }) {
 	const {
 		preferences: {
 			enabledDictionaries,
@@ -89,7 +89,7 @@ const doToggleSpellCheckingDictionary = function *({ payload: { dictionary, enab
 	yield put(spellCheckingDictionariesEnabled(dictionaries));
 };
 
-const doUpdateSpellCheckingCorrections = function *({ payload: word }) {
+const doUpdateSpellCheckingCorrections = function* ({ payload: word }) {
 	const {
 		preferences: {
 			enabledDictionaries,
@@ -114,9 +114,12 @@ const doUpdateSpellCheckingCorrections = function *({ payload: word }) {
 	))));
 };
 
-sagaMiddleware.run(function *watchSpellCheckingActions() {
-	yield takeEvery(LOAD_CONFIG, doLoadConfig);
-	yield takeEvery(INSTALL_SPELLCHECKING_DICTIONARIES, doInstallSpellCheckingDictionaries);
-	yield takeEvery(TOGGLE_SPELLCHECKING_DICTIONARY, doToggleSpellCheckingDictionary);
-	yield takeEvery(UPDATE_SPELLCHECKING_CORRECTIONS, doUpdateSpellCheckingCorrections);
-});
+export const useSpellChecking = async () => {
+	(await getSaga()).run(function* watchSpellCheckingActions() {
+		yield *doLoadConfig();
+		yield takeEvery(USER_DATA_LOADED, doLoadConfig);
+		yield takeEvery(INSTALL_SPELLCHECKING_DICTIONARIES, doInstallSpellCheckingDictionaries);
+		yield takeEvery(TOGGLE_SPELLCHECKING_DICTIONARY, doToggleSpellCheckingDictionary);
+		yield takeEvery(UPDATE_SPELLCHECKING_CORRECTIONS, doUpdateSpellCheckingCorrections);
+	});
+};

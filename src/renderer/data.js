@@ -1,5 +1,5 @@
 import debug from 'debug';
-import { store } from '../store';
+import { put, select } from 'redux-saga/effects';
 import {
 	preferencesLoaded,
 	serversLoaded,
@@ -50,8 +50,8 @@ const parseServerSorting = (value) => {
 	}
 };
 
-export const migrateDataFromLocalStorage = async () => {
-	let { preferences, servers, view } = store.getState();
+export function* migrateDataFromLocalStorage() {
+	let { preferences, servers, view } = yield select();
 
 	if (localStorage.getItem('hideTray')) {
 		debug('rc:data')('hideTray');
@@ -124,7 +124,7 @@ export const migrateDataFromLocalStorage = async () => {
 		}
 	}
 
-	store.dispatch(preferencesLoaded(preferences));
-	store.dispatch(serversLoaded(servers));
-	store.dispatch(viewLoaded(view));
-};
+	yield put(preferencesLoaded(preferences));
+	yield put(serversLoaded(servers));
+	yield put(viewLoaded(view));
+}

@@ -35,7 +35,7 @@
             "yes": "Ja",
             "no": "Nein"
         },
-        "resetAppData": {
+        "resetUserData": {
             "yes": "Ja",
             "cancel": "Abbrechen"
         },
@@ -102,7 +102,7 @@
         "redo": "Wieder&holen",
         "reload": "&Neu laden",
         "reportIssue": "Problem melden",
-        "resetAppData": "Appdaten löschen",
+        "resetUserData": "Appdaten löschen",
         "resetZoom": "Originalgröße",
         "selectAll": "Alle auswählen",
         "showFullScreen": "Vollbildmodus",

@@ -1,5 +1,6 @@
 import { app, BrowserWindow } from 'electron';
-import { connect } from '../../../store';
+import { connect } from '../../../utils/store';
+import { getStore } from '../../store';
 import { getTrayIconImage, getAppIconImage } from '../icons';
 
 
@@ -88,7 +89,7 @@ const mapStateToProps = ({
 let disconnect;
 
 const mount = () => {
-	disconnect = connect(mapStateToProps)(setProps);
+	disconnect = connect(getStore(), mapStateToProps)(setProps);
 };
 
 const unmount = async () => {

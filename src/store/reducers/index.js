@@ -15,7 +15,7 @@ import { reducer as view } from './view';
 import { reducer as webviews } from './webviews';
 
 
-export const reducer = combineReducers({
+export const rootReducer = combineReducers({
 	certificates,
 	downloads,
 	editFlags,

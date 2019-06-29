@@ -1,31 +1,52 @@
-import { select, takeEvery } from 'redux-saga/effects';
+import { app } from 'electron';
 import { parse as parseUrl } from 'url';
-import { sagaMiddleware } from '../store';
-import { BASIC_AUTH_LOGIN_REQUESTED } from '../store/actions';
+import { basicAuth as debug } from '../debug';
+import { SERVERS_LOADED } from '../store/actions';
+import { waitForAction } from '../utils/store';
+import { getStore, getSaga } from './store';
+import { pipe } from '../utils/decorators';
 
 
-const basicAuthLoginRequested = function *({ payload: { event, webContents, request, callback } }) {
-	const { auth } = parseUrl(request.url);
+const getCredentialsFromUrl = (url) => {
+	const { auth } = parseUrl(url);
 
-	if (auth) {
-		event.preventDefault();
-		const [username, password] = auth.split(':');
-		callback(username, password);
-		return;
+	if (!auth) {
+		return [];
+	}
+
+	return auth.split(':');
+};
+
+const findServer = (webContentsUrl) => ({ servers }) =>
+	servers.find(({ url }) => webContentsUrl.indexOf(url) === 0);
+
+const getCredentialsFromServer = ({ username, password } = {}) => [username, password];
+
+const fetchCredentials = async (webContents, request) => {
+	const [username, password] = getCredentialsFromUrl(request.url);
+	if (username && password) {
+		return [username, password];
 	}
 
 	const webContentsUrl = webContents.getURL();
-	const credentials = yield select(({ servers }) => servers.find(({ url }) => webContentsUrl.indexOf(url) === 0));
+	const findCredentials = pipe(findServer(webContentsUrl), getCredentialsFromServer);
+	return findCredentials((await getStore()).getState());
+};
 
-	if (!credentials || !credentials.username || !credentials.password) {
+const handleLogin = async (event, webContents, request, callback) => {
+	const [username, password] = await fetchCredentials(webContents, request);
+	if (!username || !password) {
 		return;
 	}
 
-	const { username, password } = credentials;
 	event.preventDefault();
+
 	callback(username, password);
 };
 
-sagaMiddleware.run(function *watchBasicAuthActions() {
-	yield takeEvery(BASIC_AUTH_LOGIN_REQUESTED, basicAuthLoginRequested);
-});
+export const useBasicAuth = () => {
+	waitForAction(getSaga(), SERVERS_LOADED)(() => {
+		app.on('login', handleLogin);
+		debug('%o event listener attached', 'login');
+	});
+};

@@ -50,7 +50,7 @@
             "title": "Error",
             "message": "Error copying dictionary file: {{- message}}"
         },
-        "resetAppData": {
+        "resetUserData": {
             "title": "Reset app data",
             "message": "This will sign you out from all your teams and reset the app back to its original settings. This cannot be undone.",
             "yes": "Yes",
@@ -130,7 +130,7 @@
         "reload": "&Reload",
         "reloadIgnoringCache": "Reload ignoring cache",
         "reportIssue": "Report issue",
-        "resetAppData": "Reset app data",
+        "resetUserData": "Reset app data",
         "resetZoom": "Reset zoom",
         "selectAll": "Select &all",
         "showFullScreen": "Full screen",

@@ -1,13 +1,14 @@
 import { nativeImage, TouchBar, BrowserWindow } from 'electron';
 import { EventEmitter } from 'events';
-import i18n from '../../../i18n';
-import { connect, store } from '../../../store';
+import { t } from 'i18next';
+import { getStore } from '../../store';
 import { showServer, formatButtonTouched } from '../../../store/actions';
 import boldIcon from './bold.png';
 import italicIcon from './italic.png';
 import strikeIcon from './strike.png';
 import inlineCodeIcon from './inlineCode.png';
 import multiLineIcon from './multiLine.png';
+import { connect } from '../../../utils/store';
 const {
 	TouchBarButton,
 	TouchBarLabel,
@@ -59,15 +60,15 @@ const createTouchBar = (selectServerControl) => {
 	return new TouchBar({
 		items: [
 			new TouchBarPopover({
-				label: i18n.__('touchBar.selectServer'),
+				label: t('touchBar.selectServer'),
 				items: new TouchBar({
 					items: [
-						new TouchBarLabel({ label: i18n.__('touchBar.selectServer') }),
+						new TouchBarLabel({ label: t('touchBar.selectServer') }),
 						selectServerControl,
 					],
 				}),
 			}),
-			new TouchBarLabel({ label: i18n.__('touchBar.formatting') }),
+			new TouchBarLabel({ label: t('touchBar.formatting') }),
 			...(
 				['bold', 'italic', 'strike', 'inline_code', 'multi_line']
 					.map((buttonId) => new TouchBarButton({
@@ -86,7 +87,7 @@ const render = () => {
 
 	const { mainWindow, servers, activeServerUrl } = props;
 	const serverTitlesLength = servers.reduce((length, { url, title }) => length + (title || url).length, 0);
-	const maxLengthForSegmentsControl = 76 - i18n.__('touchBar.selectServer').length;
+	const maxLengthForSegmentsControl = 76 - t('touchBar.selectServer').length;
 	const shouldUseSegmentedControl = serverTitlesLength <= maxLengthForSegmentsControl;
 
 	if (isUsingSegmentedControl !== shouldUseSegmentedControl) {
@@ -118,8 +119,14 @@ const mapStateToProps = ({
 	mainWindow: BrowserWindow.fromId(id),
 	servers,
 	activeServerUrl: view.url,
-	onSelectServer: (url) => store.dispatch(showServer(url)),
-	onTouchFormatButton: (buttonId) => store.dispatch(formatButtonTouched(buttonId)),
+	onSelectServer: (url) => {
+		Promise.resolve(getStore())
+			.then((store) => store.dispatch(showServer(url)));
+	},
+	onTouchFormatButton: (buttonId) => {
+		Promise.resolve(getStore())
+			.then((store) => store.dispatch(formatButtonTouched(buttonId)));
+	},
 });
 
 let disconnect;
@@ -129,7 +136,7 @@ const mount = () => {
 		return;
 	}
 
-	disconnect = connect(mapStateToProps)(setProps);
+	disconnect = connect(getStore(), mapStateToProps)(setProps);
 };
 
 const unmount = () => {

@@ -1,8 +1,8 @@
 import { Menu, BrowserWindow } from 'electron';
 import { EventEmitter } from 'events';
+import { t } from 'i18next';
 import { select } from 'redux-saga/effects';
-import i18n from '../../../i18n';
-import { sagaMiddleware } from '../../../store';
+import { getSaga } from '../../store';
 
 
 const events = new EventEmitter();
@@ -21,7 +21,7 @@ const createSpellCheckingMenuTemplate = ({
 			...(corrections.length === 0 ? (
 				[
 					{
-						label: i18n.__('contextMenu.noSpellingSuggestions'),
+						label: t('contextMenu.noSpellingSuggestions'),
 						enabled: false,
 					},
 				]
@@ -33,7 +33,7 @@ const createSpellCheckingMenuTemplate = ({
 			)),
 			...(corrections.length > 6 ? [
 				{
-					label: i18n.__('contextMenu.moreSpellingSuggestions'),
+					label: t('contextMenu.moreSpellingSuggestions'),
 					submenu: corrections.slice(6).map((correction) => ({
 						label: correction,
 						click: () => events.emit('replace-misspelling', correction),
@@ -45,7 +45,7 @@ const createSpellCheckingMenuTemplate = ({
 			},
 		] : []),
 		{
-			label: i18n.__('contextMenu.spellingLanguages'),
+			label: t('contextMenu.spellingLanguages'),
 			enabled: dictionaries.length > 0,
 			submenu: [
 				...dictionaries.map(({ dictionary, enabled }) => ({
@@ -58,7 +58,7 @@ const createSpellCheckingMenuTemplate = ({
 					type: 'separator',
 				},
 				{
-					label: i18n.__('contextMenu.browseForLanguage'),
+					label: t('contextMenu.browseForLanguage'),
 					click: () => events.emit('browse-for-dictionary'),
 				},
 			],
@@ -76,7 +76,7 @@ const createImageMenuTemplate = ({
 	mediaType === 'image' ?
 		[
 			{
-				label: i18n.__('contextMenu.saveImageAs'),
+				label: t('contextMenu.saveImageAs'),
 				click: () => events.emit('save-image-as', srcURL),
 			},
 			{
@@ -93,16 +93,16 @@ const createLinkMenuTemplate = ({
 	linkURL ?
 		[
 			{
-				label: i18n.__('contextMenu.openLink'),
+				label: t('contextMenu.openLink'),
 				click: () => events.emit('open-link', linkURL),
 			},
 			{
-				label: i18n.__('contextMenu.copyLinkText'),
+				label: t('contextMenu.copyLinkText'),
 				enabled: !!linkText,
 				click: () => events.emit('copy-link-text', { text: linkText, url: linkURL }),
 			},
 			{
-				label: i18n.__('contextMenu.copyLinkAddress'),
+				label: t('contextMenu.copyLinkAddress'),
 				click: () => events.emit('copy-link-address', { text: linkText, url: linkURL }),
 			},
 			{
@@ -123,13 +123,13 @@ const createDefaultMenuTemplate = ({
 	} = {},
 } = {}) => [
 	{
-		label: i18n.__('contextMenu.undo'),
+		label: t('contextMenu.undo'),
 		accelerator: 'CommandOrControl+Z',
 		enabled: canUndo,
 		click: () => events.emit('undo'),
 	},
 	{
-		label: i18n.__('contextMenu.redo'),
+		label: t('contextMenu.redo'),
 		accelerator: process.platform === 'win32' ? 'Control+Y' : 'CommandOrControl+Shift+Z',
 		enabled: canRedo,
 		click: () => events.emit('redo'),
@@ -138,41 +138,44 @@ const createDefaultMenuTemplate = ({
 		type: 'separator',
 	},
 	{
-		label: i18n.__('contextMenu.cut'),
+		label: t('contextMenu.cut'),
 		accelerator: 'CommandOrControl+X',
 		enabled: canCut,
 		click: () => events.emit('cut'),
 	},
 	{
-		label: i18n.__('contextMenu.copy'),
+		label: t('contextMenu.copy'),
 		accelerator: 'CommandOrControl+C',
 		enabled: canCopy,
 		click: () => events.emit('copy'),
 	},
 	{
-		label: i18n.__('contextMenu.paste'),
+		label: t('contextMenu.paste'),
 		accelerator: 'CommandOrControl+V',
 		enabled: canPaste,
 		click: () => events.emit('paste'),
 	},
 	{
-		label: i18n.__('contextMenu.selectAll'),
+		label: t('contextMenu.selectAll'),
 		accelerator: 'CommandOrControl+A',
 		enabled: canSelectAll,
 		click: () => events.emit('select-all'),
 	},
 ];
 
-const trigger = (params) => sagaMiddleware.run(function *trigger() {
+const trigger = async (params) => {
 	const menu = Menu.buildFromTemplate([
 		...createSpellCheckingMenuTemplate(params),
 		...createImageMenuTemplate(params),
 		...createLinkMenuTemplate(params),
 		...createDefaultMenuTemplate(params),
 	]);
-	const mainWindow = yield select(({ mainWindow: { id } }) => BrowserWindow.fromId(id));
-	menu.popup({ window: mainWindow });
-});
+
+	(await getSaga()).run(function* trigger() {
+		const mainWindow = yield select(({ mainWindow: { id } }) => BrowserWindow.fromId(id));
+		menu.popup({ window: mainWindow });
+	});
+};
 
 export const contextMenu = Object.assign(events, {
 	trigger,

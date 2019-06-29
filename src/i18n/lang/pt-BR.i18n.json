@@ -48,7 +48,7 @@
             "title": "Erro",
             "message": "Erro ao copiar arquivo de dicionário: {{- message}}"
         },
-        "resetAppData": {
+        "resetUserData": {
             "title": "Limpar dados do aplicativo",
             "message": "Isto vai deslogá-lo de todos os times e resetar o aplicativo para suas configurações originais. Isto não pode ser desfeito.",
             "yes": "Sim",
@@ -123,7 +123,7 @@
         "reload": "&Recarregar",
         "reloadIgnoringCache": "Recarregar ignorando o cache",
         "reportIssue": "Reportar problema",
-        "resetAppData": "Limpar dados do aplicativo",
+        "resetUserData": "Limpar dados do aplicativo",
         "resetZoom": "Redefinir zoom",
         "selectAll": "&Selecionar tudo",
         "showFullScreen": "Tela cheia",

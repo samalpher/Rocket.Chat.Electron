@@ -1,117 +1,131 @@
 import { app } from 'electron';
-import jetpack from 'fs-jetpack';
-import { call, put, take, takeEvery } from 'redux-saga/effects';
-import i18n from '../i18n';
-import { sagaMiddleware, store } from '../store';
+import { call, put, takeEvery } from 'redux-saga/effects';
+import { setupErrorHandling } from '../errorHandling';
+import { getStore, getSaga, setupStore } from './store';
 import {
 	APP_ACTIVATED,
-	APP_LAUNCHED,
 	APP_SECOND_INSTANCE_LAUNCHED,
 	APP_WILL_QUIT,
-	PREFERENCES_LOADED,
-	RESET_APP_DATA,
 	appActivated,
 	appReady,
 	appSecondInstanceLaunched,
 	appWillQuit,
-	basicAuthLoginRequested,
-	certificateErrorThrown,
-	commandLineArgumentPassed,
-	deepLinkRequested,
 	destroyMainWindow,
 	focusMainWindow,
-	initializeConfig,
 	showMainWindow,
 } from '../store/actions';
+import { useI18n } from './i18n';
+import { setupUserDataPath } from './userData/fileSystem';
+import { usePreferences } from './userData/preferences';
+import { isRequestingUserDataReset, resetUserData, useUserDataReset } from './userData/reset';
+import { createElectronStore } from './userData/store';
+import { useBasicAuth } from './basicAuth';
+import { useCertificates } from './certificates';
+import { useDeepLinks, processDeepLink } from './deepLinks';
+import { useDownloads } from './downloads';
+import { useSpellChecking } from './spellchecking';
+import { useUpdate } from './update';
+import { useUI } from './ui';
+import { useServers } from './userData/servers';
+import { useView } from './userData/view';
 
 
-const setupUserDataPath = () => {
-	const appName = app.getName();
-	const dirName = process.env.NODE_ENV === 'production' ? appName : `${ appName } (${ process.env.NODE_ENV })`;
-
-	app.setPath('userData', jetpack.path(app.getPath('appData'), dirName));
+const didAppActivate = function* () {
+	yield put(showMainWindow());
 };
 
-const setupAppParameters = () => {
+const doAppWillQuit = function* () {
+	yield put(destroyMainWindow());
+};
+
+const didAppSecondInstanceLaunch = function* ({ payload: args }) {
+	yield put(focusMainWindow());
+
+	for (const arg of args) {
+		yield call(processDeepLink, arg);
+	}
+};
+
+const setupAppParameters = async () => {
+	// TODO: wait for preferences
 	app.setAsDefaultProtocolClient('rocketchat');
 	app.setAppUserModelId('chat.rocket');
 	app.commandLine.appendSwitch('--autoplay-policy', 'no-user-gesture-required');
-	// TODO: make it a setting
+
+	// TODO: use preference
 	if (process.platform === 'linux') {
 		app.disableHardwareAcceleration();
 	}
 };
 
-const resetAppData = () => {
-	jetpack.remove(app.getPath('userData'));
-	app.relaunch({ args: [process.argv[1]] });
-	app.quit();
-};
+const canStart = () => process.mas || app.requestSingleInstanceLock();
 
-const attachAppEvents = () => {
+const attachEvents = () => {
 	app.on('window-all-closed', () => app.quit());
-	app.on('activate', () => store.dispatch(appActivated()));
-	app.on('before-quit', () => store.dispatch(appWillQuit()));
-	app.on('open-url', (event, url) => store.dispatch(deepLinkRequested(event, url)));
-	app.on('second-instance', (event, argv) => store.dispatch(appSecondInstanceLaunched(argv.slice(2))));
-	app.on('login', (...args) => store.dispatch(basicAuthLoginRequested(...args)));
-	app.on('certificate-error', (...args) => store.dispatch(certificateErrorThrown(...args)));
+	app.on('activate', () => {
+		Promise.resolve(getStore())
+			.then((store) => store.dispatch(appActivated()));
+	});
+	app.on('before-quit', () => {
+		Promise.resolve(getStore())
+			.then((store) => store.dispatch(appWillQuit()));
+	});
+	app.on('second-instance', (event, argv) => {
+		Promise.resolve(getStore())
+			.then((store) => store.dispatch(appSecondInstanceLaunched(argv.slice(2))));
+	});
 };
 
-const didAppLaunch = function *({ payload: args }) {
+export const startApp = async () => {
+	setupErrorHandling('main');
+
+	setupStore();
+
 	setupUserDataPath();
-	yield put(initializeConfig());
-	yield take(PREFERENCES_LOADED);
+
+	createElectronStore();
+
+	usePreferences();
+
 	setupAppParameters();
 
-	if (args.includes('--reset-app-data')) {
-		resetAppData();
+	const args = process.argv.slice(2);
+
+	if (isRequestingUserDataReset(args)) {
+		resetUserData();
 		return;
 	}
 
-	const canStart = process.mas || app.requestSingleInstanceLock();
-	if (!canStart) {
-		app.quit();
+	if (!canStart()) {
+		app.exit(0);
 		return;
 	}
 
-	attachAppEvents();
+	attachEvents();
 
-	yield call(app.whenReady.bind(app));
-	yield call(i18n.initialize);
+	useBasicAuth();
+	useCertificates();
+	useDeepLinks();
+	useDownloads();
+	useI18n();
+	useServers();
+	useSpellChecking();
+	useUI();
+	useUpdate();
+	useUserDataReset();
+	useView();
 
-	yield put(appReady());
+	await app.whenReady();
 
-	for (const arg of args) {
-		yield put(commandLineArgumentPassed(arg));
-	}
-};
-
-const didAppActivate = function *() {
-	yield put(showMainWindow());
-};
-
-const doAppWillQuit = function *() {
-	yield put(destroyMainWindow());
-};
-
-const didAppSecondInstanceLaunch = function *({ payload: args }) {
-	yield put(focusMainWindow());
+	(await getStore()).dispatch(appReady());
 
 	for (const arg of args) {
-		yield put(commandLineArgumentPassed(arg));
+		processDeepLink(arg);
 	}
-};
 
-const doResetAppData = function *() {
-	app.relaunch({ args: [process.argv[1], '--reset-app-data'] });
-	app.quit();
+	(await getSaga()).run(function* () {
+		yield takeEvery(APP_ACTIVATED, didAppActivate);
+		yield takeEvery(APP_WILL_QUIT, doAppWillQuit);
+		yield takeEvery(APP_SECOND_INSTANCE_LAUNCHED, didAppSecondInstanceLaunch);
+	});
 };
-
-sagaMiddleware.run(function *watchAppActions() {
-	yield takeEvery(APP_LAUNCHED, didAppLaunch);
-	yield takeEvery(APP_ACTIVATED, didAppActivate);
-	yield takeEvery(APP_WILL_QUIT, doAppWillQuit);
-	yield takeEvery(APP_SECOND_INSTANCE_LAUNCHED, didAppSecondInstanceLaunch);
-	yield takeEvery(RESET_APP_DATA, doResetAppData);
-});

@@ -49,7 +49,7 @@
             "title": "错误",
             "message": "复制字典时发生错误: {{- message}}"
         },
-        "resetAppData": {
+        "resetUserData": {
             "title": "重置应用数据",
             "message": "您可以退出所有团队并将应用程序恢复为其原始设置。这将无法撤消。",
             "yes": "是",
@@ -126,7 +126,7 @@
         "reload": "重新载入 (&R)",
         "reloadIgnoringCache": "忽略缓存并重新加载",
         "reportIssue": "报告问题",
-        "resetAppData": "重置应用数据",
+        "resetUserData": "重置应用数据",
         "resetZoom": "重置缩放",
         "selectAll": "选择全部 (&A)",
         "showFullScreen": "全屏幕",

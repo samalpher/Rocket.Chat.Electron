@@ -22,9 +22,9 @@ export const spellCheckingDictionaryInstalled = (dictionary) => ({
 	payload: dictionary,
 });
 
-export const spellCheckingDictionaryInstallFailed = (dictionary) => ({
+export const spellCheckingDictionaryInstallFailed = (dictionary, error) => ({
 	type: SPELLCHECKING_DICTIONARY_INSTALL_FAILED,
-	payload: dictionary,
+	payload: { dictionary, error },
 });
 
 export const toggleSpellcheckingDictionary = (dictionary, enabled) => ({

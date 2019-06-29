@@ -1,8 +1,9 @@
 import { app, Menu, systemPreferences, Tray } from 'electron';
-import i18n from '../../../i18n';
-import { connect, store } from '../../../store';
+import { t } from 'i18next';
+import { getStore } from '../../store';
 import { getTrayIconImage } from '../icons';
 import { showMainWindow, hideMainWindow } from '../../../store/actions';
+import { connect } from '../../../utils/store';
 
 
 let props = {
@@ -20,23 +21,23 @@ const getIconTooltip = ({ badge }) => {
 	const appName = app.getName();
 
 	if (badge === '•') {
-		return i18n.__('tray.tooltip.unreadMessage', { appName });
+		return t('tray.tooltip.unreadMessage', { appName });
 	}
 
 	if (Number.isInteger(badge)) {
-		return i18n.__('tray.tooltip.unreadMention', { appName, count: badge });
+		return t('tray.tooltip.unreadMention', { appName, count: badge });
 	}
 
-	return i18n.__('tray.tooltip.noUnreadMessage', { appName });
+	return t('tray.tooltip.noUnreadMessage', { appName });
 };
 
 const createContextMenuTemplate = ({ windowVisible, onClickActivate, onClickQuit }) => ([
 	{
-		label: !windowVisible ? i18n.__('tray.menu.show') : i18n.__('tray.menu.hide'),
+		label: !windowVisible ? t('tray.menu.show') : t('tray.menu.hide'),
 		click: () => onClickActivate(windowVisible),
 	},
 	{
-		label: i18n.__('tray.menu.quit'),
+		label: t('tray.menu.quit'),
 		click: () => onClickQuit(),
 	},
 ]);
@@ -122,7 +123,10 @@ const mapStateToProps = ({
 		badge,
 		windowVisible: !isHidden,
 		visible: hasTray,
-		onClickActivate: (windowVisible) => store.dispatch(windowVisible ? hideMainWindow() : showMainWindow()),
+		onClickActivate: (windowVisible) => {
+			Promise.resolve(getStore())
+				.then((store) => store.dispatch(windowVisible ? hideMainWindow() : showMainWindow()));
+		},
 		onClickQuit: () => app.quit(),
 	});
 };
@@ -132,7 +136,7 @@ let disconnect;
 const mount = () => {
 	render();
 
-	disconnect = connect(mapStateToProps)(setProps);
+	disconnect = connect(getStore(), mapStateToProps)(setProps);
 };
 
 const unmount = () => {
