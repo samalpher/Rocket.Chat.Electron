@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron';
+import { BrowserWindow } from 'electron';
 import { connect } from '../../../utils/store';
 import { getStore } from '../../store';
 import { getTrayIconImage, getAppIconImage } from '../icons';
@@ -10,34 +10,8 @@ let props = {
 	mainWindow: null,
 };
 
-let state = {
-	prevBadge: null,
-};
-
-const getBadgeText = (badge) => {
-	if (badge === '•') {
-		return '•';
-	}
-
-	if (Number.isInteger(badge)) {
-		return String(badge);
-	}
-
-	return '';
-};
-
 const render = () => {
 	const { badge, mainWindow } = props;
-	const { prevBadge } = state;
-
-	if (process.platform === 'darwin') {
-		app.dock.setBadge(getBadgeText(badge));
-		const count = Number.isInteger(badge) ? badge : 0;
-		const previousCount = Number.isInteger(prevBadge) ? prevBadge : 0;
-		if (count > 0 && previousCount === 0) {
-			app.dock.bounce();
-		}
-	}
 
 	if (process.platform === 'linux' || process.platform === 'win32') {
 		const { hasTray } = props;
@@ -52,10 +26,6 @@ const render = () => {
 };
 
 const setProps = (newProps) => {
-	state = {
-		...state,
-		prevBadge: newProps.badge,
-	};
 	props = newProps;
 	render();
 };

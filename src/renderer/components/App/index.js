@@ -4,6 +4,7 @@ import { Provider } from 'react-redux';
 import { getStore } from '../../store';
 import { Shell } from '../Shell';
 import { LoadingSplash } from '../LoadingSplash';
+import { Dock } from '../Dock';
 const { dock, menus, touchBar, tray } = remote.require('./main');
 
 
@@ -35,6 +36,7 @@ export function App() {
 		<React.Suspense fallback={<LoadingSplash visible />}>
 			<AsyncStoreProvider>
 				<Shell />
+				<Dock />
 			</AsyncStoreProvider>
 		</React.Suspense>
 	);
