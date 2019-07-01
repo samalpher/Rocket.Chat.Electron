@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { takeEvery, takeLeading } from 'redux-saga/effects';
-import { useSaga } from '../hooks';
+import { useSaga } from '../../hooks';
 import {
 	RELOAD_WEBVIEW,
 	OPEN_DEVTOOLS_FOR_WEBVIEW,
@@ -9,7 +9,7 @@ import {
 	RESET_ZOOM,
 	ZOOM_IN,
 	ZOOM_OUT,
-} from '../../../actions';
+} from '../../../../actions';
 
 
 const get = (webviewRef) => [webviewRef.current, webviewRef.current.getWebContents()];

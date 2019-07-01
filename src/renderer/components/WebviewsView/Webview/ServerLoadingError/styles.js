@@ -1,5 +1,5 @@
 import styled from '@emotion/styled';
-import { View } from '../../View';
+import { View } from '../../../View';
 import notFoundImage from './notFound.jpg';
 
 

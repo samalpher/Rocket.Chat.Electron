@@ -1,5 +1,5 @@
 import React from 'react';
-import { Webview } from '../Webview';
+import { Webview } from './Webview';
 import { useWebviews } from './hooks';
 
 

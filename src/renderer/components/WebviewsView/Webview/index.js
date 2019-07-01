@@ -1,6 +1,6 @@
 import React from 'react';
-import { View } from '../View';
-import { getPathFromApp } from '../../../utils';
+import { View } from '../../View';
+import { getPathFromApp } from '../../../../utils';
 import { useWebview } from './hooks';
 import { WebviewComponent } from './styles';
 import { ServerLoadingError } from './ServerLoadingError';
