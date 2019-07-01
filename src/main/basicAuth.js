@@ -1,7 +1,7 @@
 import { app } from 'electron';
 import { parse as parseUrl } from 'url';
 import { basicAuth as debug } from '../debug';
-import { SERVERS_LOADED } from '../store/actions';
+import { SERVERS_LOADED } from '../actions';
 import { waitForAction } from '../utils/store';
 import { getStore, getSaga } from './store';
 import { pipe } from '../utils/decorators';

@@ -34,10 +34,10 @@ import {
 	goBackOnWebview,
 	goForwardOnWebview,
 	WEBVIEW_FOCUSED,
-} from '../store/actions';
+} from '../actions';
 import { queryEditFlags } from '../utils';
 import { migrateDataFromLocalStorage } from './data';
-import { MENU_ITEM_CLICKED } from '../store/actions/menus';
+import { MENU_ITEM_CLICKED } from '../actions/menus';
 const { app, dialog, getCurrentWindow, shell, webContents } = remote;
 const { contextMenu } = remote.require('./main');
 

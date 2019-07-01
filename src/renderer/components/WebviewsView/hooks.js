@@ -8,7 +8,7 @@ import {
 	setServerProperties,
 	historyFlagsUpdated,
 	webviewFocused,
-} from '../../../store/actions';
+} from '../../../actions';
 
 
 const useWebviewEvents = () => {

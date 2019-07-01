@@ -3,7 +3,7 @@ import {
 	showDownloads,
 	showLanding,
 	showPreferences,
-} from '../../../../store/actions';
+} from '../../../../actions';
 
 
 export const useRedux = () => {

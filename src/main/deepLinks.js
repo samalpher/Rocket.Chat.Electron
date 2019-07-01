@@ -6,7 +6,7 @@ import {
 	APP_READY,
 	processAuthDeepLink,
 	processRoomDeepLink,
-} from '../store/actions';
+} from '../actions';
 import { normalizeServerUrl } from '../utils';
 import { waitForAction } from '../utils/store';
 import { getStore, getSaga } from './store';

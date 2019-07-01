@@ -1,6 +1,6 @@
 import { select, take } from 'redux-saga/effects';
 import { getStore, getSaga } from '../store';
-import { setServerProperties } from '../../store/actions';
+import { setServerProperties } from '../../actions';
 import { getServerUrl } from './getServerUrl';
 
 

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
 	sortServers,
-} from '../../../../store/actions';
+} from '../../../../actions';
 
 
 export const useShortcuts = () => {

@@ -1,7 +1,7 @@
 import { desktopCapturer } from 'electron';
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { screensharingSourceSelected } from '../../../store/actions';
+import { screensharingSourceSelected } from '../../../actions';
 
 
 export const useModal = () => {

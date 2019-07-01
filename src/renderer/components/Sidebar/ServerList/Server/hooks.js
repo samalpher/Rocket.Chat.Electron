@@ -8,7 +8,7 @@ import {
 	reloadWebview,
 	removeServerFromUrl,
 	showServer,
-} from '../../../../../store/actions';
+} from '../../../../../actions';
 const { getCurrentWindow, Menu } = remote;
 
 

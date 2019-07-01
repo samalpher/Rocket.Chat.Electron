@@ -3,8 +3,8 @@ import { forwardToMain, getInitialStateRenderer, replayActionRenderer } from 'el
 import { applyMiddleware, createStore } from 'redux';
 import createSagaMiddleware from 'redux-saga';
 import { store as debug } from '../debug';
-import { rootReducer } from '../store/reducers';
-import { arePlainObjectsEqual, defer } from '../utils';
+import { rootReducer } from '../reducers';
+import { defer } from '../utils';
 
 
 const { promise, resolve } = defer();

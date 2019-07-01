@@ -1,7 +1,7 @@
 import { app, Menu, BrowserWindow } from 'electron';
 import { t } from 'i18next';
 import { getStore } from '../../store';
-import { menuItemClicked } from '../../../store/actions/menus';
+import { menuItemClicked } from '../../../actions/menus';
 import { connect } from '../../../utils/store';
 
 

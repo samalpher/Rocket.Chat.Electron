@@ -9,7 +9,7 @@ import {
 	hideModal,
 	checkForUpdate as checkForUpdateAction,
 	setAutoUpdate as setAutoUpdateAction,
-} from '../../../store/actions';
+} from '../../../actions';
 
 
 export const useModal = () => {

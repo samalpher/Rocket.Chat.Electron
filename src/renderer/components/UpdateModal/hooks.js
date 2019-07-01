@@ -1,7 +1,7 @@
 import { remote } from 'electron';
 import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
-import { skipUpdate, hideModal, downloadUpdate } from '../../../store/actions';
+import { skipUpdate, hideModal, downloadUpdate } from '../../../actions';
 const { app, dialog, getCurrentWindow } = remote;
 
 

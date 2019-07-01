@@ -1,5 +1,5 @@
 import { getStore } from '../store';
-import { preferencesLoaded } from '../../store/actions';
+import { preferencesLoaded } from '../../actions';
 import { connectUserData } from './store';
 
 

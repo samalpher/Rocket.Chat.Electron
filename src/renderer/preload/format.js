@@ -1,7 +1,7 @@
 import { remote } from 'electron';
 import { select, takeEvery } from 'redux-saga/effects';
 import { getSaga } from '../store';
-import { FORMAT_BUTTON_TOUCHED } from '../../store/actions';
+import { FORMAT_BUTTON_TOUCHED } from '../../actions';
 const { getCurrentWebContents } = remote;
 
 

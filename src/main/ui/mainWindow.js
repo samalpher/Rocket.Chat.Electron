@@ -11,7 +11,7 @@ import {
 	mainWindowStateUpdated,
 	mainWindowCreated,
 	mainWindowStateLoaded,
-} from '../../store/actions';
+} from '../../actions';
 import { connectUserData } from '../userData/store';
 import { loadJson, purgeFile } from '../userData/fileSystem';
 

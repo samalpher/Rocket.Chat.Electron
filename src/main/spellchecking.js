@@ -13,7 +13,7 @@ import {
 	spellCheckingDictionaryInstallFailed,
 	spellCheckingDictionariesEnabled,
 	spellCheckingCorrectionsUpdated,
-} from '../store/actions';
+} from '../actions';
 import { getDirectory } from './userData/fileSystem';
 
 

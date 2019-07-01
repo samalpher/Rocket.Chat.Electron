@@ -1,6 +1,6 @@
 import { remote } from 'electron';
 import { getStore } from '../store';
-import { editFlagsUpdated, historyFlagsUpdated, setServerProperties } from '../../store/actions';
+import { editFlagsUpdated, historyFlagsUpdated, setServerProperties } from '../../actions';
 import { queryEditFlags } from '../../utils';
 import { getServerUrl } from './getServerUrl';
 const { getCurrentWebContents } = remote;

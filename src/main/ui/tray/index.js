@@ -2,7 +2,7 @@ import { app, Menu, systemPreferences, Tray } from 'electron';
 import { t } from 'i18next';
 import { getStore } from '../../store';
 import { getTrayIconImage } from '../icons';
-import { showMainWindow, hideMainWindow } from '../../../store/actions';
+import { showMainWindow, hideMainWindow } from '../../../actions';
 import { connect } from '../../../utils/store';
 
 

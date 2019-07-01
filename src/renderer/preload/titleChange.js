@@ -1,5 +1,5 @@
 import { getStore } from '../store';
-import { setServerProperties } from '../../store/actions';
+import { setServerProperties } from '../../actions';
 import { getMeteor, getTracker, getSettings } from './rocketChat';
 import { getServerUrl } from './getServerUrl';
 

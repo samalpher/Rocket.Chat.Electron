@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
 import { normalizeServerUrl } from '../../../utils';
-import { showServer, addServerFromUrl } from '../../../store/actions';
+import { showServer, addServerFromUrl } from '../../../actions';
 
 
 export const useView = () => {

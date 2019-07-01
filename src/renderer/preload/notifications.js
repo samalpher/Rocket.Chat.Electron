@@ -1,6 +1,6 @@
 import { remote } from 'electron';
 import { getStore } from '../store';
-import { focusMainWindow, showServer } from '../../store/actions';
+import { focusMainWindow, showServer } from '../../actions';
 import { getServerUrl } from './getServerUrl';
 const { Notification: ElectronNotification, nativeImage } = remote.require('electron');
 const fetchWithoutOrigin = remote.require('electron-fetch').default;

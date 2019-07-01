@@ -1,7 +1,7 @@
 import ElectronStore from 'electron-store';
 import { data as debug } from '../../debug';
 import { getStore } from '../store';
-import { userDataLoaded } from '../../store/actions';
+import { userDataLoaded } from '../../actions';
 import { compose, withDebounce, withArgumentsReducer } from '../../utils/decorators';
 import { connect } from '../../utils/store';
 

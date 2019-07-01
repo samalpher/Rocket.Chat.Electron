@@ -8,7 +8,7 @@ import {
 	askForCertificateTrust,
 	certificatesLoaded,
 	certificateTrusted,
-} from '../store/actions';
+} from '../actions';
 import { loadJson, purgeFile } from './userData/fileSystem';
 import { waitForAction } from '../utils/store';
 import { certificates as debug } from '../debug';

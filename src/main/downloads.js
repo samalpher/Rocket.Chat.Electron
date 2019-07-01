@@ -12,7 +12,7 @@ import {
 	downloadStarted,
 	downloadUpdated,
 	downloadsLoaded,
-} from '../store/actions';
+} from '../actions';
 import { downloads as debug } from '../debug';
 import { connectUserData } from './userData/store';
 import { waitForAction } from '../utils/store';

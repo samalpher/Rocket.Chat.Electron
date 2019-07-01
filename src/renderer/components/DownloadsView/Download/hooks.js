@@ -1,7 +1,7 @@
 import { shell } from 'electron';
 import { useCallback } from 'react';
 import { useDispatch } from 'react-redux';
-import { clearDownload as clearDownloadAction } from '../../../../store/actions';
+import { clearDownload as clearDownloadAction } from '../../../../actions';
 
 
 export const useActions = (id, filePath) => {

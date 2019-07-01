@@ -1,4 +1,4 @@
-import { viewLoaded } from '../../store/actions';
+import { viewLoaded } from '../../actions';
 import { getStore } from '../store';
 import { connectUserData } from './store';
 

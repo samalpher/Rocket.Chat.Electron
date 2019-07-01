@@ -13,7 +13,7 @@ import {
 	destroyMainWindow,
 	focusMainWindow,
 	showMainWindow,
-} from '../store/actions';
+} from '../actions';
 import { useI18n } from './i18n';
 import { setupUserDataPath } from './userData/fileSystem';
 import { usePreferences } from './userData/preferences';

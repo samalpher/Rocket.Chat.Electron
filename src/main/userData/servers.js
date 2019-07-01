@@ -4,7 +4,7 @@ import {
 	showServer,
 	showLanding,
 	setPreferences,
-} from '../../store/actions';
+} from '../../actions';
 import { normalizeServerUrl } from '../../utils';
 import { loadJson } from './fileSystem';
 import { connectUserData } from './store';

@@ -2,7 +2,7 @@ import { nativeImage, TouchBar, BrowserWindow } from 'electron';
 import { EventEmitter } from 'events';
 import { t } from 'i18next';
 import { getStore } from '../../store';
-import { showServer, formatButtonTouched } from '../../../store/actions';
+import { showServer, formatButtonTouched } from '../../../actions';
 import boldIcon from './bold.png';
 import italicIcon from './italic.png';
 import strikeIcon from './strike.png';

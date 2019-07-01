@@ -2,7 +2,7 @@ import { forwardToRenderer, replayActionMain } from 'electron-redux';
 import { applyMiddleware, createStore } from 'redux';
 import createSagaMiddleware from 'redux-saga';
 import { store as debug } from '../debug';
-import { rootReducer } from '../store/reducers';
+import { rootReducer } from '../reducers';
 import { defer } from '../utils';
 
 

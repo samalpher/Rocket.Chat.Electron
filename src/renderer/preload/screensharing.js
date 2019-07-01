@@ -1,5 +1,5 @@
 import { getStore } from '../store';
-import { hideModal, showScreenshareModal } from '../../store/actions';
+import { hideModal, showScreenshareModal } from '../../actions';
 import { connect } from '../../utils/store';
 import { getServerUrl } from './getServerUrl';
 

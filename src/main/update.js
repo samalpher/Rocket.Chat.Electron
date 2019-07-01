@@ -21,7 +21,7 @@ import {
 	updateNotAvailable,
 	updateSkipped,
 	updateConfigurationLoaded,
-} from '../store/actions';
+} from '../actions';
 import { loadJson, purgeFile } from './userData/fileSystem';
 import { connectUserData } from './userData/store';
 

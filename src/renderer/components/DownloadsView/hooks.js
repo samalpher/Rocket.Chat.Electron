@@ -1,6 +1,6 @@
 import { bindActionCreators } from 'redux';
 import { useDispatch, useSelector } from 'react-redux';
-import { clearAllDownloads } from '../../../store/actions';
+import { clearAllDownloads } from '../../../actions';
 
 
 export const useView = () => useSelector(({ view }) => view === 'downloads');

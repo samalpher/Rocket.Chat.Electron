@@ -3,7 +3,7 @@ import jetpack from 'fs-jetpack';
 import { call, takeEvery } from 'redux-saga/effects';
 import { data as debug } from '../../debug';
 import { getSaga } from '../store';
-import { RESET_USER_DATA, APP_READY } from '../../store/actions';
+import { RESET_USER_DATA, APP_READY } from '../../actions';
 import { waitForAction } from '../../utils/store';
 
 

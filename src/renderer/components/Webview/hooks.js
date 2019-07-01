@@ -9,7 +9,7 @@ import {
 	RESET_ZOOM,
 	ZOOM_IN,
 	ZOOM_OUT,
-} from '../../../store/actions';
+} from '../../../actions';
 
 
 const get = (webviewRef) => [webviewRef.current, webviewRef.current.getWebContents()];

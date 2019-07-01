@@ -4,7 +4,7 @@ import {
 	preferencesLoaded,
 	serversLoaded,
 	viewLoaded,
-} from '../store/actions';
+} from '../actions';
 import { normalizeServerUrl } from '../utils';
 
 
