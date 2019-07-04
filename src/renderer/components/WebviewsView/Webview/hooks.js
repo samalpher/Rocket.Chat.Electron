@@ -26,7 +26,7 @@ const useWebviewLifeCycle = (url, webviewRef, onCreate, onDestroy) => {
 	}, []);
 };
 
-const useWebviewFocus = (url, webviewRef, onFocus) => {
+const useWebviewFocus = (url, webviewRef, onFocus, onBlur) => {
 	useEffect(() => {
 		const [webview, webContents] = get(webviewRef);
 
@@ -34,22 +34,29 @@ const useWebviewFocus = (url, webviewRef, onFocus) => {
 			onFocus && onFocus(url, webContents);
 		};
 
+		const handleBlur = () => {
+			onBlur && onBlur(url, webContents);
+		};
+
 		webview.addEventListener('focus', handleFocus);
+		webview.addEventListener('blur', handleBlur);
 
 		return () => {
 			webview.removeEventListener('focus', handleFocus);
+			webview.removeEventListener('blur', handleBlur);
 		};
 	}, []);
 };
 
-const useWebviewContextMenu = (url, webviewRef, onContextMenu) => {
+const useWebviewContextMenu = (url, webviewRef, contextMenuRef) => {
 	useEffect(() => {
-		const [webview, webContents] = get(webviewRef);
+		const [webview] = get(webviewRef);
 
 		const handleContextMenu = (event) => {
 			event.preventDefault();
 			const { params } = event;
-			onContextMenu && onContextMenu(url, webContents, params);
+			const { trigger = () => {} } = (contextMenuRef && contextMenuRef.current) || {};
+			trigger(params);
 		};
 
 		webview.addEventListener('context-menu', handleContextMenu);
@@ -226,11 +233,12 @@ export const useWebview = ({
 	onCreate,
 	onDestroy,
 	onFocus,
-	onContextMenu,
+	onBlur,
 	onReady,
 	onDidNavigate,
 }) => {
 	const webviewRef = useRef(null);
+	const contextMenuRef = useRef(null);
 
 	useEffect(() => {
 		setImmediate(() => {
@@ -239,8 +247,8 @@ export const useWebview = ({
 	}, []);
 
 	useWebviewLifeCycle(url, webviewRef, onCreate, onDestroy);
-	useWebviewFocus(url, webviewRef, onFocus);
-	useWebviewContextMenu(url, webviewRef, onContextMenu);
+	useWebviewFocus(url, webviewRef, onFocus, onBlur);
+	useWebviewContextMenu(url, webviewRef, contextMenuRef);
 	useWebviewConsole(url, webviewRef);
 	const [loading, loadingError] = useWebviewLoadState(url, webviewRef, onReady, onDidNavigate);
 	useWebviewActions(url, webviewRef);
@@ -248,6 +256,7 @@ export const useWebview = ({
 
 	return {
 		webviewRef,
+		contextMenuRef,
 		loading,
 		loadingError,
 		handleReloadFromError,

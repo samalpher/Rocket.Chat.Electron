@@ -5,7 +5,6 @@ import {
 	loadingDone,
 	webviewCreated,
 	webviewDestroyed,
-	triggerContextMenu,
 	setServerProperties,
 	historyFlagsUpdated,
 	webviewFocused,
@@ -30,8 +29,8 @@ const useWebviewEvents = () => {
 		dispatch(webviewFocused(url, webContents.id));
 	};
 
-	const handleContextMenu = (url, webContents, params) => {
-		dispatch(triggerContextMenu(params));
+	const handleBlur = () => {
+		dispatch(webviewFocused(null, null));
 	};
 
 	const handleDidNavigate = (url, webContents, lastPath) => {
@@ -46,7 +45,7 @@ const useWebviewEvents = () => {
 		onCreate: handleCreate,
 		onDestroy: handleDestroy,
 		onFocus: handleFocus,
-		onContextMenu: handleContextMenu,
+		onBlur: handleBlur,
 		onDidNavigate: handleDidNavigate,
 	};
 };
@@ -113,9 +112,11 @@ export const useFocusedWebContents = () => {
 
 	useSaga(function* webviewFocusSaga() {
 		yield takeEvery(WEBVIEW_FOCUSED, function* ({ payload: { webContentsId } }) {
-			focusedWebContentsRef.current = remote.webContents.fromId(webContentsId);
+			focusedWebContentsRef.current = webContentsId
+				? remote.webContents.fromId(webContentsId)
+				: remote.getCurrentWebContents();
 		});
 	});
 
-	return focusedWebContentsRef.current;
+	return () => focusedWebContentsRef.current;
 };

@@ -7,7 +7,6 @@ export const useUI = () => {
 	emptyMenus();
 };
 
-export * from './contextMenu';
 export * from './dock';
 export * from './mainWindow';
 export * from './menus';

@@ -1,31 +1,24 @@
-import { remote, clipboard } from 'electron';
+import { remote } from 'electron';
 import { t } from 'i18next';
-import { call, put, select, take, takeEvery } from 'redux-saga/effects';
+import { call, put, select, takeEvery } from 'redux-saga/effects';
 import { getStore, getSaga } from './store';
 import {
 	ASK_FOR_CERTIFICATE_TRUST,
 	PROCESS_AUTH_DEEP_LINK,
-	SPELLCHECKING_DICTIONARY_INSTALL_FAILED,
 	UPDATE_DOWNLOAD_COMPLETED,
-	TRIGGER_CONTEXT_MENU,
-	SPELLCHECKING_CORRECTIONS_UPDATED,
-	SET_SERVER_PROPERTIES,
 	showServer,
-	toggleSpellcheckingDictionary,
 	addServerFromUrl,
 	historyFlagsUpdated,
 	editFlagsUpdated,
 	focusMainWindow,
 	replyCertificateTrustRequest,
-	installSpellCheckingDictionaries,
 	quitAndInstallUpdate,
-	updateSpellCheckingCorrections,
-	WEBVIEW_FOCUSED,
+	SPELLCHECKING_DICTIONARY_INSTALL_FAILED,
+	SET_SERVER_PROPERTIES,
 } from '../actions';
 import { queryEditFlags } from '../utils';
 import { migrateDataFromLocalStorage } from './data';
-const { dialog, getCurrentWindow, shell, webContents } = remote;
-const { contextMenu } = remote.require('./main');
+const { dialog, getCurrentWindow } = remote;
 
 
 const askWhenToInstallUpdate = () => new Promise((resolve) => {
@@ -82,30 +75,6 @@ const confirmServerAddition = ({ serverUrl }) => new Promise((resolve) => {
 		cancelId: 1,
 	}, (response) => resolve(response === 0));
 });
-
-function* browseForDictionary() {
-	const { spellchecking: { dictionaryInstallationDirectory } } = yield select();
-
-	dialog.showOpenDialog(getCurrentWindow(), {
-		title: t('dialog.loadDictionary.title'),
-		defaultPath: dictionaryInstallationDirectory,
-		filters: [
-			{ name: t('dialog.loadDictionary.dictionaries'), extensions: ['aff', 'dic'] },
-			{ name: t('dialog.loadDictionary.allFiles'), extensions: ['*'] },
-		],
-		properties: ['openFile', 'multiSelections'],
-	}, async (filePaths = []) => {
-		(await getStore()).dispatch(installSpellCheckingDictionaries(filePaths));
-	});
-}
-
-const spellCheckingDictionaryInstallFailed = ({ payload: { error } }) => {
-	console.error(error);
-	dialog.showErrorBox(
-		t('dialog.loadDictionaryError.title'),
-		t('dialog.loadDictionaryError.message', { message: error.message })
-	);
-};
 
 const validateServer = async (serverUrl, timeout = 5000) => {
 	try {
@@ -191,42 +160,12 @@ const updateDownloadCompleted = function* () {
 	yield put(quitAndInstallUpdate());
 };
 
-let focusedWebContents;
-
-const getFocusedWebContents = () => focusedWebContents || getCurrentWindow().webContents;
-
-function* spellCheckingSaga() {
-	yield takeEvery(SPELLCHECKING_DICTIONARY_INSTALL_FAILED, spellCheckingDictionaryInstallFailed);
-}
-
 function* certificatesSaga() {
 	yield takeEvery(ASK_FOR_CERTIFICATE_TRUST, askForCertificateTrust);
 }
 
 function* deepLinksSaga() {
 	yield takeEvery(PROCESS_AUTH_DEEP_LINK, processAuthDeepLink);
-}
-
-function* contextMenuSaga() {
-	yield takeEvery(TRIGGER_CONTEXT_MENU, function* ({ payload: params }) {
-		const {
-			preferences: {
-				enabledDictionaries,
-			},
-			spellchecking: {
-				availableDictionaries,
-			},
-		} = yield select();
-		yield put(updateSpellCheckingCorrections(params.selectionText));
-
-		const { payload: corrections } = yield take(SPELLCHECKING_CORRECTIONS_UPDATED);
-		const dictionaries = availableDictionaries.map((dictionary) => ({
-			dictionary,
-			enabled: enabledDictionaries.includes(dictionary),
-		}));
-
-		contextMenu.trigger({ ...params, corrections, dictionaries });
-	});
 }
 
 function* updatesSaga() {
@@ -242,20 +181,24 @@ function* mainWindowSaga() {
 	});
 }
 
-function* webviewFocusSaga() {
-	yield takeEvery(WEBVIEW_FOCUSED, function* ({ payload: { webContentsId } }) {
-		focusedWebContents = webContents.fromId(webContentsId);
-	});
+const spellCheckingDictionaryInstallFailed = ({ payload: { error } }) => {
+	console.error(error);
+	remote.dialog.showErrorBox(
+		t('dialog.loadDictionaryError.title'),
+		t('dialog.loadDictionaryError.message', { message: error.message })
+	);
+};
+
+function* spellCheckingSaga() {
+	yield takeEvery(SPELLCHECKING_DICTIONARY_INSTALL_FAILED, spellCheckingDictionaryInstallFailed);
 }
 
 const runSagas = async () => (await getSaga()).run(function* () {
 	yield* spellCheckingSaga();
 	yield* certificatesSaga();
 	yield* deepLinksSaga();
-	yield* contextMenuSaga();
 	yield* updatesSaga();
 	yield* mainWindowSaga();
-	yield* webviewFocusSaga();
 	yield* migrateDataFromLocalStorage();
 });
 
@@ -275,20 +218,6 @@ export default async () => {
 			canGoForward: false,
 		}));
 	});
-
-	contextMenu.on('replace-misspelling', (correction) => getFocusedWebContents().replaceMisspelling(correction));
-	contextMenu.on('toggle-dictionary', async (dictionary, enabled) => (await getStore()).dispatch(toggleSpellcheckingDictionary(dictionary, enabled)));
-	contextMenu.on('browse-for-dictionary', async () => (await getSaga()).run(browseForDictionary));
-	contextMenu.on('save-image-as', (url) => getFocusedWebContents().downloadURL(url)),
-	contextMenu.on('open-link', (url) => shell.openExternal(url));
-	contextMenu.on('copy-link-text', ({ text }) => clipboard.write({ text, bookmark: text }));
-	contextMenu.on('copy-link-address', ({ text, url }) => clipboard.write({ text: url, bookmark: text }));
-	contextMenu.on('undo', () => getFocusedWebContents().undo());
-	contextMenu.on('redo', () => getFocusedWebContents().redo());
-	contextMenu.on('cut', () => getFocusedWebContents().cut());
-	contextMenu.on('copy', () => getFocusedWebContents().copy());
-	contextMenu.on('paste', () => getFocusedWebContents().paste());
-	contextMenu.on('select-all', () => getFocusedWebContents().selectAll());
 
 	runSagas();
 };

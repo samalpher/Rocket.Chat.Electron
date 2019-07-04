@@ -21,30 +21,30 @@ export const useActions = () => {
 		remote.app.quit();
 	};
 
-	const focusedWebContents = useFocusedWebContents();
+	const getFocusedWebContents = useFocusedWebContents();
 
 	const onClickUndo = () => {
-		focusedWebContents.undo();
+		getFocusedWebContents().undo();
 	};
 
 	const onClickRedo = () => {
-		focusedWebContents.redo();
+		getFocusedWebContents().redo();
 	};
 
 	const onClickCut = () => {
-		focusedWebContents.cut();
+		getFocusedWebContents().cut();
 	};
 
 	const onClickCopy = () => {
-		focusedWebContents.copy();
+		getFocusedWebContents().copy();
 	};
 
 	const onClickPaste = () => {
-		focusedWebContents.paste();
+		getFocusedWebContents().paste();
 	};
 
 	const onClickSelectAll = () => {
-		focusedWebContents.selectAll();
+		getFocusedWebContents().selectAll();
 	};
 
 	const activeServerUrl = useSelector(({ view: { url } = {} }) => url);

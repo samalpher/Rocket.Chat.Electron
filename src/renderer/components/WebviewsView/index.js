@@ -6,11 +6,9 @@ import { useWebviews } from './hooks';
 export function WebviewsView() {
 	const webviews = useWebviews();
 
-	return (
-		<>
-			{webviews.map((props, key) => (
-				<Webview key={key} {...props} />
-			))}
-		</>
-	);
+	return <>
+		{webviews.map((props, key) => (
+			<Webview key={key} {...props} />
+		))}
+	</>;
 }

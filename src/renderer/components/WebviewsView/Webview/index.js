@@ -4,6 +4,7 @@ import { getPathFromApp } from '../../../../utils';
 import { useWebview } from './hooks';
 import { WebviewComponent } from './styles';
 import { ServerLoadingError } from './ServerLoadingError';
+import { ContextMenu } from './ContextMenu';
 
 
 export function Webview({
@@ -12,6 +13,7 @@ export function Webview({
 }) {
 	const {
 		webviewRef,
+		contextMenuRef,
 		loading,
 		loadingError,
 		handleReloadFromError,
@@ -19,23 +21,22 @@ export function Webview({
 
 	const preloadUrl = `file://${ getPathFromApp('preload.js') }`;
 
-	return (
-		<>
-			<View visible={visible && !loadingError}>
-				<WebviewComponent
-					ref={webviewRef}
-					preload={preloadUrl}
-					allowpopups="true"
-					disablewebsecurity="true"
-				/>
-			</View>
-			{loadingError && (
-				<ServerLoadingError
-					visible={visible && loadingError}
-					loading={loading}
-					onReload={handleReloadFromError}
-				/>
-			)}
-		</>
-	);
+	return <>
+		<View visible={visible && !loadingError}>
+			<WebviewComponent
+				ref={webviewRef}
+				preload={preloadUrl}
+				allowpopups="true"
+				disablewebsecurity="true"
+			/>
+		</View>
+		{loadingError && (
+			<ServerLoadingError
+				visible={visible && loadingError}
+				loading={loading}
+				onReload={handleReloadFromError}
+			/>
+		)}
+		{visible && !loadingError && <ContextMenu ref={contextMenuRef} />}
+	</>;
 }
