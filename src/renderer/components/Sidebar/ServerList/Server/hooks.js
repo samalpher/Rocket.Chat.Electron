@@ -1,4 +1,3 @@
-import { remote } from 'electron';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
@@ -9,7 +8,6 @@ import {
 	removeServerFromUrl,
 	showServer,
 } from '../../../../../actions';
-const { getCurrentWindow, Menu } = remote;
 
 
 export const useHasUnreadMessages = (badge) => useMemo(() => !!badge, [badge]);
@@ -62,25 +60,41 @@ export const useContextMenu = (url) => {
 
 	const { t } = useTranslation();
 
-	const handleContextMenu = useCallback((event) => {
+	const onClickReload = () => {
+		dispatch(reloadWebview({ url }));
+	};
+
+	const onClickRemove = () => {
+		dispatch(removeServerFromUrl(url));
+	};
+
+	const onClickOpenDevTools = () => {
+		dispatch(openDevToolsForWebview({ url }));
+	};
+
+	const template = [
+		{
+			label: t('sidebar.item.reload'),
+			click: onClickReload,
+		},
+		{
+			label: t('sidebar.item.remove'),
+			click: onClickRemove,
+		},
+		{
+			label: t('sidebar.item.openDevTools'),
+			click: onClickOpenDevTools,
+		},
+	];
+
+	const [open, setOpen] = useState(false);
+
+	const handleClosing = () => setOpen(false);
+
+	const handleContextMenu = (event) => {
 		event.preventDefault();
+		setOpen(true);
+	};
 
-		const menu = Menu.buildFromTemplate([
-			{
-				label: t('sidebar.item.reload'),
-				click: () => dispatch(reloadWebview({ url })),
-			},
-			{
-				label: t('sidebar.item.remove'),
-				click: () => dispatch(removeServerFromUrl(url)),
-			},
-			{
-				label: t('sidebar.item.openDevTools'),
-				click: () => dispatch(openDevToolsForWebview({ url })),
-			},
-		]);
-		menu.popup(getCurrentWindow());
-	}, [url]);
-
-	return handleContextMenu;
+	return [handleContextMenu, template, open, handleClosing];
 };

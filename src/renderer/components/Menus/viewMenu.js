@@ -1,9 +1,11 @@
-import { t } from 'i18next';
+import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import { useActions } from './actions';
 
 
 export const useViewMenuTemplate = () => {
+	const { t } = useTranslation();
+
 	const {
 		onClickReload,
 		onClickReloadIgnoringCache,

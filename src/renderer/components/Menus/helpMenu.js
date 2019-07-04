@@ -1,10 +1,12 @@
 import { remote } from 'electron';
-import { t } from 'i18next';
+import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import { useActions } from './actions';
 
 export const useHelpMenuTemplate = () => {
 	const appName = remote.app.getName();
+
+	const { t } = useTranslation();
 
 	const {
 		onClickDocumentation,

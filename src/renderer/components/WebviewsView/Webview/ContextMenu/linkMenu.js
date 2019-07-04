@@ -1,9 +1,11 @@
 import { clipboard, shell } from 'electron';
-import { t } from 'i18next';
+import { useTranslation } from 'react-i18next';
 import { useCallback } from 'react';
 
 
 export const useLinkMenuTemplate = () => {
+	const { t } = useTranslation();
+
 	const onClickOpenLink = (url) => {
 		shell.openExternal(url);
 	};

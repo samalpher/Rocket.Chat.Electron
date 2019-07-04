@@ -1,6 +1,6 @@
 import { remote } from 'electron';
-import { t } from 'i18next';
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
 import { put, select, take } from 'redux-saga/effects';
 import {
@@ -14,6 +14,8 @@ import { useSagaMiddleware } from '../../../App/SagaMiddlewareProvider';
 
 
 export const useSpellCheckingMenuTemplate = () => {
+	const { t } = useTranslation();
+
 	const getFocusedWebContents = useFocusedWebContents();
 
 	const dispatch = useDispatch();

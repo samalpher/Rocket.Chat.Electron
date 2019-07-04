@@ -1,10 +1,12 @@
-import { t } from 'i18next';
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useFocusedWebContents } from '../../hooks';
 
 
 export const useImageMenuTemplate = () => {
 	const getFocusedWebContents = useFocusedWebContents();
+
+	const { t } = useTranslation();
 
 	const onClickSaveImageAs = (url) => {
 		getFocusedWebContents().downloadURL(url);

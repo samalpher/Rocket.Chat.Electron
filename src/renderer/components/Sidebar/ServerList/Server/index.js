@@ -1,4 +1,5 @@
 import React from 'react';
+import { PopupMenu } from '../../../PopupMenu';
 import { Tooltip } from '../../styles';
 import {
 	useHasUnreadMessages,
@@ -34,54 +35,54 @@ export function Server({
 	const initials = useInitials(url, title);
 	const [faviconUrl, faviconLoaded, handleFaviconLoad, handleFaviconError] = useFavicon(url);
 	const handleSelect = useSelection(url);
-	const handleContextMenu = useContextMenu(url);
+	const [handleContextMenu, template, open, handleClosing] = useContextMenu(url);
 
-	return (
-		<Outer
-			draggable="true"
-			onClick={handleSelect}
-			onContextMenu={handleContextMenu}
-			{...props}
-		>
-			<Indicator
+	return <Outer
+		draggable="true"
+		onClick={handleSelect}
+		onContextMenu={handleContextMenu}
+		{...props}
+	>
+		<Indicator
+			active={active}
+			unread={hasUnreadMessages}
+		/>
+		<Inner>
+			<Initials
 				active={active}
-				unread={hasUnreadMessages}
+				faviconLoaded={faviconLoaded}
+				shortcut={shortcut}
+			>
+				{initials}
+			</Initials>
+
+			<Favicon
+				active={active}
+				draggable="false"
+				faviconLoaded={faviconLoaded}
+				shortcut={shortcut}
+				src={faviconUrl}
+				onLoad={handleFaviconLoad}
+				onError={handleFaviconError}
 			/>
-			<Inner>
-				<Initials
-					active={active}
-					faviconLoaded={faviconLoaded}
-					shortcut={shortcut}
-				>
-					{initials}
-				</Initials>
 
-				<Favicon
-					active={active}
-					draggable="false"
-					faviconLoaded={faviconLoaded}
-					shortcut={shortcut}
-					src={faviconUrl}
-					onLoad={handleFaviconLoad}
-					onError={handleFaviconError}
-				/>
+			{mentionCount && (
+				<Badge>
+					{mentionCount}
+				</Badge>
+			)}
 
-				{mentionCount && (
-					<Badge>
-						{mentionCount}
-					</Badge>
-				)}
+			{order <= 9 && (
+				<Shortcut visible={shortcut}>
+					{`${ process.platform === 'darwin' ? '⌘' : '^' }${ order + 1 }`}
+				</Shortcut>
+			)}
+		</Inner>
 
-				{order <= 9 && (
-					<Shortcut visible={shortcut}>
-						{`${ process.platform === 'darwin' ? '⌘' : '^' }${ order + 1 }`}
-					</Shortcut>
-				)}
-			</Inner>
+		<Tooltip>
+			{title}
+		</Tooltip>
 
-			<Tooltip>
-				{title}
-			</Tooltip>
-		</Outer>
-	);
+		<PopupMenu template={template} open={open} onClosing={handleClosing} />
+	</Outer>;
 }

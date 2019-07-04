@@ -1,16 +1,12 @@
 import { remote } from 'electron';
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useTemplate } from './hooks';
+import { ApplicationMenu } from '../ApplicationMenu';
 
 
 export function Menus() {
 	const template = useTemplate();
-
-	useEffect(() => {
-		const menu = remote.Menu.buildFromTemplate(template);
-		remote.Menu.setApplicationMenu(menu);
-	}, [template]);
 
 	const hasMenus = useSelector(({ preferences: { hasMenus } }) => hasMenus);
 
@@ -21,9 +17,5 @@ export function Menus() {
 		}
 	}, [hasMenus]);
 
-	useEffect(() => () => {
-		remote.Menu.setApplicationMenu(null);
-	}, []);
-
-	return null;
+	return <ApplicationMenu template={template} />;
 }

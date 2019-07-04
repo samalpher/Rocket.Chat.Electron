@@ -1,11 +1,13 @@
 import { remote } from 'electron';
-import { t } from 'i18next';
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useActions } from './actions';
 
 
 export const useAppMenuTemplate = () => {
 	const appName = remote.app.getName();
+
+	const { t } = useTranslation();
 
 	const {
 		onClickAbout,
