@@ -10,35 +10,21 @@ import {
 	TRIGGER_CONTEXT_MENU,
 	SPELLCHECKING_CORRECTIONS_UPDATED,
 	SET_SERVER_PROPERTIES,
-	showLanding,
 	showServer,
-	setPreferences,
 	toggleSpellcheckingDictionary,
 	addServerFromUrl,
 	historyFlagsUpdated,
 	editFlagsUpdated,
-	showAboutModal,
 	focusMainWindow,
-	clearCertificates,
 	replyCertificateTrustRequest,
 	installSpellCheckingDictionaries,
 	quitAndInstallUpdate,
-	resetUserData,
 	updateSpellCheckingCorrections,
-	reloadWebview,
-	showMainWindow,
-	openDevToolsForWebview,
-	resetZoom,
-	zoomIn,
-	zoomOut,
-	goBackOnWebview,
-	goForwardOnWebview,
 	WEBVIEW_FOCUSED,
 } from '../actions';
 import { queryEditFlags } from '../utils';
 import { migrateDataFromLocalStorage } from './data';
-import { MENU_ITEM_CLICKED } from '../actions/menus';
-const { app, dialog, getCurrentWindow, shell, webContents } = remote;
+const { dialog, getCurrentWindow, shell, webContents } = remote;
 const { contextMenu } = remote.require('./main');
 
 
@@ -93,20 +79,6 @@ const confirmServerAddition = ({ serverUrl }) => new Promise((resolve) => {
 			t('dialog.addServer.cancel'),
 		],
 		defaultId: 0,
-		cancelId: 1,
-	}, (response) => resolve(response === 0));
-});
-
-const confirmAppDataReset = () => new Promise((resolve) => {
-	dialog.showMessageBox({
-		title: t('dialog.resetUserData.title'),
-		message: t('dialog.resetUserData.message'),
-		type: 'question',
-		buttons: [
-			t('dialog.resetUserData.yes'),
-			t('dialog.resetUserData.cancel'),
-		],
-		defaultId: 1,
 		cancelId: 1,
 	}, (response) => resolve(response === 0));
 });
@@ -276,155 +248,6 @@ function* webviewFocusSaga() {
 	});
 }
 
-function* menusSaga() {
-	yield takeEvery(MENU_ITEM_CLICKED, function* ({ payload: { action, args } }) {
-		switch (action) {
-			case 'quit':
-				app.quit();
-				break;
-
-			case 'about':
-				yield put(showAboutModal());
-				break;
-
-			case 'open-url': {
-				const [url] = args;
-				shell.openExternal(url);
-				break;
-			}
-
-			case 'undo':
-				getFocusedWebContents().undo();
-				break;
-
-			case 'redo':
-				getFocusedWebContents().redo();
-				break;
-
-			case 'cut':
-				getFocusedWebContents().cut();
-				break;
-
-			case 'copy':
-				getFocusedWebContents().copy();
-				break;
-
-			case 'paste':
-				getFocusedWebContents().paste();
-				break;
-
-			case 'select-all':
-				getFocusedWebContents().selectAll();
-				break;
-
-			case 'reset-zoom':
-				yield put(resetZoom());
-				break;
-
-			case 'zoom-in':
-				yield put(zoomIn());
-				break;
-
-			case 'zoom-out':
-				yield put(zoomOut());
-				break;
-
-			case 'add-new-server':
-				yield put(showMainWindow());
-				yield put(showLanding());
-				break;
-
-			case 'select-server': {
-				const [{ url }] = args;
-				yield put(showMainWindow());
-				yield put(showServer(url));
-				break;
-			}
-
-			case 'reload-server': {
-				const [{ ignoringCache = false, clearCertificates: clearCerts = false } = {}] = args;
-				const { view: { url } = {} } = yield select();
-				if (!url) {
-					break;
-				}
-
-				if (clearCerts) {
-					yield put(clearCertificates());
-				}
-
-				yield put(reloadWebview({ url, ignoringCache }));
-				break;
-			}
-
-			case 'open-devtools-for-server': {
-				const { view: { url } = {} } = yield select();
-				if (url) {
-					yield put(openDevToolsForWebview({ url }));
-				}
-				break;
-			}
-
-			case 'go-back': {
-				const { view: { url } = {} } = yield select();
-				if (url) {
-					yield put(goBackOnWebview({ url }));
-				}
-				break;
-			}
-
-			case 'go-forward': {
-				const { view: { url } = {} } = yield select();
-				if (url) {
-					yield put(goForwardOnWebview({ url }));
-				}
-				break;
-			}
-
-			case 'reload-app':
-				getCurrentWindow().reload();
-				break;
-
-			case 'toggle-devtools':
-				getCurrentWindow().toggleDevTools();
-				break;
-
-			case 'reset-app-data': {
-				const shouldReset = yield confirmAppDataReset();
-				if (shouldReset) {
-					yield put(resetUserData());
-				}
-				break;
-			}
-
-			case 'toggle': {
-				const [property, value] = args;
-				switch (property) {
-					case 'hasTray': {
-						yield put(setPreferences({ hasTray: value }));
-						break;
-					}
-
-					case 'hasMenus': {
-						yield put(setPreferences({ hasMenus: value }));
-						break;
-					}
-
-					case 'hasSidebar': {
-						yield put(setPreferences({ hasSidebar: value }));
-						break;
-					}
-
-					case 'showWindowOnUnreadChanged': {
-						yield put(setPreferences({ showWindowOnUnreadChanged: value }));
-						break;
-					}
-				}
-				break;
-			}
-		}
-	});
-}
-
 const runSagas = async () => (await getSaga()).run(function* () {
 	yield* spellCheckingSaga();
 	yield* certificatesSaga();
@@ -433,7 +256,6 @@ const runSagas = async () => (await getSaga()).run(function* () {
 	yield* updatesSaga();
 	yield* mainWindowSaga();
 	yield* webviewFocusSaga();
-	yield* menusSaga();
 	yield* migrateDataFromLocalStorage();
 });
 

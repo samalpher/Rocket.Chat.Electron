@@ -1,8 +1,10 @@
 import { useMainWindow } from './mainWindow';
+import { emptyMenus } from './menus';
 
 
 export const useUI = () => {
 	useMainWindow();
+	emptyMenus();
 };
 
 export * from './contextMenu';

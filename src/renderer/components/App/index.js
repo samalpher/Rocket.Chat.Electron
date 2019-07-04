@@ -3,21 +3,20 @@ import React, { useEffect } from 'react';
 import { Shell } from '../Shell';
 import { LoadingSplash } from '../LoadingSplash';
 import { Dock } from '../Dock';
+import { Menus } from '../Menus';
 import { StoreProvider } from './StoreProvider';
 import { SagaMiddlewareProvider } from './SagaMiddlewareProvider';
-const { dock, menus, touchBar, tray } = remote.require('./main');
+const { dock, touchBar, tray } = remote.require('./main');
 
 
 export function App() {
 	useEffect(() => {
 		dock.mount();
-		menus.mount();
 		touchBar.mount();
 		tray.mount();
 
 		return () => {
 			dock.unmount();
-			menus.unmount();
 			touchBar.unmount();
 			tray.unmount();
 		};
@@ -29,6 +28,7 @@ export function App() {
 				<SagaMiddlewareProvider>
 					<Shell />
 					<Dock />
+					<Menus />
 				</SagaMiddlewareProvider>
 			</StoreProvider>
 		</React.Suspense>
