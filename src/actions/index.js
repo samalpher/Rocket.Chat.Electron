@@ -1,7 +1,5 @@
 export * from './app';
-export * from './basicAuth';
 export * from './certificates';
-export * from './contextMenu';
 export * from './deepLinks';
 export * from './downloads';
 export * from './editFlags';
