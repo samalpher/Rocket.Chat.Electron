@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
 import { delay, takeLeading } from 'redux-saga/effects';
-import { useSaga } from '../hooks';
+import { useSaga } from '../App/SagaMiddlewareProvider';
 import {
 	CHECKING_FOR_UPDATE_ERRORED,
 	UPDATE_NOT_AVAILABLE,

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { takeEvery, takeLeading } from 'redux-saga/effects';
-import { useSaga } from '../../hooks';
+import { useSaga } from '../../App/SagaMiddlewareProvider';
 import {
 	RELOAD_WEBVIEW,
 	OPEN_DEVTOOLS_FOR_WEBVIEW,
