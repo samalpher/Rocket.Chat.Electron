@@ -58,10 +58,6 @@ const fetchWindowState = async () => (await getSaga()).run(function* fetchWindow
 	yield put(mainWindowStateUpdated(windowState));
 });
 
-const handleFocus = () => {
-	mainWindow.flashFrame(false);
-};
-
 const handleClose = async (event) => (await getSaga()).run(function* handleClose() {
 	event.preventDefault();
 	yield call(() => new Promise((resolve) => {
@@ -184,7 +180,6 @@ const didWindowStateLoaded = function* ({ payload: mainWindowState }) {
 	mainWindow.on('unmaximize', fetchWindowState);
 	mainWindow.on('show', fetchWindowState);
 	mainWindow.on('hide', fetchWindowState);
-	mainWindow.on('focus', handleFocus);
 	mainWindow.on('close', handleClose);
 
 	mainWindow.loadFile(`${ app.getAppPath() }/app/public/app.html`);

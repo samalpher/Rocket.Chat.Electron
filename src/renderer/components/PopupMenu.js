@@ -1,14 +1,14 @@
-import React, { useEffect, useRef } from 'react';
-import { Menu } from './Menu';
+import { useEffect } from 'react';
+import { useMenu } from '../hooks/menu';
 
 
 export function PopupMenu({ template = [], open, onClosing }) {
-	const menuRef = useRef();
+	const menu = useMenu(template);
 
 	useEffect(() => {
 		open
-			? menuRef.current.popup()
-			: menuRef.current.closePopup();
+			? menu.popup()
+			: menu.closePopup();
 	}, [open]);
 
 	useEffect(() => {
@@ -16,12 +16,12 @@ export function PopupMenu({ template = [], open, onClosing }) {
 			return;
 		}
 
-		menuRef.current.addListener('menu-will-close', onClosing);
+		menu.addListener('menu-will-close', onClosing);
 
 		return () => {
-			menuRef.current.removeListener('menu-will-close', onClosing);
+			menu.removeListener('menu-will-close', onClosing);
 		};
 	}, [onClosing]);
 
-	return <Menu ref={menuRef} template={template} />;
+	return null;
 }

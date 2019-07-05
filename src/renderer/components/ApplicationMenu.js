@@ -1,18 +1,18 @@
 import { remote } from 'electron';
-import React, { useEffect, useRef } from 'react';
-import { Menu } from './Menu';
+import { useEffect } from 'react';
+import { useMenu } from '../hooks/menu';
 
 
 export function ApplicationMenu({ template }) {
-	const menuRef = useRef();
+	const menu = useMenu(template);
 
 	useEffect(() => {
-		remote.Menu.setApplicationMenu(menuRef.current);
-	}, [template]);
+		remote.Menu.setApplicationMenu(menu);
 
-	useEffect(() => () => {
-		remote.Menu.setApplicationMenu(null);
-	}, []);
+		return () => {
+			remote.Menu.setApplicationMenu(null);
+		};
+	}, [menu]);
 
-	return <Menu ref={menuRef} template={template} />;
+	return null;
 }
