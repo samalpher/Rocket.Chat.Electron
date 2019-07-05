@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { takeEvery, takeLeading } from 'redux-saga/effects';
 import { useSaga } from '../../App/SagaMiddlewareProvider';
 import {
@@ -218,11 +218,11 @@ const useWebviewActions = (url, webviewRef) => {
 };
 
 const useWebviewReloadFromError = (url, webviewRef) => {
-	const handleReloadFromError = () => {
+	const handleReloadFromError = useCallback(() => {
 		const webview = webviewRef.current;
 
 		webview.loadURL(url);
-	};
+	}, [url]);
 
 	return handleReloadFromError;
 };

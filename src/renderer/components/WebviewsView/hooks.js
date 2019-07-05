@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { takeEvery } from 'redux-saga/effects';
 import {
 	loadingDone,
 	webviewCreated,
@@ -8,10 +7,7 @@ import {
 	setServerProperties,
 	historyFlagsUpdated,
 	webviewFocused,
-	WEBVIEW_FOCUSED,
 } from '../../../actions';
-import { useSaga } from '../App/SagaMiddlewareProvider';
-import { remote } from 'electron';
 
 
 const useWebviewEvents = () => {
@@ -105,18 +101,4 @@ export const useWebviews = () => {
 		...state,
 		...events,
 	}));
-};
-
-export const useFocusedWebContents = () => {
-	const focusedWebContentsRef = useRef();
-
-	useSaga(function* webviewFocusSaga() {
-		yield takeEvery(WEBVIEW_FOCUSED, function* ({ payload: { webContentsId } }) {
-			focusedWebContentsRef.current = webContentsId
-				? remote.webContents.fromId(webContentsId)
-				: remote.getCurrentWebContents();
-		});
-	});
-
-	return () => focusedWebContentsRef.current;
 };

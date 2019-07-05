@@ -1,4 +1,4 @@
-import React, { forwardRef, useImperativeHandle, useState } from 'react';
+import React, { forwardRef, useCallback, useImperativeHandle, useState } from 'react';
 import { PopupMenu } from '../../../PopupMenu';
 import { useContextMenuTemplate } from './hooks';
 
@@ -8,17 +8,19 @@ export const ContextMenu = forwardRef(
 		const [open, setOpen] = useState(false);
 		const [template, setTemplate] = useState([]);
 
-		const handleClosing = () => setOpen(false);
+		const handleClosing = useCallback(() => {
+			setOpen(false);
+		}, [setOpen]);
 
 		const createTemplate = useContextMenuTemplate();
 
-		const trigger = async (params) => {
-			const template = await createTemplate(params);
-			setTemplate(template);
-			setOpen(true);
-		};
-
-		useImperativeHandle(ref, () => ({ trigger }), []);
+		useImperativeHandle(ref, () => ({
+			trigger: async (params) => {
+				const template = await createTemplate(params);
+				setTemplate(template);
+				setOpen(true);
+			},
+		}), [setTemplate, setOpen]);
 
 		return <PopupMenu template={template} open={open} onClosing={handleClosing} />;
 	}

@@ -1,8 +1,23 @@
 import { remote, shell } from 'electron';
 import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
-import { showAboutModal, showMainWindow, showLanding, reloadWebview, clearCertificates, openDevToolsForWebview, goBackOnWebview, goForwardOnWebview, setPreferences, resetZoom, zoomIn, zoomOut, showServer, resetUserData } from '../../../actions';
-import { useFocusedWebContents } from '../WebviewsView/hooks';
+import {
+	showAboutModal,
+	showMainWindow,
+	showLanding,
+	reloadWebview,
+	clearCertificates,
+	openDevToolsForWebview,
+	goBackOnWebview,
+	goForwardOnWebview,
+	setPreferences,
+	resetZoom,
+	zoomIn,
+	zoomOut,
+	showServer,
+	resetUserData,
+} from '../../../actions';
+import { useTextEditActions } from '../../hooks/textEditActions';
 
 
 export const useActions = () => {
@@ -23,31 +38,14 @@ export const useActions = () => {
 		remote.app.quit();
 	};
 
-	const getFocusedWebContents = useFocusedWebContents();
-
-	const onClickUndo = () => {
-		getFocusedWebContents().undo();
-	};
-
-	const onClickRedo = () => {
-		getFocusedWebContents().redo();
-	};
-
-	const onClickCut = () => {
-		getFocusedWebContents().cut();
-	};
-
-	const onClickCopy = () => {
-		getFocusedWebContents().copy();
-	};
-
-	const onClickPaste = () => {
-		getFocusedWebContents().paste();
-	};
-
-	const onClickSelectAll = () => {
-		getFocusedWebContents().selectAll();
-	};
+	const {
+		undo: onClickUndo,
+		redo: onClickRedo,
+		cut: onClickCut,
+		copy: onClickCopy,
+		paste: onClickPaste,
+		selectAll: onClickSelectAll,
+	} = useTextEditActions();
 
 	const activeServerUrl = useSelector(({ view: { url } = {} }) => url);
 

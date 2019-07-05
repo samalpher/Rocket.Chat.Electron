@@ -9,14 +9,14 @@ import {
 	toggleSpellcheckingDictionary,
 	updateSpellCheckingCorrections,
 } from '../../../../../actions';
-import { useFocusedWebContents } from '../../hooks';
+import { useFocusedWebContents } from '../../../../hooks/focusedWebContents';
 import { useSagaMiddleware } from '../../../App/SagaMiddlewareProvider';
 
 
 export const useSpellCheckingMenuTemplate = () => {
 	const { t } = useTranslation();
 
-	const getFocusedWebContents = useFocusedWebContents();
+	const focusedWebContents = useFocusedWebContents();
 
 	const dispatch = useDispatch();
 
@@ -27,7 +27,7 @@ export const useSpellCheckingMenuTemplate = () => {
 	}) => dictionaryInstallationDirectory);
 
 	const onClickReplaceMispelling = (correction) => {
-		getFocusedWebContents().replaceMisspelling(correction);
+		focusedWebContents.replaceMisspelling(correction);
 	};
 
 	const onClickToggleDictionary = (dictionary, { checked }) => {
@@ -127,5 +127,5 @@ export const useSpellCheckingMenuTemplate = () => {
 			},
 			{ type: 'separator' },
 		];
-	});
+	}, [focusedWebContents]);
 };

@@ -1,6 +1,7 @@
 import { remote } from 'electron';
 import React, { useEffect, useMemo } from 'react';
 import { useSelector } from 'react-redux';
+import { useGlobalBadge } from '../../hooks/globalBadge';
 import { useIcon } from '../../hooks/icon';
 
 
@@ -14,15 +15,7 @@ export function MainWindow({ children }) {
 		},
 	}) => [hasMenus, hasTray]);
 
-	const badge = useSelector(({ servers }) => {
-		const badges = servers.map(({ badge }) => badge);
-		const mentionCount = (
-			badges
-				.filter((badge) => Number.isInteger(badge))
-				.reduce((sum, count) => sum + count, 0)
-		);
-		return mentionCount || (badges.some((badge) => !!badge) && '•') || null;
-	});
+	const globalBadge = useGlobalBadge();
 
 	useEffect(() => {
 		if (process.platform !== 'darwin') {
@@ -31,7 +24,7 @@ export function MainWindow({ children }) {
 		}
 	}, [hasMenus]);
 
-	const icon = useIcon(hasTray, badge);
+	const icon = useIcon(hasTray, globalBadge);
 
 	useEffect(() => {
 		if (process.platform === 'darwin') {
@@ -42,7 +35,7 @@ export function MainWindow({ children }) {
 	}, [icon]);
 
 	useEffect(() => {
-		const count = Number.isInteger(badge) ? badge : 0;
+		const count = Number.isInteger(globalBadge) ? globalBadge : 0;
 		if (!mainWindow.isFocused()) {
 			mainWindow.flashFrame(count > 0);
 			mainWindow.once('focus', () => mainWindow.flashFrame(false));
@@ -51,7 +44,7 @@ export function MainWindow({ children }) {
 		return () => {
 			mainWindow.flashFrame(false);
 		};
-	}, [badge, mainWindow]);
+	}, [globalBadge, mainWindow]);
 
 	return <>
 		{children}

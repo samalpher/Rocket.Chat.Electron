@@ -1,15 +1,15 @@
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useFocusedWebContents } from '../../hooks';
+import { useFocusedWebContents } from '../../../../hooks/focusedWebContents';
 
 
 export const useImageMenuTemplate = () => {
-	const getFocusedWebContents = useFocusedWebContents();
+	const focusedWebContents = useFocusedWebContents();
 
 	const { t } = useTranslation();
 
 	const onClickSaveImageAs = (url) => {
-		getFocusedWebContents().downloadURL(url);
+		focusedWebContents.downloadURL(url);
 	};
 
 	return useCallback(({
@@ -23,5 +23,5 @@ export const useImageMenuTemplate = () => {
 			},
 			{ type: 'separator' },
 		]
-		: []));
+		: []), [focusedWebContents]);
 };

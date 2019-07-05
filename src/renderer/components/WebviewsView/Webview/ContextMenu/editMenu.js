@@ -1,36 +1,22 @@
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useFocusedWebContents } from '../../hooks';
+import { useFocusedWebContents } from '../../../../hooks/focusedWebContents';
+import { useTextEditActions } from '../../../../hooks/textEditActions';
 
 
 export const useEditMenuTemplate = () => {
-	const getFocusedWebContents = useFocusedWebContents();
+	const focusedWebContents = useFocusedWebContents();
 
 	const { t } = useTranslation();
 
-	const onClickUndo = () => {
-		getFocusedWebContents().undo();
-	};
-
-	const onClickRedo = () => {
-		getFocusedWebContents().redo();
-	};
-
-	const onClickCut = () => {
-		getFocusedWebContents().cut();
-	};
-
-	const onClickCopy = () => {
-		getFocusedWebContents().copy();
-	};
-
-	const onClickPaste = () => {
-		getFocusedWebContents().paste();
-	};
-
-	const onClickSelectAll = () => {
-		getFocusedWebContents().selectAll();
-	};
+	const {
+		undo: onClickUndo,
+		redo: onClickRedo,
+		cut: onClickCut,
+		copy: onClickCopy,
+		paste: onClickPaste,
+		selectAll: onClickSelectAll,
+	} = useTextEditActions();
 
 	return useCallback(({
 		editFlags: {
@@ -79,5 +65,5 @@ export const useEditMenuTemplate = () => {
 			enabled: canSelectAll,
 			click: onClickSelectAll,
 		},
-	]);
+	], [focusedWebContents]);
 };

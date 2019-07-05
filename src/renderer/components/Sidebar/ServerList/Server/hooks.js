@@ -72,7 +72,7 @@ export const useContextMenu = (url) => {
 		dispatch(openDevToolsForWebview({ url }));
 	};
 
-	const template = [
+	const template = useMemo(() => [
 		{
 			label: t('sidebar.item.reload'),
 			click: onClickReload,
@@ -85,16 +85,18 @@ export const useContextMenu = (url) => {
 			label: t('sidebar.item.openDevTools'),
 			click: onClickOpenDevTools,
 		},
-	];
+	], []);
 
 	const [open, setOpen] = useState(false);
 
-	const handleClosing = () => setOpen(false);
+	const handleClosing = useCallback(() => {
+		setOpen(false);
+	}, [setOpen]);
 
-	const handleContextMenu = (event) => {
+	const handleContextMenu = useCallback((event) => {
 		event.preventDefault();
 		setOpen(true);
-	};
+	}, [setOpen]);
 
 	return [handleContextMenu, template, open, handleClosing];
 };

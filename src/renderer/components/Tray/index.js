@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
 import { showMainWindow, hideMainWindow } from '../../../actions';
+import { useGlobalBadge } from '../../hooks/globalBadge';
 import { useIcon } from '../../hooks/icon';
 import { useMenu } from '../../hooks/menu';
 
@@ -10,21 +11,13 @@ import { useMenu } from '../../hooks/menu';
 export function Tray() {
 	const visible = useSelector(({ preferences: { hasTray } }) => hasTray);
 
-	const badge = useSelector(({ servers }) => {
-		const badges = servers.map(({ badge }) => badge);
-		const mentionCount = (
-			badges
-				.filter((badge) => Number.isInteger(badge))
-				.reduce((sum, count) => sum + count, 0)
-		);
-		return mentionCount || (badges.some((badge) => !!badge) && '•') || null;
-	});
+	const globalBadge = useGlobalBadge();
 
 	const windowVisible = useSelector(({ mainWindow: { isHidden } }) => !isHidden);
 
 	const dispatch = useDispatch();
 
-	const icon = useIcon(false, badge);
+	const icon = useIcon(false, globalBadge);
 
 	const trayRef = useRef();
 
@@ -81,9 +74,9 @@ export function Tray() {
 			return;
 		}
 
-		const title = Number.isInteger(badge) ? String(badge) : '';
+		const title = Number.isInteger(globalBadge) ? String(globalBadge) : '';
 		trayRef.current.setTitle(title);
-	}, [trayRef.current, badge]);
+	}, [trayRef.current, globalBadge]);
 
 	useEffect(() => {
 		if (!trayRef.current) {
@@ -92,14 +85,14 @@ export function Tray() {
 
 		const appName = remote.app.getName();
 
-		if (badge === '•') {
+		if (globalBadge === '•') {
 			trayRef.current.setToolTip(t('tray.tooltip.unreadMessage', { appName }));
-		} else if (Number.isInteger(badge)) {
-			trayRef.current.setToolTip(t('tray.tooltip.unreadMention', { appName, count: badge }));
+		} else if (Number.isInteger(globalBadge)) {
+			trayRef.current.setToolTip(t('tray.tooltip.unreadMention', { appName, count: globalBadge }));
 		} else {
 			trayRef.current.setToolTip(t('tray.tooltip.noUnreadMessage', { appName }));
 		}
-	}, [trayRef.current, badge]);
+	}, [trayRef.current, globalBadge]);
 
 	useEffect(() => {
 		if (!trayRef.current) {

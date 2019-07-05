@@ -9,7 +9,7 @@ export function PopupMenu({ template = [], open, onClosing }) {
 		open
 			? menu.popup()
 			: menu.closePopup();
-	}, [open]);
+	}, [menu, open]);
 
 	useEffect(() => {
 		if (!onClosing) {
@@ -21,7 +21,7 @@ export function PopupMenu({ template = [], open, onClosing }) {
 		return () => {
 			menu.removeListener('menu-will-close', onClosing);
 		};
-	}, [onClosing]);
+	}, [menu, onClosing]);
 
 	return null;
 }
