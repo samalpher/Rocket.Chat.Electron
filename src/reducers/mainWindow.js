@@ -8,8 +8,8 @@ import {
 const filterState = ({
 	x,
 	y,
-	width,
-	height,
+	width = 1000,
+	height = 700,
 	isMinimized,
 	isMaximized,
 	isHidden,

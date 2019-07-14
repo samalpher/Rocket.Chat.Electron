@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
 import { showMainWindow, hideMainWindow } from '../../../actions';
-import { useGlobalBadge } from '../../hooks/globalBadge';
+import useGlobalBadge from '../../hooks/useGlobalBadge';
 import { useIcon } from '../../hooks/icon';
 import { useMenu } from '../../hooks/menu';
 

@@ -25,7 +25,7 @@ import { useDeepLinks, processDeepLink } from './deepLinks';
 import { useDownloads } from './downloads';
 import { useSpellChecking } from './spellchecking';
 import { useUpdate } from './update';
-import { useUI } from './ui';
+import { useMainWindow } from './mainWindow';
 import { useServers } from './userData/servers';
 import { useView } from './userData/view';
 
@@ -110,7 +110,7 @@ export const startApp = async () => {
 	useI18n();
 	useServers();
 	useSpellChecking();
-	useUI();
+	useMainWindow();
 	useUpdate();
 	useUserDataReset();
 	useView();
