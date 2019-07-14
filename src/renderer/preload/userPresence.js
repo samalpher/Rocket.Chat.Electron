@@ -1,27 +1,22 @@
 import idle from '@paulcbetts/system-idle-time';
 import { getMeteor, getTracker, getGetUserPreference, getUserPresence } from './rocketChat';
 
-const pollUserPresence = (UserPresence, maximumIdleTime) => {
-	
-	return () => {
-		let isUserPresent = true;
+const pollUserPresence = (UserPresence, maximumIdleTime) => () => {
+	let isUserPresent = true;
 
-		try {
-			const idleTime = idle.getIdleTime();
-			isUserPresent = idleTime < maximumIdleTime;
-		
-			if (isUserPresent) {	
-				UserPresence.setOnline();
-				
-			} else {
-				UserPresence.setAway();
-			}
-		} catch (error) {
-			console.error(error);
-		} finally {
-			wasUserPresent = isUserPresent;
+	try {
+		const idleTime = idle.getIdleTime();
+		isUserPresent = idleTime < maximumIdleTime;
+
+		if (isUserPresent) {
+			UserPresence.setOnline();
+
+		} else {
+			UserPresence.setAway();
 		}
-	};
+	} catch (error) {
+		console.error(error);
+	}
 };
 
 const handleUserPresence = () => {
