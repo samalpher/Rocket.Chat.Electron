@@ -5,6 +5,8 @@ export const FOCUS_MAIN_WINDOW = 'FOCUS_MAIN_WINDOW';
 export const SHOW_MAIN_WINDOW = 'SHOW_MAIN_WINDOW';
 export const HIDE_MAIN_WINDOW = 'HIDE_MAIN_WINDOW';
 export const DESTROY_MAIN_WINDOW = 'DESTROY_MAIN_WINDOW';
+export const RELOAD_MAIN_WINDOW = 'RELOAD_MAIN_WINDOW';
+export const TOGGLE_DEV_TOOLS_ON_MAIN_WINDOW = 'TOGGLE_DEV_TOOLS_ON_MAIN_WINDOW';
 
 export const mainWindowCreated = (id) => ({
 	type: MAIN_WINDOW_CREATED,
@@ -35,4 +37,12 @@ export const hideMainWindow = () => ({
 
 export const destroyMainWindow = () => ({
 	type: DESTROY_MAIN_WINDOW,
+});
+
+export const reloadMainWindow = () => ({
+	type: RELOAD_MAIN_WINDOW,
+});
+
+export const toggleDevToolsOnMainWindow = () => ({
+	type: TOGGLE_DEV_TOOLS_ON_MAIN_WINDOW,
 });

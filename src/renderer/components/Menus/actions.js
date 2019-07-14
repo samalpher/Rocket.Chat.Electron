@@ -16,6 +16,8 @@ import {
 	zoomOut,
 	showServer,
 	resetUserData,
+	reloadMainWindow,
+	toggleDevToolsOnMainWindow,
 } from '../../../actions';
 import { useTextEditActions } from '../../hooks/textEditActions';
 
@@ -103,11 +105,11 @@ export const useActions = () => {
 	};
 
 	const onClickReloadApp = () => {
-		remote.getCurrentWindow().reload();
+		dispatch(reloadMainWindow());
 	};
 
 	const onClickToggleAppDevTools = () => {
-		remote.getCurrentWindow().toggleDevTools();
+		dispatch(toggleDevToolsOnMainWindow());
 	};
 
 	const onClickShowWindowOnUnreadChanged = ({ checked }) => {

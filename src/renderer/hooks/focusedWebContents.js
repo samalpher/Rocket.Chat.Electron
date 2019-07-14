@@ -6,7 +6,7 @@ import { WEBVIEW_FOCUSED } from '../../actions';
 
 
 export const useFocusedWebContents = () => {
-	const [focusedWebContents, setFocusedWebContents] = useState(remote.getCurrentWindow());
+	const [focusedWebContents, setFocusedWebContents] = useState(remote.getCurrentWebContents());
 
 	useSaga(function* () {
 		function* handleWebviewFocused({ payload: { webContentsId } }) {

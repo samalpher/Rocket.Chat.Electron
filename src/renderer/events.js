@@ -5,16 +5,15 @@ import { getStore, getSaga } from './store';
 import {
 	ASK_FOR_CERTIFICATE_TRUST,
 	PROCESS_AUTH_DEEP_LINK,
+	SPELLCHECKING_DICTIONARY_INSTALL_FAILED,
 	UPDATE_DOWNLOAD_COMPLETED,
-	showServer,
 	addServerFromUrl,
-	historyFlagsUpdated,
 	editFlagsUpdated,
 	focusMainWindow,
-	replyCertificateTrustRequest,
+	historyFlagsUpdated,
 	quitAndInstallUpdate,
-	SPELLCHECKING_DICTIONARY_INSTALL_FAILED,
-	SET_SERVER_PROPERTIES,
+	replyCertificateTrustRequest,
+	showServer,
 } from '../actions';
 import { queryEditFlags } from '../utils';
 import { migrateDataFromLocalStorage } from './data';
@@ -172,15 +171,6 @@ function* updatesSaga() {
 	yield takeEvery(UPDATE_DOWNLOAD_COMPLETED, updateDownloadCompleted);
 }
 
-function* mainWindowSaga() {
-	yield takeEvery(SET_SERVER_PROPERTIES, function* ({ payload: { badge } }) {
-		const { preferences: { showWindowOnUnreadChanged } } = yield select();
-		if (typeof badge === 'number' && showWindowOnUnreadChanged) {
-			getCurrentWindow().showInactive();
-		}
-	});
-}
-
 const spellCheckingDictionaryInstallFailed = ({ payload: { error } }) => {
 	console.error(error);
 	remote.dialog.showErrorBox(
@@ -198,19 +188,10 @@ const runSagas = async () => (await getSaga()).run(function* () {
 	yield* certificatesSaga();
 	yield* deepLinksSaga();
 	yield* updatesSaga();
-	yield* mainWindowSaga();
 	yield* migrateDataFromLocalStorage();
 });
 
 export default async () => {
-	window.addEventListener('beforeunload', () => {
-		try {
-			getCurrentWindow().removeAllListeners();
-		} catch (error) {
-			remote.getGlobal('console').error(error.stack || error);
-		}
-	});
-
 	document.addEventListener('selectionchange', async () => {
 		(await getStore()).dispatch(editFlagsUpdated(queryEditFlags()));
 		(await getStore()).dispatch(historyFlagsUpdated({
