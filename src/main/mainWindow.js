@@ -1,15 +1,13 @@
 import { app, BrowserWindow } from 'electron';
-import { put, select, take } from 'redux-saga/effects';
 import {
-	APP_READY,
 	mainWindowCreated,
 	mainWindowStateLoaded,
 } from '../actions';
-import { connectUserData } from './userData/store';
+import { connectUserData } from './userData';
 import { loadJson, purgeFile } from './userData/fileSystem';
 
 
-const selectToUserData = ({ mainWindow = {} }) => ({ mainWindow });
+const selectToUserData = (getState) => () => (({ mainWindow }) => ({ mainWindow }))(getState());
 
 const fetchFromUserData = (dispatch) => async (state) => {
 	if (Object.keys(state).length === 0) {
@@ -22,29 +20,25 @@ const fetchFromUserData = (dispatch) => async (state) => {
 	dispatch(mainWindowStateLoaded(state));
 };
 
-export const useMainWindow = ({ dispatch, runSaga }) => {
-	runSaga(function* watchMainWindowActions() {
-		yield take(APP_READY);
+export const setupMainWindow = ({ getState, dispatch }) => {
+	connectUserData(selectToUserData(getState), fetchFromUserData(dispatch));
 
-		const [width, height] = yield select(({ mainWindow: { width, height } }) => [width, height]);
+	const { mainWindow: { width, height } } = getState();
 
-		const mainWindow = new BrowserWindow({
-			width,
-			height,
-			minWidth: 600,
-			minHeight: 400,
-			titleBarStyle: 'hidden',
-			show: false,
-			webPreferences: {
-				nodeIntegration: true,
-				webviewTag: true,
-			},
-		});
-
-		yield put(mainWindowCreated(mainWindow.id));
-
-		mainWindow.loadFile(`${ app.getAppPath() }/app/public/app.html`);
+	const mainWindow = new BrowserWindow({
+		width,
+		height,
+		minWidth: 600,
+		minHeight: 400,
+		titleBarStyle: 'hidden',
+		show: false,
+		webPreferences: {
+			nodeIntegration: true,
+			webviewTag: true,
+		},
 	});
 
-	connectUserData(selectToUserData, fetchFromUserData(dispatch));
+	dispatch(mainWindowCreated(mainWindow.id));
+
+	mainWindow.loadFile(`${ app.getAppPath() }/app/public/app.html`);
 };

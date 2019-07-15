@@ -11,7 +11,6 @@ import { reducer as screensharing } from './screensharing';
 import { reducer as servers } from './servers';
 import { reducer as spellchecking } from './spellchecking';
 import { reducer as update } from './update';
-import { reducer as view } from './view';
 import { reducer as webviews } from './webviews';
 
 
@@ -28,6 +27,5 @@ export const rootReducer = combineReducers({
 	servers,
 	spellchecking,
 	update,
-	view,
 	webviews,
 });

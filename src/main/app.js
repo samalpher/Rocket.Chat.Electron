@@ -3,23 +3,22 @@ import { setupErrorHandling } from '../errorHandling';
 import { setupStore } from './store';
 import {
 	appActivated,
-	appReady,
 	appSecondInstanceLaunched,
 	appWillQuit,
 } from '../actions';
-import { useI18n } from './i18n';
+import { setupI18n } from './i18n';
 import { setupUserDataPath } from './userData/fileSystem';
 import { usePreferences } from './userData/preferences';
 import { isRequestingUserDataReset, resetUserData, useUserDataReset } from './userData/reset';
-import { createElectronStore } from './userData/store';
-import { useBasicAuth } from './basicAuth';
-import { useCertificates } from './certificates';
-import { useDownloads } from './downloads';
-import { useSpellChecking } from './spellchecking';
-import { useUpdate } from './update';
-import { useMainWindow } from './mainWindow';
+import { restoreState } from './userData';
+import { setupBasicAuth } from './basicAuth';
+import { setupCertificates } from './certificates';
+import { setupDownloads } from './downloads';
+import { useSpellChecking as setupSpellChecking } from './spellchecking';
+import { setupUpdate } from './update';
+import { setupMainWindow } from './mainWindow';
 import { useServers } from './userData/servers';
-import { useView } from './userData/view';
+import { service as debug } from '../debug';
 
 
 const setupAppParameters = ({ getState }) => {
@@ -41,7 +40,12 @@ const setupAppParameters = ({ getState }) => {
 const canStart = () => process.mas || app.requestSingleInstanceLock();
 
 const attachEvents = ({ dispatch }) => {
-	app.on('window-all-closed', () => app.quit());
+	app.on('newListener', (eventName) => debug('%o event listener attached', eventName));
+	app.on('removeListener', (eventName) => debug('%o event listener detached', eventName));
+
+	app.on('window-all-closed', () => {
+		app.quit();
+	});
 	app.on('activate', () => {
 		dispatch(appActivated());
 	});
@@ -53,8 +57,10 @@ const attachEvents = ({ dispatch }) => {
 	});
 };
 
-export const startApp = () => {
+export const startApp = async () => {
 	setupErrorHandling('main');
+
+	setupUserDataPath();
 
 	const [store, sagaMiddleware] = setupStore();
 	const globalState = {
@@ -63,9 +69,7 @@ export const startApp = () => {
 		runSaga: sagaMiddleware.run,
 	};
 
-	setupUserDataPath();
-
-	createElectronStore(globalState);
+	restoreState(globalState);
 
 	usePreferences(globalState);
 
@@ -83,18 +87,19 @@ export const startApp = () => {
 		return;
 	}
 
-	attachEvents(globalState);
+	await attachEvents(globalState);
+	await setupBasicAuth(globalState);
+	await setupCertificates(globalState);
+	await setupUpdate(globalState);
 
-	useBasicAuth(globalState);
-	useCertificates(globalState);
-	useDownloads(globalState);
-	useI18n(globalState);
-	useServers(globalState);
-	useSpellChecking(globalState);
-	useMainWindow(globalState);
-	useUpdate(globalState);
-	useUserDataReset(globalState);
-	useView(globalState);
+	await app.whenReady();
 
-	app.whenReady().then(() => store.dispatch(appReady()));
+	await setupI18n(globalState);
+	await setupDownloads(globalState);
+	await setupMainWindow(globalState);
+
+	await useUserDataReset(globalState);
+
+	await useServers(globalState);
+	await setupSpellChecking(globalState);
 };

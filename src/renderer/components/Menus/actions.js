@@ -49,7 +49,7 @@ export const useActions = () => {
 		selectAll: onClickSelectAll,
 	} = useTextEditActions();
 
-	const activeServerUrl = useSelector(({ view: { url } = {} }) => url);
+	const activeServerUrl = useSelector(({ preferences: { view: { url } = {} } }) => url);
 
 	const onClickReload = () => {
 		dispatch(reloadWebview({ url: activeServerUrl }));

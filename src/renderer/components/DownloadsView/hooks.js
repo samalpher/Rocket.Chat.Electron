@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { allDownloadsCleared } from '../../../actions';
 
 
-export const useView = () => useSelector(({ view }) => view === 'downloads');
+export const useView = () => useSelector(({ preferences: { view } }) => view === 'downloads');
 
 export const useDownloads = () => {
 	const downloads = useSelector(({

@@ -11,7 +11,7 @@ import multiLineIcon from './multiLine.png';
 
 
 export function TouchBar() {
-	const [servers, activeServerUrl] = useSelector(({ servers, view }) => [servers, view.url]);
+	const [servers, activeServerUrl] = useSelector(({ servers, preferences: { view: { url } = {} } }) => [servers, url]);
 
 	const { t } = useTranslation();
 

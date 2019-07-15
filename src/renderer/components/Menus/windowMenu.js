@@ -16,11 +16,11 @@ export const useWindowMenuTemplate = () => {
 
 	return useSelector(({
 		servers,
-		view: {
-			url: activeServerUrl,
-		} = {},
 		preferences: {
 			showWindowOnUnreadChanged,
+			view: {
+				url: activeServerUrl,
+			} = {},
 		},
 	}) => ({
 		label: t('menus.windowMenu'),

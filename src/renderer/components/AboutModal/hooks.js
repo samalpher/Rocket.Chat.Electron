@@ -26,12 +26,12 @@ export const useModal = () => {
 
 export const useUpdate = () => {
 	const state = useSelector(({
+		preferences: {
+			canUpdate,
+			canAutoUpdate,
+		},
 		update: {
-			configuration: {
-				canUpdate,
-				canAutoUpdate,
-				canSetAutoUpdate,
-			},
+			canSetAutoUpdate,
 			checking,
 		},
 	}) => ({ canUpdate, canAutoUpdate, canSetAutoUpdate, checking }));

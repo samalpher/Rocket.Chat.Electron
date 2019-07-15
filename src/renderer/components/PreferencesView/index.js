@@ -25,7 +25,7 @@ const Title = styled.h2`
 `;
 
 const useRedux = () => {
-	const state = useSelector(({ view }) => ({ visible: view === 'preferences' }));
+	const state = useSelector(({ preferences: { view } }) => ({ visible: view === 'preferences' }));
 
 	return state;
 };

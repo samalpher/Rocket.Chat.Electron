@@ -1,6 +1,5 @@
 import {
 	UPDATE_CONFIGURATION_LOADED,
-	AUTO_UPDATE_SET,
 	CHECKING_FOR_UPDATE_STARTED,
 	CHECKING_FOR_AUTO_UPDATE_STARTED,
 	CHECKING_FOR_UPDATE_STOPPED,
@@ -9,27 +8,13 @@ import {
 	CHECKING_FOR_UPDATE_ERRORED,
 	UPDATE_NOT_AVAILABLE,
 	UPDATE_AVAILABLE,
-	UPDATE_SKIPPED,
 	UPDATE_DOWNLOAD_ERRORED,
 } from '../actions';
 
 
-const filterUpdateConfiguration = ({
-	fromAdmin = false,
-	canUpdate = false,
-	canAutoUpdate = false,
-	canSetAutoUpdate = false,
-	skippedVersion = null,
-}) => ({
-	fromAdmin,
-	canUpdate,
-	canAutoUpdate,
-	canSetAutoUpdate,
-	skippedVersion,
-});
-
 const initialState = {
-	configuration: filterUpdateConfiguration({}),
+	adminConfiguration: false,
+	canSetAutoUpdate: false,
 	checking: null,
 	version: null,
 	download: null,
@@ -40,16 +25,8 @@ export const reducer = (state = initialState, { type, payload }) => {
 		case UPDATE_CONFIGURATION_LOADED:
 			return {
 				...state,
-				configuration: filterUpdateConfiguration(payload),
-			};
-
-		case AUTO_UPDATE_SET:
-			return {
-				...state,
-				configuration: filterUpdateConfiguration({
-					...state.configuration,
-					canAutoUpdate: !!payload,
-				}),
+				adminConfiguration: payload.adminConfiguration,
+				canSetAutoUpdate: payload.canSetAutoUpdate,
 			};
 
 		case CHECKING_FOR_UPDATE_STARTED:
@@ -92,15 +69,6 @@ export const reducer = (state = initialState, { type, payload }) => {
 				...state,
 				checking: null,
 				version: payload,
-			};
-
-		case UPDATE_SKIPPED:
-			return {
-				...state,
-				configuration: filterUpdateConfiguration({
-					...state.configuration,
-					skippedVersion: payload,
-				}),
 			};
 
 		case UPDATE_DOWNLOAD_ERRORED:

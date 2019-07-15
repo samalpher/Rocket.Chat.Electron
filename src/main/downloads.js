@@ -1,7 +1,6 @@
 import { app, session } from 'electron';
 import jetpack from 'fs-jetpack';
 import { take } from 'redux-saga/effects';
-import uniqid from 'uniqid';
 import {
 	ALL_DOWNLOADS_CLEARED,
 	DOWNLOAD_CLEARED,
@@ -10,7 +9,7 @@ import {
 	downloadsLoaded,
 } from '../actions';
 import { downloads as debug } from '../debug';
-import { connectUserData } from './userData/store';
+import { connectUserData } from './userData';
 
 
 const createDownloadItem = (id, item) => ({
@@ -30,7 +29,7 @@ const createDownloadItem = (id, item) => ({
 });
 
 const createWillDownloadHandler = (dispatch, runSaga) => (event, item) => {
-	const id = uniqid();
+	const id = Math.random().toString(36);
 
 	// TODO: fix download file overwrite
 	item.setSavePath(jetpack.path(app.getPath('downloads'), item.getFilename()));
@@ -79,18 +78,15 @@ const createWillDownloadHandler = (dispatch, runSaga) => (event, item) => {
 	dispatch(downloadStarted(createDownloadItem(id, item)));
 };
 
-const selectToUserData = ({ downloads = [] }) => ({ downloads });
+const selectToUserData = (getState) => () => (({ downloads = [] }) => ({ downloads }))(getState());
 
 const fetchFromUserData = (dispatch) => (downloads) => {
 	dispatch(downloadsLoaded(downloads));
 };
 
-export const useDownloads = async ({ dispatch, runSaga }) => {
-	connectUserData(selectToUserData, fetchFromUserData(dispatch));
-
-	await app.whenReady();
+export const setupDownloads = async ({ getState, dispatch, runSaga }) => {
+	connectUserData(selectToUserData(getState), fetchFromUserData(dispatch));
 
 	const handleWillDownload = createWillDownloadHandler(dispatch, runSaga);
 	session.defaultSession.on('will-download', handleWillDownload);
-	debug('%o event listener attached', 'will-download');
 };

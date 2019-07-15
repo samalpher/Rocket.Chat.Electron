@@ -6,7 +6,7 @@ const { getCurrentWebContents } = remote;
 
 
 const formatButtonTouched = function* ({ payload: buttonId }) {
-	const { view, webviews } = yield select();
+	const { preferences: { view }, webviews } = yield select();
 	const { id } = getCurrentWebContents();
 	const webview = webviews.find(({ webContentsId }) => webContentsId === id);
 	if (view.url !== webview.url) {

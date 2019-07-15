@@ -8,7 +8,7 @@ import { showServer, addServerFromUrl } from '../../../actions';
 export const useView = () => {
 	const visible = useSelector(({
 		loading,
-		view,
+		preferences: { view },
 	}) => !loading && view === 'landing');
 
 	return visible;
@@ -78,8 +78,8 @@ export const useForm = () => {
 
 	const state = useSelector(({
 		loading,
-		view,
 		servers,
+		preferences: { view },
 	}) => ({
 		visible: !loading && view === 'landing',
 		servers,

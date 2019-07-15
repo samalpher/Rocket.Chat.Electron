@@ -1,11 +1,6 @@
-export const APP_READY = 'APP_READY';
 export const APP_ACTIVATED = 'APP_ACTIVATED';
 export const APP_WILL_QUIT = 'APP_WILL_QUIT';
 export const APP_SECOND_INSTANCE_LAUNCHED = 'APP_SECOND_INSTANCE_LAUNCHED';
-
-export const appReady = () => ({
-	type: APP_READY,
-});
 
 export const appActivated = () => ({
 	type: APP_ACTIVATED,

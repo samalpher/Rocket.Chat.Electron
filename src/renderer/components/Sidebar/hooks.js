@@ -5,9 +5,9 @@ export const useRedux = () => useSelector(({
 	loading,
 	preferences: {
 		hasSidebar,
+		view,
 	},
 	servers,
-	view,
 }) => {
 	const {
 		background,

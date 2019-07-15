@@ -76,17 +76,13 @@ const useDeepLinks = () => {
 		};
 
 		remote.app.on('open-url', handleOpenUrl);
-		debug('%o event listener attached', 'open-url');
 
 		remote.app.on('second-instance', handleSecondInstanceLaunch);
-		debug('%o event listener attached', 'second-instance');
 
 		return () => {
 			remote.app.off('open-url', handleOpenUrl);
-			debug('%o event listener detached', 'open-url');
 
 			remote.app.off('second-instance', handleSecondInstanceLaunch);
-			debug('%o event listener detached', 'second-instance');
 		};
 	}, [handleDeepLink]);
 

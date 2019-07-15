@@ -24,13 +24,11 @@ const getI18nextOptions = async () => {
 	};
 };
 
-export const useI18n = async () => {
+export const setupI18n = async () => {
 	await i18next
 		.use(i18nextNodeFileSystemBackend)
 		.init(await getI18nextOptions());
 	debug('i18next initialized');
-
-	await app.whenReady();
 
 	i18next.changeLanguage(normalizeLocale(app.getLocale()));
 	debug('%o set for i18next', i18next.language);

@@ -29,6 +29,26 @@ export const loadJson = withDirectory(async (directory, filename) => {
 	}
 });
 
+export const loadJsonSync = withDirectory((directory, filename) => {
+	try {
+		debug('loading %s on %s', filename, directory.cwd());
+		return directory.read(filename, 'json') || {};
+	} catch (error) {
+		reportInfo(error);
+		return {};
+	}
+});
+
+export const writeJson = withDirectory(async (directory, filename, data) => {
+	try {
+		debug('writting %s on %s', filename, directory.cwd());
+		await directory.writeAsync(filename, data, { atomic: true });
+	} catch (error) {
+		reportInfo(error);
+	}
+});
+
+
 export const purgeFile = withDirectory(async (directory, filename) => {
 	try {
 		debug('purging %s on %s', filename, directory.cwd());

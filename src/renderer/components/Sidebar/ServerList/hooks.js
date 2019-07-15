@@ -31,10 +31,7 @@ export const useShortcuts = () => {
 };
 
 export const useServers = () => {
-	const {
-		servers: propServers,
-		view,
-	} = useSelector(({ servers, view }) => ({ servers, view }));
+	const [propServers, view] = useSelector(({ servers, preferences: { view } }) => [servers, view]);
 
 	const active = view && view.url;
 

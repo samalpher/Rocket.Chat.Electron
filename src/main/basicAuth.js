@@ -1,6 +1,5 @@
 import { app } from 'electron';
 import { parse as parseUrl } from 'url';
-import { basicAuth as debug } from '../debug';
 import { pipe } from '../utils/decorators';
 
 
@@ -39,8 +38,7 @@ const createLoginHandler = (getState) => (event, webContents, request, callback)
 	callback(username, password);
 };
 
-export const useBasicAuth = ({ getState }) => {
+export const setupBasicAuth = ({ getState }) => {
 	const handleLogin = createLoginHandler(getState);
 	app.on('login', handleLogin);
-	debug('%o event listener attached', 'login');
 };

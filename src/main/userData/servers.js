@@ -6,10 +6,10 @@ import {
 } from '../../actions';
 import { normalizeServerUrl } from '../../utils';
 import { loadJson } from './fileSystem';
-import { connectUserData } from './store';
+import { connectUserData } from '.';
 
 
-const selectToUserData = ({ servers = [] }) => ({ servers });
+const selectToUserData = (getState) => () => (({ servers = [] }) => ({ servers }))(getState());
 
 const fetchFromUserData = (dispatch) => async (servers) => {
 	if (servers.length !== 0) {
@@ -39,6 +39,6 @@ const fetchFromUserData = (dispatch) => async (servers) => {
 	dispatch(serversLoaded(servers));
 };
 
-export const useServers = ({ dispatch }) => {
-	connectUserData(selectToUserData, fetchFromUserData(dispatch));
+export const useServers = ({ getState, dispatch }) => {
+	connectUserData(selectToUserData(getState), fetchFromUserData(dispatch));
 };

@@ -51,7 +51,7 @@ const parseServerSorting = (value) => {
 };
 
 export function* migrateDataFromLocalStorage() {
-	let { preferences, servers, view } = yield select();
+	let { preferences, servers } = yield select();
 
 	if (localStorage.getItem('hideTray')) {
 		debug('rc:data')('hideTray');
@@ -113,18 +113,18 @@ export function* migrateDataFromLocalStorage() {
 		localStorage.removeItem('rocket.chat.sortOrder');
 	}
 
+	yield put(preferencesLoaded(preferences));
+	yield put(serversLoaded(servers));
+
 	if (localStorage.getItem('rocket.chat.currentHost')) {
 		debug('rc:data')('rocket.chat.currentHost');
 		try {
 			const value = localStorage.getItem('rocket.chat.currentHost');
 			const hasActiveServer = (!value || value === 'null');
-			view = hasActiveServer ? 'landing' : { url: normalizeServerUrl(value) };
+			const view = hasActiveServer ? 'landing' : { url: normalizeServerUrl(value) };
+			yield put(viewLoaded(view));
 		} finally {
 			localStorage.removeItem('rocket.chat.currentHost');
 		}
 	}
-
-	yield put(preferencesLoaded(preferences));
-	yield put(serversLoaded(servers));
-	yield put(viewLoaded(view));
 }

@@ -10,8 +10,6 @@ export const service = rc.extend('service');
 
 export const i18n = service.extend('i18n');
 
-export const basicAuth = service.extend('basic-auth');
-
 export const certificates = service.extend('certificates');
 
 export const deepLinks = service.extend('deep-links');

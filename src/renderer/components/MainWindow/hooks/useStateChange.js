@@ -2,7 +2,6 @@ import { remote } from 'electron';
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { mainWindowStateUpdated } from '../../../../actions';
-import { withDebounce } from '../../../../utils/decorators';
 
 
 const applyBounds = (mainWindow, { x, y, width, height }) => {
@@ -107,10 +106,10 @@ export default (mainWindow) => {
 
 	const dispatch = useDispatch();
 
-	const handleWindowStateChange = withDebounce(100, () => {
+	const handleWindowStateChange = () => {
 		const state = fetchState(mainWindow);
 		dispatch(mainWindowStateUpdated(state));
-	});
+	};
 
 	useEffect(() => {
 		mainWindow.on('move', handleWindowStateChange);

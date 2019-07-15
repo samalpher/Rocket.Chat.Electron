@@ -9,7 +9,7 @@ import {
 } from '../actions';
 import { loadJson, purgeFile } from './userData/fileSystem';
 import { certificates as debug } from '../debug';
-import { connectUserData } from './userData/store';
+import { connectUserData } from './userData';
 
 
 const trustRequests = {};
@@ -67,7 +67,7 @@ const createCertificateErrorHandler = (getState, dispatch, runSaga) =>
 		});
 	};
 
-const selectToUserData = ({ certificates = {} }) => ({ certificates });
+const selectToUserData = (getState) => () => (({ certificates = {} }) => ({ certificates }))(getState());
 
 const fetchFromUserData = (dispatch) => async (certificates) => {
 	if (certificates.length === 0) {
@@ -78,10 +78,9 @@ const fetchFromUserData = (dispatch) => async (certificates) => {
 	dispatch(certificatesLoaded(certificates));
 };
 
-export const useCertificates = ({ getState, dispatch, runSaga }) => {
+export const setupCertificates = ({ getState, dispatch, runSaga }) => {
 	const handleCertificateError = createCertificateErrorHandler(getState, dispatch, runSaga);
 	app.on('certificate-error', handleCertificateError);
-	debug('%o event listener attached', 'certificate-error');
 
-	connectUserData(selectToUserData, fetchFromUserData(dispatch));
+	connectUserData(selectToUserData(getState), fetchFromUserData(dispatch));
 };

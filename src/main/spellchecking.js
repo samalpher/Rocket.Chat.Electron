@@ -3,7 +3,6 @@ import path from 'path';
 import { put, select, takeEvery } from 'redux-saga/effects';
 import spellchecker from 'spellchecker';
 import {
-	USER_DATA_LOADED,
 	INSTALL_SPELLCHECKING_DICTIONARIES,
 	TOGGLE_SPELLCHECKING_DICTIONARY,
 	UPDATE_SPELLCHECKING_CORRECTIONS,
@@ -116,7 +115,6 @@ const doUpdateSpellCheckingCorrections = function* ({ payload: word }) {
 export const useSpellChecking = async ({ runSaga }) => {
 	runSaga(function* watchSpellCheckingActions() {
 		yield *doLoadConfig();
-		yield takeEvery(USER_DATA_LOADED, doLoadConfig);
 		yield takeEvery(INSTALL_SPELLCHECKING_DICTIONARIES, doInstallSpellCheckingDictionaries);
 		yield takeEvery(TOGGLE_SPELLCHECKING_DICTIONARY, doToggleSpellCheckingDictionary);
 		yield takeEvery(UPDATE_SPELLCHECKING_CORRECTIONS, doUpdateSpellCheckingCorrections);

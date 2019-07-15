@@ -19,10 +19,7 @@ import {
 	updateDownloadErrored,
 	updateNotAvailable,
 	updateSkipped,
-	updateConfigurationLoaded,
 } from '../actions';
-import { loadJson, purgeFile } from './userData/fileSystem';
-import { connectUserData } from './userData/store';
 
 
 const didUpdateConfigurationLoad = function* ({ payload: { canUpdate, canAutoUpdate } }) {
@@ -37,7 +34,7 @@ const didUpdateConfigurationLoad = function* ({ payload: { canUpdate, canAutoUpd
 };
 
 const doSetAutoUpdate = function* ({ payload: enabled }) {
-	const { update: { configuration: { canSetAutoUpdate } } } = yield select();
+	const { preferences: { canSetAutoUpdate } } = yield select();
 	if (!canSetAutoUpdate) {
 		return;
 	}
@@ -46,7 +43,7 @@ const doSetAutoUpdate = function* ({ payload: enabled }) {
 };
 
 const doCheckForUpdate = function* () {
-	const { update: { configuration: { canUpdate }, checking } } = yield select();
+	const { preferences: { canUpdate }, checking } = yield select();
 
 	if (checking || !canUpdate) {
 		return;
@@ -61,9 +58,9 @@ const doCheckForUpdate = function* () {
 };
 
 const doSkipUpdate = function* () {
-	const { update: { configuration: { fromAdmin }, version } } = yield select();
+	const { update: { adminConfiguration, version } } = yield select();
 
-	if (fromAdmin) {
+	if (adminConfiguration) {
 		return;
 	}
 
@@ -86,8 +83,8 @@ const doQuitAndInstallUpdate = function* () {
 
 const handleUpdateAvailable = (getState, dispatch) => ({ version }) => {
 	const {
+		preferences: { skippedVersion },
 		update: {
-			configuration: { skippedVersion },
 			checking: { mode } = {},
 		},
 	} = getState();
@@ -115,60 +112,7 @@ const handleUpdateDownloaded = (dispatch) => (info) => {
 	dispatch(updateDownloadCompleted(info));
 };
 
-const selectToUserData = ({
-	update: {
-		configuration: {
-			canUpdate,
-			canAutoUpdate,
-			skippedVersion,
-		} = {},
-	} = {},
-}) => ({
-	update: {
-		canUpdate,
-		canAutoUpdate,
-		skippedVersion,
-	},
-});
-
-const fetchFromUserData = (dispatch) => async ({ canUpdate, canAutoUpdate, skippedVersion }) => {
-	const appUpdateConfiguration = await loadJson('app', 'update.json');
-	const userUpdateConfiguration = await loadJson('user', 'update.json');
-
-	const fromAdmin = !!appUpdateConfiguration.forced;
-
-	const isUpdatePossible = (
-		(process.platform === 'linux' && Boolean(process.env.APPIMAGE)) ||
-		(process.platform === 'win32' && !process.windowsStore) ||
-		(process.platform === 'darwin' && !process.mas)
-	);
-
-	const updateConfiguration = {
-		fromAdmin,
-		canUpdate: isUpdatePossible && (
-			fromAdmin ?
-				(appUpdateConfiguration.canUpdate !== false || true) :
-				(userUpdateConfiguration.canUpdate !== false || canUpdate || true)
-		),
-		canAutoUpdate: (
-			fromAdmin ?
-				(appUpdateConfiguration.autoUpdate !== false || true) :
-				(userUpdateConfiguration.autoUpdate !== false || canAutoUpdate || true)
-		),
-		canSetAutoUpdate: !appUpdateConfiguration.forced || appUpdateConfiguration.autoUpdate !== false,
-		skippedVersion: (
-			fromAdmin ?
-				(appUpdateConfiguration.skip || null) :
-				(userUpdateConfiguration.skip || skippedVersion || null)
-		),
-	};
-
-	await purgeFile('user', 'update.json');
-
-	dispatch(updateConfigurationLoaded(updateConfiguration));
-};
-
-export const useUpdate = ({ getState, dispatch, runSaga }) => {
+export const setupUpdate = ({ getState, dispatch, runSaga }) => {
 	autoUpdater.autoDownload = false;
 	autoUpdater.logger = null;
 	autoUpdater.on('update-available', handleUpdateAvailable(getState, dispatch));
@@ -184,6 +128,4 @@ export const useUpdate = ({ getState, dispatch, runSaga }) => {
 		yield takeEvery(DOWNLOAD_UPDATE, doDownloadUpdate);
 		yield takeEvery(QUIT_AND_INSTALL_UPDATE, doQuitAndInstallUpdate);
 	});
-
-	connectUserData(selectToUserData, fetchFromUserData(dispatch));
 };

@@ -33,7 +33,6 @@
     "@paulcbetts/system-idle-time": "^1.0.4",
     "electron-fetch": "^1.3.0",
     "electron-redux": "^1.4.0",
-    "electron-store": "^3.2.0",
     "electron-updater": "^4.0.6",
     "fs-jetpack": "^2.2.0",
     "i18next": "^15.0.4",
@@ -46,8 +45,7 @@
     "react-redux": "^7.0.3",
     "redux": "^4.0.1",
     "redux-saga": "^1.0.2",
-    "spellchecker": "^3.5.0",
-    "uniqid": "^5.0.3"
+    "spellchecker": "^3.5.0"
   },
   "devDependencies": {
     "@babel/core": "^7.4.4",

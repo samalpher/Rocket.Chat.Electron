@@ -51,10 +51,7 @@ const useWebviewsState = () => {
 
 	const [readyState, setReadyState] = useState({});
 
-	const {
-		view,
-		servers,
-	} = useSelector(({ view, servers }) => ({ view, servers }));
+	const [view, servers] = useSelector(({ preferences: { view }, servers }) => [view, servers]);
 
 	useEffect(() => {
 		const propUrls = servers.map(({ url }) => url);
