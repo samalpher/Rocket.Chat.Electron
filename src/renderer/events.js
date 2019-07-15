@@ -9,7 +9,6 @@ import {
 	UPDATE_DOWNLOAD_COMPLETED,
 	addServerFromUrl,
 	editFlagsUpdated,
-	focusMainWindow,
 	historyFlagsUpdated,
 	quitAndInstallUpdate,
 	replyCertificateTrustRequest,
@@ -144,7 +143,6 @@ const askForCertificateTrust = function* ({ payload: { requestUrl, error, certif
 };
 
 const processAuthDeepLink = function* ({ payload: { serverUrl } }) {
-	yield put(focusMainWindow());
 	yield addServer(serverUrl, true);
 };
 

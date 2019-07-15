@@ -4,6 +4,7 @@ import useActionRequests from './hooks/useActionRequests';
 import useGlobalBadgeChange from './hooks/useGlobalBadgeChange';
 import useMenus from './hooks/useMenus';
 import useStateChange from './hooks/useStateChange';
+import useSideEffects from './hooks/useSideEffects';
 
 
 export function MainWindow({ children }) {
@@ -13,6 +14,7 @@ export function MainWindow({ children }) {
 	useGlobalBadgeChange(mainWindow);
 	useMenus(mainWindow);
 	useStateChange(mainWindow);
+	useSideEffects(mainWindow);
 
 	useEffect(() => {
 		if (process.env.NODE_ENV === 'development') {

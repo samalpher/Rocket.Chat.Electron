@@ -8,6 +8,7 @@ import { SagaMiddlewareProvider } from './SagaMiddlewareProvider';
 import { Tray } from '../Tray';
 import { TouchBar } from '../TouchBar';
 import { MainWindow } from '../MainWindow';
+import { DeepLinksRouter } from './DeepLinksRouter';
 
 
 export function App() {
@@ -15,13 +16,15 @@ export function App() {
 		<React.Suspense fallback={<LoadingSplash visible />}>
 			<StoreProvider>
 				<SagaMiddlewareProvider>
-					<MainWindow>
-						<Shell />
-						<Dock />
-						<Menus />
-						<Tray />
-						<TouchBar />
-					</MainWindow>
+					<DeepLinksRouter>
+						<MainWindow>
+							<Shell />
+							<Dock />
+							<Menus />
+							<Tray />
+							<TouchBar />
+						</MainWindow>
+					</DeepLinksRouter>
 				</SagaMiddlewareProvider>
 			</StoreProvider>
 		</React.Suspense>
