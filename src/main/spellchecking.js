@@ -2,7 +2,6 @@ import jetpack from 'fs-jetpack';
 import path from 'path';
 import { put, select, takeEvery } from 'redux-saga/effects';
 import spellchecker from 'spellchecker';
-import { getSaga } from './store';
 import {
 	USER_DATA_LOADED,
 	INSTALL_SPELLCHECKING_DICTIONARIES,
@@ -114,8 +113,8 @@ const doUpdateSpellCheckingCorrections = function* ({ payload: word }) {
 	))));
 };
 
-export const useSpellChecking = async () => {
-	(await getSaga()).run(function* watchSpellCheckingActions() {
+export const useSpellChecking = async ({ runSaga }) => {
+	runSaga(function* watchSpellCheckingActions() {
 		yield *doLoadConfig();
 		yield takeEvery(USER_DATA_LOADED, doLoadConfig);
 		yield takeEvery(INSTALL_SPELLCHECKING_DICTIONARIES, doInstallSpellCheckingDictionaries);

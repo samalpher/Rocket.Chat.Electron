@@ -1,6 +1,5 @@
 import { app, BrowserWindow } from 'electron';
 import { put, select, take } from 'redux-saga/effects';
-import { getStore, getSaga } from './store';
 import {
 	APP_READY,
 	mainWindowCreated,
@@ -12,7 +11,7 @@ import { loadJson, purgeFile } from './userData/fileSystem';
 
 const selectToUserData = ({ mainWindow = {} }) => ({ mainWindow });
 
-const fetchFromUserData = async (state) => {
+const fetchFromUserData = (dispatch) => async (state) => {
 	if (Object.keys(state).length === 0) {
 		const { x, y, width, height, isMinimized, isMaximized, isHidden } =
 			await loadJson('user', 'window-state-main.json');
@@ -20,13 +19,11 @@ const fetchFromUserData = async (state) => {
 		await purgeFile('user', 'window-state-main.json');
 	}
 
-	(await getStore()).dispatch(mainWindowStateLoaded(state));
+	dispatch(mainWindowStateLoaded(state));
 };
 
-export const attachMainWindowStateToStore = () => connectUserData(selectToUserData, fetchFromUserData);
-
-export const useMainWindow = async () => {
-	(await getSaga()).run(function* watchMainWindowActions() {
+export const useMainWindow = ({ dispatch, runSaga }) => {
+	runSaga(function* watchMainWindowActions() {
 		yield take(APP_READY);
 
 		const [width, height] = yield select(({ mainWindow: { width, height } }) => [width, height]);
@@ -49,5 +46,5 @@ export const useMainWindow = async () => {
 		mainWindow.loadFile(`${ app.getAppPath() }/app/public/app.html`);
 	});
 
-	attachMainWindowStateToStore();
+	connectUserData(selectToUserData, fetchFromUserData(dispatch));
 };

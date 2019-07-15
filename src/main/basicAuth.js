@@ -1,9 +1,6 @@
 import { app } from 'electron';
 import { parse as parseUrl } from 'url';
 import { basicAuth as debug } from '../debug';
-import { SERVERS_LOADED } from '../actions';
-import { waitForAction } from '../utils/store';
-import { getStore, getSaga } from './store';
 import { pipe } from '../utils/decorators';
 
 
@@ -17,24 +14,22 @@ const getCredentialsFromUrl = (url) => {
 	return auth.split(':');
 };
 
-const findServer = (webContentsUrl) => ({ servers }) =>
-	servers.find(({ url }) => webContentsUrl.indexOf(url) === 0);
+const findServer = (webContentsUrl) => ({ servers }) => servers.find(({ url }) => webContentsUrl.indexOf(url) === 0);
 
 const getCredentialsFromServer = ({ username, password } = {}) => [username, password];
 
-const fetchCredentials = async (webContents, request) => {
+const selectCredentials = (webContents, request) => {
 	const [username, password] = getCredentialsFromUrl(request.url);
 	if (username && password) {
 		return [username, password];
 	}
 
 	const webContentsUrl = webContents.getURL();
-	const findCredentials = pipe(findServer(webContentsUrl), getCredentialsFromServer);
-	return findCredentials((await getStore()).getState());
+	return pipe(findServer(webContentsUrl), getCredentialsFromServer);
 };
 
-const handleLogin = async (event, webContents, request, callback) => {
-	const [username, password] = await fetchCredentials(webContents, request);
+const createLoginHandler = (getState) => (event, webContents, request, callback) => {
+	const [username, password] = selectCredentials(webContents, request)(getState);
 	if (!username || !password) {
 		return;
 	}
@@ -44,9 +39,8 @@ const handleLogin = async (event, webContents, request, callback) => {
 	callback(username, password);
 };
 
-export const useBasicAuth = () => {
-	waitForAction(getSaga(), SERVERS_LOADED)(() => {
-		app.on('login', handleLogin);
-		debug('%o event listener attached', 'login');
-	});
+export const useBasicAuth = ({ getState }) => {
+	const handleLogin = createLoginHandler(getState);
+	app.on('login', handleLogin);
+	debug('%o event listener attached', 'login');
 };

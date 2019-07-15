@@ -1,14 +1,14 @@
 import { shell } from 'electron';
 import { useCallback } from 'react';
 import { useDispatch } from 'react-redux';
-import { clearDownload as clearDownloadAction } from '../../../../actions';
+import { downloadCleared } from '../../../../actions';
 
 
 export const useActions = (id, filePath) => {
 	const dispatch = useDispatch();
 
 	const clearDownload = useCallback(() => {
-		dispatch(clearDownloadAction(id));
+		dispatch(downloadCleared(id));
 	}, [id]);
 
 	const showFile = useCallback(() => {

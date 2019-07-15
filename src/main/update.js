@@ -1,7 +1,6 @@
 import { app } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import { call, put, select, takeEvery } from 'redux-saga/effects';
-import { getStore, getSaga } from './store';
 import {
 	CHECK_FOR_UPDATE,
 	DOWNLOAD_UPDATE,
@@ -85,51 +84,54 @@ const doQuitAndInstallUpdate = function* () {
 	autoUpdater.quitAndInstall();
 };
 
-const handleUpdateAvailable = async ({ version }) => (await getSaga()).run(function* handleUpdateAvailable() {
+const handleUpdateAvailable = (getState, dispatch) => ({ version }) => {
 	const {
 		update: {
 			configuration: { skippedVersion },
 			checking: { mode } = {},
 		},
-	} = yield select();
+	} = getState();
 
 	const isAutoUpdate = mode === 'auto';
 	const shouldSkip = skippedVersion === version;
 
 	if (isAutoUpdate && shouldSkip) {
-		yield put(updateNotAvailable());
+		dispatch(updateNotAvailable());
 		return;
 	}
 
-	yield put(updateAvailable(version));
-});
+	dispatch(updateAvailable(version));
+};
 
-const handleUpdateNotAvailable = async () => (await getSaga()).run(function* handleUpdateNotAvailable() {
-	yield put(updateNotAvailable());
-});
+const handleUpdateNotAvailable = (dispatch) => () => {
+	dispatch(updateNotAvailable());
+};
 
-const handleDownloadProgress = async (progress) => (await getSaga()).run(function* handleDownloadProgress() {
-	yield put(updateDownloadProgressed(progress));
-});
+const handleDownloadProgress = (dispatch) => (progress) => {
+	dispatch(updateDownloadProgressed(progress));
+};
 
-const handleUpdateDownloaded = async (info) => (await getSaga()).run(function* handleUpdateDownloaded() {
-	yield put(updateDownloadCompleted(info));
-});
-
-autoUpdater.autoDownload = false;
-autoUpdater.logger = null;
-autoUpdater.on('update-available', handleUpdateAvailable);
-autoUpdater.on('update-not-available', handleUpdateNotAvailable);
-autoUpdater.on('download-progress', handleDownloadProgress);
-autoUpdater.on('update-downloaded', handleUpdateDownloaded);
+const handleUpdateDownloaded = (dispatch) => (info) => {
+	dispatch(updateDownloadCompleted(info));
+};
 
 const selectToUserData = ({
 	update: {
-		configuration: update = {},
+		configuration: {
+			canUpdate,
+			canAutoUpdate,
+			skippedVersion,
+		} = {},
 	} = {},
-}) => ({ update });
+}) => ({
+	update: {
+		canUpdate,
+		canAutoUpdate,
+		skippedVersion,
+	},
+});
 
-const fetchFromUserData = async (updateConfiguration) => {
+const fetchFromUserData = (dispatch) => async ({ canUpdate, canAutoUpdate, skippedVersion }) => {
 	const appUpdateConfiguration = await loadJson('app', 'update.json');
 	const userUpdateConfiguration = await loadJson('user', 'update.json');
 
@@ -141,35 +143,40 @@ const fetchFromUserData = async (updateConfiguration) => {
 		(process.platform === 'darwin' && !process.mas)
 	);
 
-	updateConfiguration = {
-		...updateConfiguration,
+	const updateConfiguration = {
 		fromAdmin,
 		canUpdate: isUpdatePossible && (
 			fromAdmin ?
 				(appUpdateConfiguration.canUpdate !== false || true) :
-				(userUpdateConfiguration.canUpdate !== false || updateConfiguration.canUpdate || true)
+				(userUpdateConfiguration.canUpdate !== false || canUpdate || true)
 		),
 		canAutoUpdate: (
 			fromAdmin ?
 				(appUpdateConfiguration.autoUpdate !== false || true) :
-				(userUpdateConfiguration.autoUpdate !== false || updateConfiguration.canAutoUpdate || true)
+				(userUpdateConfiguration.autoUpdate !== false || canAutoUpdate || true)
 		),
 		canSetAutoUpdate: !appUpdateConfiguration.forced || appUpdateConfiguration.autoUpdate !== false,
 		skippedVersion: (
 			fromAdmin ?
 				(appUpdateConfiguration.skip || null) :
-				(userUpdateConfiguration.skip || updateConfiguration.skippedVersion || null)
+				(userUpdateConfiguration.skip || skippedVersion || null)
 		),
 	};
+
 	await purgeFile('user', 'update.json');
 
-	(await getStore()).dispatch(updateConfigurationLoaded(updateConfiguration));
+	dispatch(updateConfigurationLoaded(updateConfiguration));
 };
 
-const attachToStore = () => connectUserData(selectToUserData, fetchFromUserData);
+export const useUpdate = ({ getState, dispatch, runSaga }) => {
+	autoUpdater.autoDownload = false;
+	autoUpdater.logger = null;
+	autoUpdater.on('update-available', handleUpdateAvailable(getState, dispatch));
+	autoUpdater.on('update-not-available', handleUpdateNotAvailable(dispatch));
+	autoUpdater.on('download-progress', handleDownloadProgress(dispatch));
+	autoUpdater.on('update-downloaded', handleUpdateDownloaded(dispatch));
 
-export const useUpdate = async () => {
-	(await getSaga()).run(function* watchUpdateActions() {
+	runSaga(function* watchUpdateActions() {
 		yield takeEvery(UPDATE_CONFIGURATION_LOADED, didUpdateConfigurationLoad);
 		yield takeEvery(SET_AUTO_UPDATE, doSetAutoUpdate);
 		yield takeEvery(CHECK_FOR_UPDATE, doCheckForUpdate);
@@ -178,5 +185,5 @@ export const useUpdate = async () => {
 		yield takeEvery(QUIT_AND_INSTALL_UPDATE, doQuitAndInstallUpdate);
 	});
 
-	attachToStore();
+	connectUserData(selectToUserData, fetchFromUserData(dispatch));
 };

@@ -8,10 +8,10 @@ import { connect } from '../../utils/store';
 
 let electronStore;
 
-export const createElectronStore = async () => {
+export const createElectronStore = ({ dispatch }) => {
 	electronStore = new ElectronStore();
 
-	(await getStore()).dispatch(userDataLoaded());
+	dispatch(userDataLoaded());
 };
 
 const withCumulativeDebounce = compose(

@@ -1,4 +1,3 @@
-import { getStore } from '../store';
 import {
 	serversLoaded,
 	showServer,
@@ -12,9 +11,9 @@ import { connectUserData } from './store';
 
 const selectToUserData = ({ servers = [] }) => ({ servers });
 
-const fetchFromUserData = async (servers) => {
+const fetchFromUserData = (dispatch) => async (servers) => {
 	if (servers.length !== 0) {
-		(await getStore()).dispatch(serversLoaded(servers));
+		dispatch(serversLoaded(servers));
 		return;
 	}
 
@@ -31,17 +30,15 @@ const fetchFromUserData = async (servers) => {
 		),
 	];
 
-	(await getStore()).dispatch(servers[0] ? showServer(servers[0].url) : showLanding());
+	dispatch(servers[0] ? showServer(servers[0].url) : showLanding());
 
 	if (servers.length <= 1) {
-		(await getStore()).dispatch(setPreferences({ hasSidebar: false }));
+		dispatch(setPreferences({ hasSidebar: false }));
 	}
 
-	(await getStore()).dispatch(serversLoaded(servers));
+	dispatch(serversLoaded(servers));
 };
 
-const attachToStore = () => connectUserData(selectToUserData, fetchFromUserData);
-
-export const useServers = () => {
-	attachToStore();
+export const useServers = ({ dispatch }) => {
+	connectUserData(selectToUserData, fetchFromUserData(dispatch));
 };

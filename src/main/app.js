@@ -1,6 +1,6 @@
 import { app } from 'electron';
 import { setupErrorHandling } from '../errorHandling';
-import { getStore, setupStore } from './store';
+import { setupStore } from './store';
 import {
 	appActivated,
 	appReady,
@@ -22,47 +22,54 @@ import { useServers } from './userData/servers';
 import { useView } from './userData/view';
 
 
-const setupAppParameters = async () => {
-	// TODO: wait for preferences
+const setupAppParameters = ({ getState }) => {
 	app.setAsDefaultProtocolClient('rocketchat');
 	app.setAppUserModelId('chat.rocket');
 	app.commandLine.appendSwitch('--autoplay-policy', 'no-user-gesture-required');
 
-	// TODO: use preference
-	if (process.platform === 'linux') {
+	const disableHardwareAcceleration = (({
+		preferences: {
+			disableHardwareAcceleration = process.platform === 'linux',
+		},
+	}) => disableHardwareAcceleration)(getState());
+
+	if (disableHardwareAcceleration) {
 		app.disableHardwareAcceleration();
 	}
 };
 
 const canStart = () => process.mas || app.requestSingleInstanceLock();
 
-const attachEvents = () => {
+const attachEvents = ({ dispatch }) => {
 	app.on('window-all-closed', () => app.quit());
 	app.on('activate', () => {
-		Promise.resolve(getStore())
-			.then((store) => store.dispatch(appActivated()));
+		dispatch(appActivated());
 	});
 	app.on('before-quit', () => {
-		Promise.resolve(getStore())
-			.then((store) => store.dispatch(appWillQuit()));
+		dispatch(appWillQuit());
 	});
-	app.on('second-instance', async (event, argv) => {
-		(await getStore()).dispatch(appSecondInstanceLaunched(argv.slice(2)));
+	app.on('second-instance', (event, argv) => {
+		dispatch(appSecondInstanceLaunched(argv.slice(2)));
 	});
 };
 
-export const startApp = async () => {
+export const startApp = () => {
 	setupErrorHandling('main');
 
-	setupStore();
+	const [store, sagaMiddleware] = setupStore();
+	const globalState = {
+		getState: store.getState,
+		dispatch: store.dispatch,
+		runSaga: sagaMiddleware.run,
+	};
 
 	setupUserDataPath();
 
-	createElectronStore();
+	createElectronStore(globalState);
 
-	usePreferences();
+	usePreferences(globalState);
 
-	setupAppParameters();
+	setupAppParameters(globalState);
 
 	const args = process.argv.slice(2);
 
@@ -76,20 +83,18 @@ export const startApp = async () => {
 		return;
 	}
 
-	attachEvents();
+	attachEvents(globalState);
 
-	useBasicAuth();
-	useCertificates();
-	useDownloads();
-	useI18n();
-	useServers();
-	useSpellChecking();
-	useMainWindow();
-	useUpdate();
-	useUserDataReset();
-	useView();
+	useBasicAuth(globalState);
+	useCertificates(globalState);
+	useDownloads(globalState);
+	useI18n(globalState);
+	useServers(globalState);
+	useSpellChecking(globalState);
+	useMainWindow(globalState);
+	useUpdate(globalState);
+	useUserDataReset(globalState);
+	useView(globalState);
 
-	await app.whenReady();
-
-	(await getStore()).dispatch(appReady());
+	app.whenReady().then(() => store.dispatch(appReady()));
 };

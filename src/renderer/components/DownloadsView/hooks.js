@@ -1,6 +1,6 @@
 import { bindActionCreators } from 'redux';
 import { useDispatch, useSelector } from 'react-redux';
-import { clearAllDownloads } from '../../../actions';
+import { allDownloadsCleared } from '../../../actions';
 
 
 export const useView = () => useSelector(({ view }) => view === 'downloads');
@@ -15,7 +15,7 @@ export const useDownloads = () => {
 
 	const dispatch = useDispatch();
 
-	const clearAll = bindActionCreators(clearAllDownloads, dispatch);
+	const clearAll = bindActionCreators(allDownloadsCleared, dispatch);
 
 	return [downloads, clearAll];
 };

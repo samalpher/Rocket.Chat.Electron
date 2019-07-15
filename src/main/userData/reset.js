@@ -1,10 +1,8 @@
 import { app } from 'electron';
 import jetpack from 'fs-jetpack';
-import { call, takeEvery } from 'redux-saga/effects';
+import { takeEvery } from 'redux-saga/effects';
 import { data as debug } from '../../debug';
-import { getSaga } from '../store';
-import { RESET_USER_DATA, APP_READY } from '../../actions';
-import { waitForAction } from '../../utils/store';
+import { RESET_USER_DATA } from '../../actions';
 
 
 const resetUserDataCommandLineFlag = '--reset-user-data';
@@ -24,8 +22,10 @@ const requestUserDataReset = () => {
 	app.quit();
 };
 
-export const useUserDataReset = async () => {
-	waitForAction(getSaga(), APP_READY)(function* () {
-		yield takeEvery(RESET_USER_DATA, call(requestUserDataReset));
+export const useUserDataReset = ({ runSaga }) => {
+	runSaga(function* () {
+		yield takeEvery(RESET_USER_DATA, function* () {
+			requestUserDataReset();
+		});
 	});
 };

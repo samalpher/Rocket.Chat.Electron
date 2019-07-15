@@ -28,6 +28,8 @@ export const setupStore = () => {
 	replayActionMain(store);
 
 	resolve({ store, sagaMiddleware });
+
+	return [store, sagaMiddleware];
 };
 
 export const getStore = () => promise.then(({ store }) => store);
